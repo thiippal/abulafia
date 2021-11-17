@@ -209,15 +209,19 @@ class Task:
                 # Print status message
                 msg.info(f'Setting up filters')
 
-                # Check if workers should be filtered based on their language skills
+                # Check if workers should be filtered based on language skills
                 if 'languages' in self.pool_conf['filter'].keys():
 
                     # If only one language has been defined, proceed to set the filter
                     if len(self.pool_conf['filter']['languages']) == 1:
 
-                        # Set the filter
-                        self.pool.filter = toloka.filter.Languages.in_(
+                        # Create filter
+                        language = toloka.filter.Languages.in_(
                             self.pool_conf['filter']['languages'][0].upper())
+
+                        # Check for existing filters and set
+                        self.pool.filter = set_filter(filters=self.pool.filter,
+                                                      new_filters=language)
 
                     # If more than one languages have been defined, combine and set filters
                     if len(self.pool_conf['filter']['languages']) > 1:
@@ -229,10 +233,11 @@ class Task:
                         # Combine filters
                         languages = toloka.filter.FilterOr(languages)
 
-                        # Set filters
-                        self.pool.filter = languages
+                        # Check for existing filters and set
+                        self.pool.filter = set_filter(filters=self.pool.filter,
+                                                      new_filters=languages)
 
-                # Check if workers should be filtered according to their client type
+                # Check if workers should be filtered based on client type
                 if 'client_type' in self.pool_conf['filter'].keys():
 
                     # Check if only one client type has been defined
@@ -243,9 +248,10 @@ class Task:
                                   self.pool_conf['filter']['client_type'][0].upper())
 
                         # Check for existing filters and set
-                        self.pool.filter = set_filter(filters=self.pool.filter, new_filters=client)
+                        self.pool.filter = set_filter(filters=self.pool.filter,
+                                                      new_filters=client)
 
-                    # Check if only one client type has been defined
+                    # Check if more than one client type has been defined
                     if len(self.pool_conf['filter']['client_type']) > 1:
 
                         # Create filters
@@ -256,20 +262,49 @@ class Task:
                         clients = toloka.filter.FilterOr(clients)
 
                         # Check for existing filters and set
-                        self.pool.filter = set_filter(filters=self.pool.filter, new_filters=clients)
+                        self.pool.filter = set_filter(filters=self.pool.filter,
+                                                      new_filters=clients)
 
-                # Check if workers should be filtered according to their rating
+                # Check if workers should be filtered based on rating
                 if 'rating' in self.pool_conf['filter'].keys():
 
                     # Create filter
                     rating = (toloka.filter.Rating >= self.pool_conf['filter']['rating'])
 
                     # Check for existing filters and set
-                    self.pool.filter = set_filter(filters=self.pool.filter, new_filters=rating)
+                    self.pool.filter = set_filter(filters=self.pool.filter,
+                                                  new_filters=rating)
+
+                # Check if workers should be filtered based on education
+                if 'education' in self.pool_conf['filter'].keys():
+
+                    # Check if only one education level has been defined
+                    if len(self.pool_conf['filter']['education']) == 1:
+
+                        # Create filter
+                        education = (toloka.filter.Education ==
+                                     self.pool_conf['filter']['education'][0].upper())
+
+                        # Check for existing filters and set
+                        self.pool.filter = set_filter(filters=self.pool.filter,
+                                                      new_filters=education)
+
+                    # Check if more than one education level has been defined
+                    if len(self.pool_conf['filter']['education']) > 1:
+
+                        # Create filters
+                        levels = [(toloka.filter.Education == edu.upper()) for edu in
+                                  self.pool_conf['filter']['education']]
+
+                        # Combine filters
+                        levels = toloka.filter.FilterOr(levels)
+
+                        # Check for existing filters and set
+                        self.pool.filter = set_filter(filters=self.pool.filter,
+                                                      new_filters=levels)
 
                 # Print status message
-                msg.good(f'Successfully added filters for '
-                         f'{", ".join(f for f in list(self.pool_conf["filter"].keys()))}')
+                msg.good(f'Finished adding filters to the pool')
 
             # If quality control rules exist, add them to the pool
             if self.qual_conf is not None:
