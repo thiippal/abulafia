@@ -179,6 +179,35 @@ def read_configuration(configuration: str):
     return conf_dict
 
 
+def set_filter(filters, new_filters):
+    """
+    This function checks the pool for existing filters and appends new ones to them.
+
+    Parameters:
+
+        filters: A Toloka filter object (e.g. Rating or FilterAnd) or None.
+        new_filters: A Toloka filter object (e.g. Rating or FilterAnd).
+
+    Returns:
+
+        Updated Toloka filter objects for the pool.
+    """
+    # Check if the pool already contains filters
+    if filters is not None:
+
+        # Update the filters by adding new filters to the existing ones
+        filters = (filters & new_filters)
+
+    # Othewise set the new filters as filters
+    else:
+
+        # Update filters
+        filters = new_filters
+
+    # Return filters
+    return filters
+
+
 def track_pool_progress(client: toloka.TolokaClient,
                         pool_id: str,
                         interval: Union[int, float]):

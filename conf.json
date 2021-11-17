@@ -32,6 +32,7 @@
 			}
 	},
 	"project": {
+		"id": 84365,
 		"setup": {
 			"public_name": "Unknown",
 			"public_description": "Description"
@@ -66,7 +67,8 @@
 		"filter":
 			{
 				"languages": ["EN", "FI"],
-				"client_type": ["TOLOKA_APP", "BROWSER"]
+				"client_type": ["TOLOKA_APP", "BROWSER"],
+				"rating": 400
 			}
 	},
 	"quality_control":

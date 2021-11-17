@@ -238,19 +238,12 @@ class Task:
                     # Check if only one client type has been defined
                     if len(self.pool_conf['filter']['client_type']) == 1:
 
-                        # Check for existing filters
-                        if self.pool.filter is not None:
+                        # Create filter
+                        client = (toloka.filter.ClientType ==
+                                  self.pool_conf['filter']['client_type'][0].upper())
 
-                            # Update the filters by retaining existing filters and adding the new
-                            self.pool.filter = (self.pool.filter &
-                                               (toloka.filter.ClientType ==
-                                                self.pool_conf['filter']['client_type'][0].upper()))
-
-                        else:
-
-                            # Otherwise simply set the filter
-                            self.pool.filter = (toloka.filter.ClientType ==
-                                                self.pool_conf['filter']['client_type'][0].upper())
+                        # Check for existing filters and set
+                        self.pool.filter = set_filter(filters=self.pool.filter, new_filters=client)
 
                     # Check if only one client type has been defined
                     if len(self.pool_conf['filter']['client_type']) > 1:
@@ -262,19 +255,21 @@ class Task:
                         # Combine filters
                         clients = toloka.filter.FilterOr(clients)
 
-                        # Check for existing filters
-                        if self.pool.filter is not None:
+                        # Check for existing filters and set
+                        self.pool.filter = set_filter(filters=self.pool.filter, new_filters=clients)
 
-                            # Update the filters by retaining existing filters and adding the new
-                            self.pool.filter = (self.pool.filter & clients)
+                # Check if workers should be filtered according to their rating
+                if 'rating' in self.pool_conf['filter'].keys():
 
-                        else:
+                    # Create filter
+                    rating = (toloka.filter.Rating >= self.pool_conf['filter']['rating'])
 
-                            # Otherwise simply set the filter
-                            self.pool.filter = clients
+                    # Check for existing filters and set
+                    self.pool.filter = set_filter(filters=self.pool.filter, new_filters=rating)
 
                 # Print status message
-                msg.good(f'Successfully added filters')
+                msg.good(f'Successfully added filters for '
+                         f'{", ".join(f for f in list(self.pool_conf["filter"].keys()))}')
 
             # If quality control rules exist, add them to the pool
             if self.qual_conf is not None:
