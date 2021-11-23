@@ -74,7 +74,7 @@
 				"client_type": ["TOLOKA_APP", "BROWSER"],
 				"rating": 400,
 				"education": ["BASIC", "MIDDLE", "HIGH"],
-				"skill": [{"9171": 70}, {"5351": 80}]
+				"skill": [{"9173": 70}]
 			},
 		"skill":
 			{

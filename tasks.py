@@ -4,7 +4,6 @@
 from core import *
 from wasabi import msg
 import datetime
-import json
 import uuid
 import toloka.client as toloka
 import toloka.client.project.template_builder as tb
@@ -312,7 +311,7 @@ class Task:
                     if len(self.pool_conf['filter']['skill']) == 1:
 
                         # Get the skill ID and values from the dictionary key and cast to integers
-                        skill_id = int(list(self.pool_conf['filter']['skill'][0].keys())[0])
+                        skill_id = list(self.pool_conf['filter']['skill'][0].keys())[0]
                         skill_value = int(list(self.pool_conf['filter']['skill'][0].values())[0])
 
                         # Define filter
@@ -326,7 +325,7 @@ class Task:
                     if len(self.pool_conf['filter']['skill']) > 1:
 
                         # Get the skill ID and values from the dictionary key and cast to integers
-                        skills = [(toloka.filter.Skill(int(list(skill_dict.keys())[0])) >=
+                        skills = [(toloka.filter.Skill(list(skill_dict.keys())[0]) >=
                                    int(list(skill_dict.values())[0]))
                                   for skill_dict in self.pool_conf['filter']['skill']]
 
@@ -598,12 +597,3 @@ class ImageClassificationTask(Task):
             msg.good(f'Successfully closed pool with ID {self.training.id}')
 
         # TODO Get and process results
-
-
-# Read the credentials
-with open('creds.json') as cred_f:
-
-    creds = json.loads(cred_f.read())
-    tclient = toloka.TolokaClient(creds['token'], creds['mode'])
-
-t = ImageClassificationTask(configuration='conf.json', client=tclient)
