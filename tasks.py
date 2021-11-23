@@ -10,9 +10,9 @@ import toloka.client.project.template_builder as tb
 
 
 # Define the base class for Toloka tasks
-class Task:
+class CrowdsourcingTask:
     """
-    This is the base class for all Toloka tasks. The class is responsible for
+    This is the base class for all tasks defined on Toloka. The class is responsible for
     loading the configuration from JSON.
     """
 
@@ -329,12 +329,12 @@ class Task:
                                    int(list(skill_dict.values())[0]))
                                   for skill_dict in self.pool_conf['filter']['skill']]
 
-                        # Combine filters
-                        skills = toloka.filter.FilterAnd(skills)
+                        # Add skills one by one
+                        for skill in skills:
 
-                        # Check for existing filters and set
-                        self.pool.filter = set_filter(filters=self.pool.filter,
-                                                      new_filters=skills)
+                            # Check for existing filters and set
+                            self.pool.filter = set_filter(filters=self.pool.filter,
+                                                          new_filters=skill)
 
                 # Print status message
                 msg.good(f'Finished adding filters to the pool')
@@ -458,7 +458,7 @@ class Task:
             msg.good(f'Successfully created a new pool with ID {self.pool.id} on Toloka')
 
 
-class ImageClassificationTask(Task):
+class ImageClassificationTask(CrowdsourcingTask):
     """
     This is a class for classification tasks.
     """
