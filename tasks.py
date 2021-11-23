@@ -48,6 +48,8 @@ class Task:
         self.add_train_data = False     # Do not add training tasks by default
         self.training = None            # No training
         self.is_complete = False        # Is the Task complete or not?
+        self.skill = False              # Does the Task use or require a skill?
+        self.exam = False               # Does this Task define an exam pool?
 
         # Get requester information
         requester = client.get_requester()
@@ -70,7 +72,7 @@ class Task:
                 msg.good(f'Successfully loaded project {self.project.id} from Toloka')
 
             # Catch the error
-            except toloka.exceptions.DoesNotExistApiError as error:
+            except toloka.exceptions.DoesNotExistApiError:
 
                 # Raise error
                 raise_error(f'Failed to load project with ID {self.project_conf["id"]} from '
@@ -303,10 +305,77 @@ class Task:
                         self.pool.filter = set_filter(filters=self.pool.filter,
                                                       new_filters=levels)
 
+                # Check if workers should be filtered based on skill
+                if 'skill' in self.pool_conf['filter'].keys():
+
+                    # Check if only one skill has been defined
+                    if len(self.pool_conf['filter']['skill']) == 1:
+
+                        # Get the skill ID and values from the dictionary key and cast to integers
+                        skill_id = int(list(self.pool_conf['filter']['skill'][0].keys())[0])
+                        skill_value = int(list(self.pool_conf['filter']['skill'][0].values())[0])
+
+                        # Define filter
+                        skill = (toloka.filter.Skill(skill_id) >= skill_value)
+
+                        # Check for existing filters and set
+                        self.pool.filter = set_filter(filters=self.pool.filter,
+                                                      new_filters=skill)
+
+                    # Check if more than one skill has been defined
+                    if len(self.pool_conf['filter']['skill']) > 1:
+
+                        # Get the skill ID and values from the dictionary key and cast to integers
+                        skills = [(toloka.filter.Skill(int(list(skill_dict.keys())[0])) >=
+                                   int(list(skill_dict.values())[0]))
+                                  for skill_dict in self.pool_conf['filter']['skill']]
+
+                        # Combine filters
+                        skills = toloka.filter.FilterAnd(skills)
+
+                        # Check for existing filters and set
+                        self.pool.filter = set_filter(filters=self.pool.filter,
+                                                      new_filters=skills)
+
                 # Print status message
                 msg.good(f'Finished adding filters to the pool')
 
-            # If quality control rules exist, add them to the pool
+            # Check if skills have been defined
+            if 'skill' in self.pool_conf.keys():
+
+                # Print status message
+                msg.info(f'Setting up skill')
+
+                # Check if an existing skill has been requested
+                if 'id' in self.pool_conf['skill'].keys():
+
+                    # Attempt to retrieve the skill from Toloka
+                    try:
+
+                        # Retrieve the skill
+                        self.skill = client.get_skill(skill_id=self.pool_conf['skill']['id'])
+
+                        # Print status message
+                        msg.good(f'Successfully loaded skill with ID {self.skill.id} from Toloka')
+
+                    # Catch the error
+                    except toloka.exceptions.DoesNotExistApiError:
+
+                        # Raise error
+                        raise_error(f'Failed to load skill with ID {self.pool_conf["skill"]["id"]} '
+                                    f'from Toloka')
+
+                # Otherwise create a new skill
+                else:
+
+                    # Create new skill and set public description
+                    self.skill = client.create_skill(name=self.pool_conf['skill']['name'],
+                                                     public_requester_description={self.pool_conf['skill']['language']:
+                                                                                   self.pool_conf['skill']['description']})
+                    # Print status message
+                    msg.good(f'Successfully created skill with ID {self.skill.id}')
+
+            # If general quality control rules exist, add them to the pool
             if self.qual_conf is not None:
 
                 # Print status message
@@ -340,7 +409,48 @@ class Task:
                              f'response time is less than {threshold} seconds for {count} out '
                              f'of {history_size} tasks')
 
-                # TODO Add other quality control rules
+            # Check if the pool is an exam pool
+            if 'exam' in self.pool_conf.keys():
+
+                # Set exam flag to True
+                self.exam = True
+
+                # First, check that a skill has been defined in the JSON configuration file
+                if not self.skill:
+
+                    # Print status message and exit
+                    msg.fail(f'The pool configuration contains the key "exam", but no skill has '
+                             f'been defined in the pool configuration.', exits=0)
+
+                # Check that a maximum number of exam performers has been set
+                if 'max_performers' not in self.pool_conf['exam']:
+
+                    # Print status message and exit
+                    msg.fail(f'The pool configuration contains the key "exam", but the number of '
+                             f'maximum performers for the exam has not been set. With infinite '
+                             f'overlap, the pool will never close. Set the number of maximum '
+                             f'performers using the key "max_performers" under the "exam" entry.',
+                             exits=0)
+
+                # Next, check the mixer configuration – exam pools must contain tasks with known
+                # answers only
+                if not self.pool_conf['mixer']['real_tasks_count'] == 0 \
+                        and self.pool_conf['mixer']['training_tasks_count'] == 0:
+
+                    # Print status message and exit
+                    msg.fail(f'The configuration file defines an exam pool, but the count for both '
+                             f'real and training tasks is greater than 0. Exam pools must contain '
+                             f'golden tasks only.', exits=0)
+
+                # Otherwise, set up the quality control rule for assigning skills
+                self.pool.quality_control.add_action(
+                    collector=toloka.collectors.GoldenSet(history_size=self.pool_conf['exam']['history_size']),
+                    conditions=[toloka.conditions.TotalAnswersCount >= self.pool_conf['exam']['min_answers']],
+                    action=toloka.actions.SetSkillFromOutputField(skill_id=self.skill.id,
+                                                                  from_field='correct_answers_rate'))
+
+                # Print status message
+                msg.good(f'Successfully configured exam pool using skill {self.skill.id}')
 
             # Create pool on Toloka
             self.pool = client.create_pool(self.pool)
@@ -356,8 +466,8 @@ class ImageClassificationTask(Task):
 
     def __init__(self, configuration, client):
         """
-        This function initialises the ClassificationTask class, which inherits attributes
-        and methods from the Task class.
+        This function initialises the ImageClassificationTask class, which inherits attributes
+        and methods from the superclass Task.
         """
 
         # Read the configuration from the JSON file
@@ -434,7 +544,8 @@ class ImageClassificationTask(Task):
             # Create training task objects
             self.train_tasks = [toloka.Task(pool_id=self.training.id,
                                             input_values={in_var_t: row[in_var_t]},
-                                            known_solutions=[toloka.task.BaseTask.KnownSolution(output_values={out_var_t: str(row[out_var_t])})],
+                                            known_solutions=[toloka.task.BaseTask.KnownSolution(
+                                                output_values={out_var_t: str(row[out_var_t])})],
                                             message_on_unknown_solution=row['hint'],
                                             overlap=1)
                                 for _, row in self.train_data.iterrows()]
@@ -444,13 +555,27 @@ class ImageClassificationTask(Task):
                               kind='train')
 
         # Print status message
-        msg.info(f'Creating and adding main tasks to pool with ID {self.pool.id}')
+        msg.info(f'Creating and adding tasks to pool with ID {self.pool.id}')
 
-        # Create a list of Toloka Task objects by looping over the input DataFrame stored under
-        # self.input_data. Use the name of the input column ('in_var') to get the correct column
-        # from the DataFrame.
-        self.tasks = [toloka.Task(input_values={in_var: row}, pool_id=self.pool.id)
-                      for row in self.input_data[in_var]]
+        # If this is an exam pool, create tasks with known answers
+        if self.exam:
+
+            # Populate the pool with exam tasks that have known answers
+            self.tasks = [toloka.Task(pool_id=self.pool.id,
+                                      input_values={in_var: row[in_var]},
+                                      known_solutions=[toloka.task.BaseTask.KnownSolution(
+                                          output_values={out_var: str(row[out_var])})],
+                                      infinite_overlap=True)
+                          for _, row in self.input_data.iterrows()]
+
+        # Otherwise, create normal tasks
+        if not self.exam:
+
+            # Create a list of Toloka Task objects by looping over the input DataFrame stored under
+            # self.input_data. Use the name of the input column ('in_var') to get the correct column
+            # from the DataFrame.
+            self.tasks = [toloka.Task(input_values={in_var: row}, pool_id=self.pool.id)
+                          for row in self.input_data[in_var]]
 
         # Add tasks to the main pool
         add_tasks_to_pool(client=client, tasks=self.tasks, pool=self.pool, kind='main')
@@ -460,7 +585,8 @@ class ImageClassificationTask(Task):
                   else [self.pool.id, self.training.id])
 
         # Track pool progress to print status messages
-        track_pool_progress(client=client, pool_id=self.pool.id, interval=0.5)
+        track_pool_progress(client=client, pool_id=self.pool.id, interval=0.5, exam=self.exam,
+                            limit=None if not self.exam else self.pool_conf['exam']['max_performers'])
 
         # If the main pool is closed and a training pool exists
         if not self.pool.is_open() and self.training is not None:

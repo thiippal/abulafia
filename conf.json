@@ -1,6 +1,6 @@
 {
 	"data": {
-		"file": "data/ai2d-rst_categorically-weighted_sample_100.tsv",
+		"file": "data/exam.tsv",
 		"input": {
 			"image": "url"
 		},
@@ -9,8 +9,7 @@
 		}
 	},
 	"interface": {"prompt": "Hello!"},
-	"training":
-		{
+	"training": {
 		 "setup":
 		 	{
 				"private_name": "My training",
@@ -32,7 +31,7 @@
 			}
 	},
 	"project": {
-		"id": 84365,
+		"id": 85112,
 		"setup": {
 			"public_name": "Unknown",
 			"public_description": "Description"
@@ -40,7 +39,12 @@
 		"instructions": "data/instructions.html"
 	},
 	"pool":
-		{
+		{"exam":
+			{
+				"history_size": 20,
+				"min_answers": 20,
+				"max_performers": 100
+			},
 		 "setup":
 			{
 				"private_name": "title",
@@ -51,13 +55,13 @@
 			},
 		"defaults":
 			{
-				"default_overlap_for_new_tasks": 3,
+				"default_overlap_for_new_tasks": 1,
 				"default_overlap_for_new_task_suites": 0
 			},
 		"mixer":
 			{
-				"real_tasks_count": 5,
-				"golden_tasks_count": 0,
+				"real_tasks_count": 0,
+				"golden_tasks_count": 2,
 				"training_tasks_count": 0
 			},
 		"training":
@@ -68,7 +72,17 @@
 			{
 				"languages": ["EN", "FI"],
 				"client_type": ["TOLOKA_APP", "BROWSER"],
-				"rating": 400
+				"rating": 400,
+				"education": ["BASIC", "MIDDLE", "HIGH"],
+				"skill": [{"9171": 70}, {"5351": 80}]
+			},
+		"skill":
+			{
+				"id": 9173,
+				"name": "Classify images",
+				"language": "EN",
+				"description": "Skill in image classification",
+				"hidden": true
 			}
 	},
 	"quality_control":

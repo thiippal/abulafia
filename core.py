@@ -52,8 +52,8 @@ def add_tasks_to_pool(client: toloka.TolokaClient,
     except toloka.exceptions.ValidationApiError:
 
         # Print status message
-        msg.fail(f'Failed to create tasks on Toloka due to validation error. Check '
-                 f'the data configuration!', exits=0)
+        raise_error(f'Failed to create tasks on Toloka due to validation error. Check '
+                    f'the configuration file!')
 
 
 def load_data(data: str):
@@ -210,7 +210,9 @@ def set_filter(filters, new_filters):
 
 def track_pool_progress(client: toloka.TolokaClient,
                         pool_id: str,
-                        interval: Union[int, float]):
+                        interval: Union[int, float],
+                        exam: bool,
+                        **kwargs):
     """
     This function tracks the progress of a pool.
 
@@ -220,6 +222,9 @@ def track_pool_progress(client: toloka.TolokaClient,
         pool_id: A valid identifier for a pool on Toloka.
         interval: An integer or float that defines how often a status message
                   should be printed. The value corresponds to minutes.
+        exam: Whether the pool is an exam pool or not – progress cannot be measured on exam
+              pools with infinite overlap.
+        kwargs: Keywords and arguments.
 
     Returns:
 
@@ -232,8 +237,8 @@ def track_pool_progress(client: toloka.TolokaClient,
     # Retrieve the pool from Toloka
     pool = client.get_pool(pool_id=pool_id)
 
-    # Check pool status; run the following block while pool remains open
-    while not pool.is_closed():
+    # For main pools, run the following block while pool remains open
+    while not exam and not pool.is_closed():
 
         # Retrieve analytics for completion percentage from the pool
         op = client.get_analytics(
@@ -247,6 +252,28 @@ def track_pool_progress(client: toloka.TolokaClient,
 
         # Print status message
         msg.info(f'Pool with ID {pool.id} is {percentage}% complete.')
+
+        # Sleep until next message
+        time.sleep(sleep)
+
+        # Update pool information to check for completeness
+        pool = client.get_pool(pool_id=pool_id)
+
+    # For exam pools, run the following block while pool remains open
+    while exam and not pool.is_closed():
+
+        # Retrieve analytics for completion percentage from the pool
+        op = client.get_analytics(
+            [toloka.analytics_request.UniqueSubmittersCountPoolAnalytics(subject_id=pool.id)])
+
+        # Wait until the previous operation finishes
+        op = client.wait_operation(op)
+
+        # Retrieve the percentage value
+        count = op.details['value'][0]['result']
+
+        # Print status message
+        msg.info(f'{count} workers submitted to pool with ID {pool.id}.')
 
         # Sleep until next message
         time.sleep(sleep)
