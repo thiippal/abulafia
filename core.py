@@ -16,7 +16,7 @@ tracep = TracebackPrinter()
 
 def add_tasks_to_pool(client: toloka.TolokaClient,
                       tasks: list,
-                      pool: toloka.Pool,
+                      pool: Union[toloka.Pool, toloka.Training],
                       kind: str):
     """
     This function loads Toloka Task objects to a pool on Toloka.
@@ -40,7 +40,7 @@ def add_tasks_to_pool(client: toloka.TolokaClient,
             # Create tasks on Toloka; use the default settings
             client.create_tasks(tasks, allow_defaults=True)
 
-        else:
+        if kind == 'train':
 
             # Create tasks on Toloka without default settings
             client.create_tasks(tasks, allow_defaults=False)
@@ -79,7 +79,7 @@ def load_data(data: str):
         df = pd.read_csv(data, sep='\t', header=0)
 
         # Print message
-        msg.good(f'Successfully loaded {len(df)} rows of data')
+        msg.good(f'Successfully loaded {len(df)} rows of data from {data}')
 
     except FileNotFoundError:
 
@@ -115,6 +115,7 @@ def open_pool(client: toloka.TolokaClient, pool_id: Union[str, list]):
     # If the 'pool_id' variable contains a list, open each pool in turn
     elif type(pool_id) == list:
 
+        # Loop over the pool identifiers
         for pid in pool_id:
 
             # Open the pool for workers

@@ -45,7 +45,10 @@ class CrowdsourcingTask:
 
         # Assign flags and default values
         self.add_train_data = False     # Do not add training tasks by default
-        self.training = None            # No training
+        self.project = None             # Project configuration
+        self.training = None            # Training configuration
+        self.pool = None                # Pool configuration
+        self.input_data = None          # Input data
         self.is_complete = False        # Is the Task complete or not?
         self.skill = False              # Does the Task use or require a skill?
         self.exam = False               # Does this Task define an exam pool?
@@ -56,6 +59,37 @@ class CrowdsourcingTask:
         # Print status messages on requester ID and balance
         msg.info(f'Using Toloka with requester with ID {requester.id}')
         msg.info(f'Current balance on this account is ${requester.balance}')
+
+        # Load project configuration
+        self.load_project(client=client, task_spec=task_spec)
+
+        # Load training configuration
+        self.load_training(client=client)
+
+        # Load pool configuration
+        self.load_pool(client=client)
+
+        # Load input data from the CSV file into a pandas DataFrame
+        self.input_data = load_data(self.data_conf['file'])
+
+    def __call__(self, input_data):
+
+        self.input_data = input_data
+
+    def load_project(self, client, task_spec):
+        """
+        This function loads an existing project from Toloka or creates a new project according to
+        the configuration in the JSON file under the key "project".
+
+        Parameters:
+
+            client: A toloka.TolokaClient object with valid credentials.
+            task_spec: A toloka.project.task_spec.TaskSpec object that defines an user interface.
+
+        Returns:
+
+             Assigns a Toloka Project object under self.project.
+        """
 
         # If the configuration file contains a key named 'id' for 'project', assume
         # that an existing project should be used.
@@ -111,8 +145,19 @@ class CrowdsourcingTask:
             # Print status message
             msg.good(f'Successfully created a new project with ID {self.project.id} on Toloka')
 
-        # Load input data from the CSV file into a pandas DataFrame
-        self.input_data = load_data(self.data_conf['file'])
+    def load_training(self, client):
+        """
+        This function loads a Training pool from Toloka or creates a new Training according to
+        the configuration in the JSON file under the key "training".
+
+        Parameters:
+
+            client: A toloka.TolokaClient object with valid credentials.
+
+        Returns:
+
+            Assigns a Toloka Training object under self.training.
+        """
 
         # If a training configuration has been provided, create a training pool
         if self.train_conf is not None:
@@ -124,7 +169,7 @@ class CrowdsourcingTask:
                 try:
 
                     # Retrieve the existing training pool from Toloka
-                    self.training = client.get_pool(pool_id=self.train_conf['id'])
+                    self.training = client.get_training(training_id=self.train_conf['id'])
 
                     # Print status message
                     msg.good(f'Successfully loaded training pool with ID {self.training.id} '
@@ -158,18 +203,38 @@ class CrowdsourcingTask:
                 # Assign flag to indicate that training tasks must be added
                 self.add_train_data = True
 
+    def load_pool(self, client):
+        """
+        This function loads a main pool from Toloka or creates a new pool according to the
+        configuration in the JSON file under the key "pool".
+
+        Parameters:
+
+            client: A toloka.TolokaClient object with valid credentials.
+
+        Returns:
+
+             Assigns a Toloka Pool object under self.pool.
+        """
+
         # If the configuration file contains a key named 'id' for 'pool', assume
-        # that an existing pool should be used.
+        # that an existing main pool should be used.
         if 'id' in self.pool_conf.keys():
 
-            # Attempt to retrieve the pool from Toloka
+            # Attempt to retrieve the main pool from Toloka
             try:
 
-                # Retrieve the existing pool from Toloka
+                # Retrieve the existing main pool from Toloka
                 self.pool = client.get_pool(pool_id=self.pool_conf['id'])
 
                 # Print status message
                 msg.good(f'Successfully loaded main pool with ID {self.pool.id} from Toloka')
+
+                # Check if the pool is an exam pool
+                if 'exam' in self.pool_conf.keys():
+
+                    # Set flag to True
+                    self.exam = True
 
             # Catch the error
             except toloka.exceptions.DoesNotExistApiError:
@@ -584,7 +649,7 @@ class ImageClassificationTask(CrowdsourcingTask):
                   else [self.pool.id, self.training.id])
 
         # Track pool progress to print status messages
-        track_pool_progress(client=client, pool_id=self.pool.id, interval=0.5, exam=self.exam,
+        track_pool_progress(client=client, pool_id=self.pool.id, interval=0.25, exam=self.exam,
                             limit=None if not self.exam else self.pool_conf['exam']['max_performers'])
 
         # If the main pool is closed and a training pool exists
@@ -597,3 +662,10 @@ class ImageClassificationTask(CrowdsourcingTask):
             msg.good(f'Successfully closed pool with ID {self.training.id}')
 
         # TODO Get and process results
+
+
+class InputData:
+
+    def __init__(self, tsv):
+
+        load_data(tsv)
