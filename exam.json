@@ -1,4 +1,5 @@
 {
+	"name": "classification_exam",
 	"data": {
 		"file": "data/exam.tsv",
 		"input": {
