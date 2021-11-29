@@ -51,8 +51,12 @@ class CrowdsourcingTask:
         self.project = None             # Project configuration
         self.training = None            # Training configuration
         self.pool = None                # Pool configuration
+        self.prev_task = None           # Previous Task in the crowdsourcing pipeline
         self.input_data = None          # Placeholder for input data
         self.output_data = None         # Placeholder for output data
+        self.train_data = None          # Placeholder for training data
+        self.train_tasks = None         # Placeholder for training tasks
+        self.tasks = None               # Placeholder for main tasks
         self.is_complete = False        # Is the Task complete or not?
         self.skill = False              # Does the Task provide or require a skill?
         self.exam = False               # Is this Task an exam?
@@ -73,21 +77,24 @@ class CrowdsourcingTask:
         # Load pool configuration
         self.load_pool(client=client)
 
-    def __call__(self, input_data, **kwargs):
+    def __call__(self, input_obj, **kwargs):
         """
         This function makes the CrowdsourcingTask class callable and check the input provided.
 
         Parameters:
 
-            input_data: Input data provided to the Task. Must be an InputData or a subclass of CrowdsourcingTask.
+            input_obj: Input object provided to the Task. Must be an InputData or a subclass of
+                        CrowdsourcingTask.
             kwargs: Keywords and arguments.
 
         Returns:
 
-            Populates the self.input_data attribute of a Task with a pandas DataFrame.
+            Assigns the previous Task object under self.prev_task and the input data under
+            self.input_data as a Pandas DataFrame.
         """
 
-        return self.check_input(input_data=input_data, **kwargs)
+        # Check the input type
+        self.check_input(input_obj=input_obj, **kwargs)
 
     def load_project(self, client, task_spec):
         """
@@ -535,99 +542,173 @@ class CrowdsourcingTask:
             # Print status message
             msg.good(f'Successfully created a new pool with ID {self.pool.id} on Toloka')
 
-    def check_input(self, input_data, **kwargs):
+    def check_input(self, input_obj, **kwargs):
         """
-        This function checks the type of the input data and validates the input.
+        This function checks the type of the input object and validates the input.
 
         Parameters:
 
-            input_data: an InputData object or a subclass of a CrowdsourcingTask object.
+            input_obj: an InputData object or a subclass of a CrowdsourcingTask object.
 
         Returns:
 
-            The input data as a Pandas DataFrame.
+            The input object and the input data as a Pandas DataFrame.
         """
-        # Check the type of the input
-        input_type = type(input_data)
-
         # Check if keywords and arguments have been provided
         if kwargs:
 
-            # If the keyword 'forward' has been set to True, the input should be forwarded directly to the output.
-            # This flag can be used, for example, for skipping over exam pools.
+            # If the keyword 'forward' has been set to True, the input should be forwarded directly
+            # to the output. This flag can be used, for example, for skipping over exam pools.
             if 'forward' in kwargs and kwargs['forward'] is True:
 
                 try:
 
                     # Set the input data as the output data
-                    self.output_data = input_data.df
+                    self.output_data = input_obj.df
+                    self.prev_task = input_obj
 
                     return
 
                 except AttributeError:
 
-                    raise_error(f'Could not load input data from the previous task, although the "forward" flag '
-                                f'has been set to True. Check the output from the previous Task!')
+                    raise_error(f'Could not load input data from the previous task, although the '
+                                f'"forward" flag has been set to True. Check the output from the '
+                                f'previous Task!')
 
-        # If input type is a InputData object, it should contain a DataFrame. Proceed to check the columns.
-        if input_type == InputData:
+        # If input type is a InputData object, it should contain a DataFrame. Proceed to check the
+        # columns.
+        if type(input_obj) == InputData:
 
             # Check that the input DataFrame contains matches for the input data defined in the JSON
-            if set(self.data_conf['input'].keys()).issubset(set(input_data.df.columns)):
+            if set(self.data_conf['input'].keys()).issubset(set(input_obj.df.columns)):
 
-                # If the task is an exam, check that the input data contains a column for output as well
+                # If the task is an exam, check that the input data contains a column for output
                 if self.exam:
 
                     # Compare the configuration and the input data
-                    if set(self.data_conf['output'].keys()).issubset(set(input_data.df.columns)):
+                    if set(self.data_conf['output'].keys()).issubset(set(input_obj.df.columns)):
 
-                        # Return the DataFrame for the input data
-                        return input_data.df
+                        # Set the input data for current Task
+                        self.input_data = input_obj.df
+                        self.prev_task = input_obj
 
                 # Otherwise, proceed to return the data
                 if not self.exam:
 
-                    # Return the DataFrame for the input data
-                    return input_data.df
+                    # Set the input data for current Task
+                    self.input_data = input_obj.df
+                    self.prev_task = input_obj
 
             else:
 
                 # Print status message and exit
-                msg.fail(f'The InputData object does not contain columns for the data defined in the JSON '
-                         f'configuration. Does the input TSV have headers?', exits=0)
+                msg.fail(f'The InputData object does not contain columns for the data defined in '
+                         f'the JSON configuration. Does the input TSV have headers?', exits=0)
 
-        # Otherwise, if the input type is a subclass of CrowdsourcingTask
+        # Otherwise, if the input type is a subclass of CrowdsourcingTask, run the block below
         else:
 
-            # Verify that the input is a subclass of a CrowdsourcingTask object
-            if issubclass(input_type, CrowdsourcingTask):
+            # Verify that the input object is a subclass of a CrowdsourcingTask object
+            if issubclass(type(input_obj), CrowdsourcingTask):
 
                 try:
 
-                    # Attempt to return the output data from the previous task
-                    return input_data.output_data
+                    # Attempt to set the input data for current Task
+                    self.input_data = input_obj.output_data
+                    self.prev_task = input_obj
 
                 except AttributeError:
 
-                    raise_error(f'The input data does not contain output!')
+                    raise_error(f'The input object does not contain output from previous Task!')
 
             else:
 
                 # Print status message and exit
-                msg.fail(f'The input is not a known type (InputData or a subclass of CrowdsourcingTask).',
-                         exits=0)
+                msg.fail(f'The input is not a known type (InputData or a subclass of '
+                         f'CrowdsourcingTask).', exits=0)
 
     def run(self):
 
+        # Check if training tasks should be added
+        if self.add_train_data:
+
+            # Load training data
+            self.train_data = load_data(self.conf['training']['data']['file'])
+
+            # Get the input and output variable names
+            input_values = {n: n for n in list(self.conf['training']['data']['input'].keys())}
+            output_values = {n: n for n in list(self.conf['training']['data']['output'].keys())}
+
+            # Create Task objects for training
+            self.train_tasks = [toloka.Task(pool_id=self.training.id,
+                                            input_values={k: row[v] for k, v in
+                                                          input_values.items()},
+                                            known_solutions=[toloka.task.BaseTask.KnownSolution(
+                                                output_values={k: str(row[v]) for k, v in
+                                                               output_values.items()})],
+                                            message_on_unknown_solution=row['hint'],
+                                            overlap=1)
+                                for _, row in self.train_data.iterrows()]
+
+            # Add training tasks to the training pool
+            add_tasks_to_pool(client=self.client, tasks=self.train_tasks, pool=self.training,
+                              kind='train')
+
+        # Print status message
+        msg.info(f'Creating and adding tasks to pool with ID {self.pool.id}')
+
+        # If this is an exam pool, create tasks with known answers
+        if self.exam:
+
+            # Fetch input variable names from the configuration. Create a dictionary with matching
+            # key and value pairs, which is updated when creating the toloka.Task objects below.
+            input_values = {n: n for n in list(self.conf['data']['input'].keys())}
+            output_values = {n: n for n in list(self.conf['data']['output'].keys())}
+
+            # Populate the pool with exam tasks that have known answers
+            self.tasks = [toloka.Task(pool_id=self.pool.id,
+                                      input_values={k: row[v] for k, v in input_values.items()},
+                                      known_solutions=[toloka.task.BaseTask.KnownSolution(
+                                          output_values={k: str(row[v]) for k, v in
+                                                         output_values.items()})],
+                                      infinite_overlap=True)
+                          for _, row in self.input_data.iterrows()]
+
+        # Otherwise, create normal tasks
+        if not self.exam:
+
+            # Fetch input variable names from the configuration. Create a dictionary with matching
+            # key and value pairs, which is updated when creating the toloka.Task objects below.
+            input_values = {n: n for n in list(self.conf['data']['input'].keys())}
+
+            # Create a list of Toloka Task objects by looping over the input DataFrame stored under
+            # self.input_data. Use the name of the input column ('in_var') to get the correct column
+            # from the DataFrame.
+            self.tasks = [toloka.Task(pool_id=self.pool.id,
+                                      input_values={k: row[v] for k, v in input_values.items()})
+                          for _, row in self.input_data.iterrows()]
+
+        # TODO Prevent adding tasks to pool that already exist
+
         # Add tasks to the main pool
-        add_tasks_to_pool(client=self.client, tasks=self.tasks, pool=self.pool, kind='main')
+        add_tasks_to_pool(client=self.client,
+                          tasks=self.tasks,
+                          pool=self.pool,
+                          kind='main')
 
         # Open main and training pools for workers
-        open_pool(client=self.client, pool_id=self.pool.id if self.training is None else [self.pool.id, self.training.id])
+        open_pool(client=self.client,
+                  pool_id=self.pool.id
+                  if self.training is None
+                  else [self.pool.id, self.training.id])
 
         # Track pool progress to print status messages
-        track_pool_progress(client=self.client, pool_id=self.pool.id, interval=0.25, exam=self.exam,
-                            limit=None if not self.exam else self.pool_conf['exam']['max_performers'])
+        track_pool_progress(client=self.client,
+                            pool_id=self.pool.id,
+                            interval=0.25,
+                            exam=self.exam,
+                            limit=None if not self.exam
+                            else self.pool_conf['exam']['max_performers'])
 
         # If the main pool is closed and a training pool exists
         if not self.pool.is_open() and self.training is not None:
@@ -660,73 +741,38 @@ class ImageClassificationTask(CrowdsourcingTask):
         # This will set up the project, pool and training as specified in the configuration JSON.
         super().__init__(configuration, client, task_spec)
 
-    def __call__(self, input_data, **kwargs):
+    def __call__(self, input_obj, **kwargs):
 
         # If the class is called, check the input data
-        self.input_data = super().__call__(input_data, **kwargs)
+        super().__call__(input_obj, **kwargs)
 
-        # Check if training tasks should be added
-        if self.add_train_data:
+        # When called, return the ImageClassificationTask object
+        return self
 
-            # Load training data
-            self.train_data = load_data(self.conf['training']['data']['file'])
+    @staticmethod
+    def specify_task(configuration):
+        """
+        This function specifies the task interface on Toloka.
 
-            # Get the input and output variable names
-            in_var_t = list(self.conf['training']['data']['input'].keys())[0]
-            out_var_t = list(self.conf['training']['data']['output'].keys())[0]
+        Parameters:
 
-            # Create Task objects for training
-            self.train_tasks = [toloka.Task(pool_id=self.training.id,
-                                            input_values={in_var_t: row[in_var_t]},
-                                            known_solutions=[toloka.task.BaseTask.KnownSolution(
-                                                output_values={out_var_t: str(row[out_var_t])})],
-                                            message_on_unknown_solution=row['hint'],
-                                            overlap=1)
-                                for _, row in self.train_data.iterrows()]
+            configuration: A dictionary containing the configuration defined in the JSON file.
 
-            # Add training tasks to the training pool
-            add_tasks_to_pool(client=self.client, tasks=self.train_tasks, pool=self.training,
-                              kind='train')
+        Returns:
 
-        # Print status message
-        msg.info(f'Creating and adding tasks to pool with ID {self.pool.id}')
-
-        # If this is an exam pool, create tasks with known answers
-        if self.exam:
-
-            # Populate the pool with exam tasks that have known answers
-            self.tasks = [toloka.Task(pool_id=self.pool.id,
-                                      input_values={self.in_var: row[self.in_var]},
-                                      known_solutions=[toloka.task.BaseTask.KnownSolution(
-                                          output_values={self.out_var: str(row[self.out_var])})],
-                                      infinite_overlap=True)
-                          for _, row in self.input_data.iterrows()]
-
-        # Otherwise, create normal tasks
-        if not self.exam:
-
-            # Create a list of Toloka Task objects by looping over the input DataFrame stored under
-            # self.input_data. Use the name of the input column ('in_var') to get the correct column
-            # from the DataFrame.
-            self.tasks = [toloka.Task(input_values={self.in_var: row}, pool_id=self.pool.id)
-                          for row in self.input_data[self.in_var]]
-
-        # super().run()
-
-        # TODO Get and process results
-
-    def specify_task(self, configuration):
+             A Toloka TaskSpec object.
+        """
 
         # Read input and output data and create data specifications
         data_in = {k: data_spec[v] for k, v in configuration['data']['input'].items()}
         data_out = {k: data_spec[v] for k, v in configuration['data']['output'].items()}
 
         # Get the names of input and output variables for setting up the interface
-        self.in_var = list(configuration['data']['input'].keys())[0]
-        self.out_var = list(configuration['data']['output'].keys())[0]
+        in_var = list(configuration['data']['input'].keys())[0]
+        out_var = list(configuration['data']['output'].keys())[0]
 
         # Create the task interface; start by setting up the image viewer
-        img_viewer = tb.ImageViewV1(url=tb.InputData(self.in_var),
+        img_viewer = tb.ImageViewV1(url=tb.InputData(in_var),
                                     rotatable=True,
                                     ratio=[1, 1])
 
@@ -737,7 +783,7 @@ class ImageClassificationTask(CrowdsourcingTask):
         radio_group = tb.ButtonRadioGroupFieldV1(
 
             # Set up the output data field
-            data=tb.OutputData(self.out_var),
+            data=tb.OutputData(out_var),
 
             # Create radio buttons
             options=[
@@ -753,9 +799,9 @@ class ImageClassificationTask(CrowdsourcingTask):
         task_width_plugin = tb.TolokaPluginV1(kind='scroll', task_width=500)
 
         # Add hotkey plugin
-        hotkey_plugin = tb.HotkeysPluginV1(key_1=tb.SetActionV1(data=tb.OutputData(self.out_var),
+        hotkey_plugin = tb.HotkeysPluginV1(key_1=tb.SetActionV1(data=tb.OutputData(out_var),
                                                                 payload=True),
-                                           key_2=tb.SetActionV1(data=tb.OutputData(self.out_var),
+                                           key_2=tb.SetActionV1(data=tb.OutputData(out_var),
                                                                 payload=False))
 
         # Combine the task interface elements into a view
@@ -776,9 +822,23 @@ class ImageClassificationTask(CrowdsourcingTask):
 
 
 class InputData:
+    """
+    This is a class for input data.
+    """
+    def __init__(self, tsv, name):
+        """
+        This function loads
 
-    def __init__(self, tsv):
+        Parameters:
 
-        self.name = f'input_data'
+            tsv: A string object that defines a path to a TSV file with input data.
 
+        Returns:
+
+             Creates an InputData object.
+        """
+        # Assign unique name to the InputData object
+        self.name = name
+
+        # Load the data from the TSV and assign under attribute 'df' as a pandas DataFrame
         self.df = load_data(tsv)
