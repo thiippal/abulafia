@@ -11,7 +11,7 @@
 	},
 	"interface": {"prompt": "Does the diagram contain text, letters or numbers?"},
 	"training": {
-		 "id": 1038480,
+		 "id": 1040467,
 		 "setup":
 		 	{
 				"private_name": "Training for exam",
@@ -33,7 +33,7 @@
 			}
 	},
 	"project": {
-		"id": 85576,
+		"id": 85835,
 		"setup": {
 			"public_name": "Check if an image contains text, letters or numbers",
 			"public_description": "Look at diagrams from science textbooks and state if they contain text, letters or numbers."
@@ -41,7 +41,8 @@
 		"instructions": "data/instructions.html"
 	},
 	"pool":
-		{"id": 1038481,
+		{
+		"id": 1040329,
 		"exam":
 			{
 				"history_size": 13,

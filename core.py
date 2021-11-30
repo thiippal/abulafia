@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 
 # Import libraries
-from wasabi import msg, TracebackPrinter
+from wasabi import Printer, TracebackPrinter
 from typing import Union
 import json
 import pandas as pd
@@ -10,7 +10,8 @@ import toloka.client as toloka
 import traceback
 
 
-# Set up TracebackPrinter
+# Set up Printer and TracebackPrinter
+msg = Printer(pretty=True, timestamp=True, hide_animation=True)
 tracep = TracebackPrinter()
 
 
@@ -272,7 +273,6 @@ def track_pool_progress(client: toloka.TolokaClient,
 
         Prints a status message to standard output.
     """
-
     # Define the time that should pass between status messages
     sleep = 60 * interval
 

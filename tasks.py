@@ -2,24 +2,27 @@
 
 # Import libraries
 from core import *
-from wasabi import msg
+from wasabi import Printer
 import datetime
 import uuid
 import toloka.client as toloka
 import toloka.client.project.template_builder as tb
+
+# Set up Printer
+msg = Printer(pretty=True, timestamp=True, hide_animation=True)
 
 
 # Define the base class for Toloka tasks
 class CrowdsourcingTask:
     """
     This is the base class for all tasks defined on Toloka. The class is responsible for
-    loading the configuration from JSON and for handling basic tasks, such as checking
-    inputs to Tasks and opening and closing pools on Toloka.
+    loading the Task configuration from the JSON file and for handling basic tasks, such
+    as validating input data and opening and closing pools on Toloka.
     """
 
     def __init__(self, configuration, client, task_spec):
         """
-        This function initialises the Task class.
+        This function initialises the CrowdsourcingTask class.
 
         Parameters:
 
@@ -27,12 +30,8 @@ class CrowdsourcingTask:
             client: A toloka.TolokaClient object with valid credentials.
             task_spec: A Toloka TaskSpec object with task interface and input/output data.
         """
-
         # Create unique identifier for the Task and shorten
         self.task_id = str(uuid.uuid4())[:8].upper()
-
-        # Print status message
-        msg.info(f'The unique ID of this Task object is {self.task_id}')
 
         # Assign configuration and client to attributes
         self.client = client
@@ -60,6 +59,9 @@ class CrowdsourcingTask:
         self.skill = False              # Does the Task provide or require a skill?
         self.exam = False               # Is this Task an exam?
 
+        # Print status message
+        msg.info(f'The unique ID for this object ({self.name}) is {self.task_id}')
+
         # Get requester information
         requester = client.get_requester()
 
@@ -78,7 +80,7 @@ class CrowdsourcingTask:
 
     def __call__(self, input_obj, **kwargs):
         """
-        This function makes the CrowdsourcingTask class callable and check the input provided.
+        This function makes the CrowdsourcingTask class callable and checks the input provided.
 
         Parameters:
 
@@ -583,7 +585,7 @@ class CrowdsourcingTask:
                 try:
 
                     # Set the input data as the output data
-                    self.output_data = input_obj.df
+                    self.output_data = input_obj.input_data
                     self.prev_task = input_obj
 
                     return
@@ -599,23 +601,23 @@ class CrowdsourcingTask:
         if type(input_obj) == InputData:
 
             # Check that the input DataFrame contains matches for the input data defined in the JSON
-            if set(self.data_conf['input'].keys()).issubset(set(input_obj.df.columns)):
+            if set(self.data_conf['input'].keys()).issubset(set(input_obj.input_data.columns)):
 
                 # If the task is an exam, check that the input data contains a column for output
                 if self.exam:
 
                     # Compare the configuration and the input data
-                    if set(self.data_conf['output'].keys()).issubset(set(input_obj.df.columns)):
+                    if set(self.data_conf['output'].keys()).issubset(set(input_obj.input_data.columns)):
 
-                        # Set the input data for current Task
-                        self.input_data = input_obj.df
+                        # Set the input data for current task
+                        self.input_data = input_obj.input_data
                         self.prev_task = input_obj
 
                 # Otherwise, proceed to return the data
                 if not self.exam:
 
-                    # Set the input data for current Task
-                    self.input_data = input_obj.df
+                    # Set the input data for current task
+                    self.input_data = input_obj.input_data
                     self.prev_task = input_obj
 
             else:
@@ -856,5 +858,5 @@ class InputData:
         # Assign unique name to the InputData object
         self.name = name
 
-        # Load the data from the TSV and assign under attribute 'df' as a pandas DataFrame
-        self.df = load_data(tsv)
+        # Load the data from the TSV and assign under attribute 'input_data' as a pandas DataFrame
+        self.input_data = load_data(tsv)
