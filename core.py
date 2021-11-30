@@ -56,6 +56,47 @@ def add_tasks_to_pool(client: toloka.TolokaClient,
                     f'the configuration file!')
 
 
+def compare_tasks(old_tasks: list,
+                  new_tasks: list):
+    """
+    This function checks newly-defined Tasks against those that already exist in a given Pool.
+
+    Parameters:
+
+        old_tasks:
+        new_tasks:
+
+    Returns:
+
+         True if the new and existing Tasks match, otherwise False
+    """
+    # Get the keys of existing tasks, flatten the list and cast into a set
+    existing_keys = [list(task.input_values.keys()) for task in old_tasks]
+    existing_keys = set([item for sublist in existing_keys for item in sublist])
+
+    # Get the values of existing tasks, flatten the list and cast into a set
+    existing_values = [list(task.input_values.values()) for task in old_tasks]
+    existing_values = set([item for sublist in existing_values for item in sublist])
+
+    # Do the same for the keys of new tasks ...
+    new_keys = [list(task.input_values.keys()) for task in new_tasks]
+    new_keys = set([item for sublist in new_keys for item in sublist])
+
+    # ... and for values as well.
+    new_values = [list(task.input_values.values()) for task in new_tasks]
+    new_values = set([item for sublist in new_values for item in sublist])
+
+    # Compare the sets of keys and values
+    if new_keys == existing_keys and new_values == existing_values:
+
+        # If match, return True
+        return True
+
+    else:
+
+        return False
+
+
 def load_data(data: str):
     """
     This function loads data from a TSV file and returns a pandas DataFrame.
