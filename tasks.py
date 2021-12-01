@@ -609,6 +609,8 @@ class CrowdsourcingTask:
                     # Compare the configuration and the input data
                     if set(self.data_conf['output'].keys()).issubset(set(input_obj.input_data.columns)):
 
+                        # TODO The statement above won't work unless the input contains golden results ...
+
                         # Set the input data for current task
                         self.input_data = input_obj.input_data
                         self.prev_task = input_obj

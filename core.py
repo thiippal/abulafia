@@ -304,6 +304,18 @@ def track_pool_progress(client: toloka.TolokaClient,
     # For exam pools, run the following block while pool remains open
     while exam and not pool.is_closed():
 
+        # Check if a limit has been set for the number of submitting users
+        if kwargs and 'limit' in kwargs:
+
+            # Set limit
+            limit = kwargs['limit']
+
+        else:
+
+            # Print status message
+            msg.fail(f'No limit has been set to the number of workers submitting to the exam pool. '
+                     f'This pool will run indefinitely.', exits=0)
+
         # Retrieve analytics for completion percentage from the pool
         op = client.get_analytics(
             [toloka.analytics_request.UniqueSubmittersCountPoolAnalytics(subject_id=pool.id)])
@@ -316,6 +328,15 @@ def track_pool_progress(client: toloka.TolokaClient,
 
         # Print status message
         msg.info(f'{count} workers submitted to pool with ID {pool.id}.')
+
+        # If the maximum number of performers has been reached
+        if count >= limit:
+
+            # Print status message
+            msg.info(f'Maximum number of submitting workers reached. Closing pool ...')
+
+            # Close the pool
+            client.close_pool(pool_id=pool_id)
 
         # Sleep until next message
         time.sleep(sleep)
