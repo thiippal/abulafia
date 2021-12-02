@@ -5,6 +5,7 @@ from core import *
 from wasabi import Printer
 import datetime
 import uuid
+import pandas as pd
 import toloka.client as toloka
 import toloka.client.project.template_builder as tb
 
@@ -55,6 +56,7 @@ class CrowdsourcingTask:
         self.train_data = None          # Placeholder for training data
         self.train_tasks = None         # Placeholder for training tasks
         self.tasks = None               # Placeholder for main tasks
+        self.results = None             # Placeholder for results
         self.is_complete = False        # Is the Task complete or not?
         self.skill = False              # Does the Task provide or require a skill?
         self.exam = False               # Is this Task an exam?
@@ -650,6 +652,30 @@ class CrowdsourcingTask:
                 msg.fail(f'The input is not a known type (InputData or a subclass of '
                          f'CrowdsourcingTask).', exits=0)
 
+    def get_results(self):
+
+        # Use the get_assignments() method to retrieve task suites from the current pool
+        suites = [suite for suite in self.client.get_assignments(pool_id=self.pool.id)]
+
+        # Define a placeholder for assignments retrieved from the task suites
+        assignments = {}
+
+        # Loop over each task suite
+        for suite in suites:
+
+            # Loop over tasks and solutions (answers) in each task suite
+            for i, (task, solution) in enumerate(zip(suite.tasks, suite.solutions)):
+
+                # Extract information from tasks and solutions
+                assignments[i] = {**task.input_values,
+                                  **solution.output_values,
+                                  'task_id': task.id,
+                                  'suite_id': suite.id,
+                                  'status': str(suite.status)}
+
+        # Return results as a pandas DataFrame
+        return pd.DataFrame.from_dict(assignments, orient='index')
+
     def run(self):
 
         # Print status message
@@ -738,6 +764,9 @@ class CrowdsourcingTask:
 
             # Print status
             msg.good(f'Successfully closed pool with ID {self.training.id}')
+
+        # Get results and assign under the attribute 'results'
+        self.results = self.get_results()
 
 
 class ImageClassificationTask(CrowdsourcingTask):
