@@ -529,7 +529,7 @@ class CrowdsourcingTask:
                     msg.fail(f'The pool configuration contains the key "exam", but no skill has '
                              f'been defined in the pool configuration.', exits=0)
 
-                # Check that a maximum number of exam performers has been set
+                # Next, check that a maximum number of exam performers has been set
                 if 'max_performers' not in self.pool_conf['exam']:
 
                     # Print status message and exit
@@ -547,7 +547,14 @@ class CrowdsourcingTask:
                     # Print status message and exit
                     msg.fail(f'The configuration file defines an exam pool, but the count for both '
                              f'real and training tasks is greater than 0. Exam pools must contain '
-                             f'golden tasks only.', exits=0)
+                             f'tasks with known (golden) answers only.', exits=0)
+
+                # Finally, check that an input file for exam tasks has been provided
+                if 'file' not in self.data_conf:
+
+                    # Print status message and exit
+                    msg.fail(f'The data configuration does not contain an entry for "file", which '
+                             f'should define a path to a TSV with exam tasks.', exits=0)
 
                 # Otherwise, set up the quality control rule for assigning skills
                 self.pool.quality_control.add_action(
@@ -565,7 +572,7 @@ class CrowdsourcingTask:
             # Print status message
             msg.good(f'Successfully created a new pool with ID {self.pool.id} on Toloka')
 
-    def check_input(self, input_obj, **kwargs):
+    def check_input(self, input_obj):
         """
         This function checks the type of the input object and validates the input.
 
@@ -577,80 +584,42 @@ class CrowdsourcingTask:
 
             The input object and the input data as a Pandas DataFrame.
         """
-        # Check if keywords and arguments have been provided
-        if kwargs:
+        # If the current task is an exam, set the input data directly as output data. The exam input is defined
+        # separately in the configuration file under "data". Essentially, this skips over the exam pool.
+        if self.exam:
 
-            # If the keyword 'forward' has been set to True, the input should be forwarded directly
-            # to the output. This flag can be used, for example, for skipping over exam pools.
-            if 'forward' in kwargs and kwargs['forward'] is True:
+            try:
 
-                try:
+                # Set the input data as the output data
+                self.output_data = input_obj.input_data
+                self.prev_task = input_obj
 
-                    # Set the input data as the output data
-                    self.output_data = input_obj.input_data
-                    self.prev_task = input_obj
+                # Print status message
+                msg.info(f'Task "{self.name}" defines an exam pool. Forwarding input data to output data.')
 
-                    return
+            except AttributeError:
 
-                except AttributeError:
+                raise_error(f'Could not load input data from the previous task, although the '
+                            f'"forward" flag has been set to True. Check the output from the '
+                            f'previous Task!')
 
-                    raise_error(f'Could not load input data from the previous task, although the '
-                                f'"forward" flag has been set to True. Check the output from the '
-                                f'previous Task!')
+        else:
 
-        # If input type is a InputData object, it should contain a DataFrame. Proceed to check the
-        # columns.
-        if type(input_obj) == InputData:
+            # Proceed to process InputData and CrowdsourcingTask objects
+            if type(input_obj) == InputData or issubclass(type(input_obj), CrowdsourcingTask):
 
-            # Check that the input DataFrame contains matches for the input data defined in the JSON
-            if set(self.data_conf['input'].keys()).issubset(set(input_obj.input_data.columns)):
-
-                # If the task is an exam, check that the input data contains a column for output
-                if self.exam:
-
-                    # Compare the configuration and the input data
-                    if set(self.data_conf['output'].keys()).issubset(set(input_obj.input_data.columns)):
-
-                        # TODO The statement above won't work unless the input contains golden results ...
-
-                        # Set the input data for current task
-                        self.input_data = input_obj.input_data
-                        self.prev_task = input_obj
-
-                # Otherwise, proceed to return the data
-                if not self.exam:
+                # Check that the input DataFrame contains matches for the input data defined in the JSON
+                if set(self.data_conf['output'].keys()).issubset(set(input_obj.input_data.columns)):
 
                     # Set the input data for current task
                     self.input_data = input_obj.input_data
                     self.prev_task = input_obj
 
-            else:
+                else:
 
-                # Print status message and exit
-                msg.fail(f'The InputData object does not contain columns for the data defined in '
-                         f'the JSON configuration. Does the input TSV have headers?', exits=0)
-
-        # Otherwise, if the input type is a subclass of CrowdsourcingTask, run the block below
-        else:
-
-            # Verify that the input object is a subclass of a CrowdsourcingTask object
-            if issubclass(type(input_obj), CrowdsourcingTask):
-
-                try:
-
-                    # Attempt to set the input data for current Task
-                    self.input_data = input_obj.output_data
-                    self.prev_task = input_obj
-
-                except AttributeError:
-
-                    raise_error(f'The input object does not contain output from previous Task!')
-
-            else:
-
-                # Print status message and exit
-                msg.fail(f'The input is not a known type (InputData or a subclass of '
-                         f'CrowdsourcingTask).', exits=0)
+                    # Print status message and exit
+                    msg.fail(f'The input data does not contain columns for the data defined in '
+                             f'the JSON configuration. Does the input TSV have headers?', exits=0)
 
     def get_results(self):
 
@@ -681,8 +650,11 @@ class CrowdsourcingTask:
         # Print status message
         msg.info(f'Creating and adding tasks to pool with ID {self.pool.id}')
 
-        # If this is an exam pool, create tasks with known answers
+        # If this is an exam pool, load data and create tasks with known answers
         if self.exam:
+
+            # Load exam tasks from the path defined in the JSON configuration
+            exam_data = load_data(self.conf['data']['file'])
 
             # Fetch input variable names from the configuration. Create a dictionary with matching
             # key and value pairs, which is updated when creating the toloka.Task objects below.
@@ -696,7 +668,7 @@ class CrowdsourcingTask:
                                           output_values={k: str(row[v]) for k, v in
                                                          output_values.items()})],
                                       infinite_overlap=True)
-                          for _, row in self.input_data.iterrows()]
+                          for _, row in exam_data.iterrows()]
 
         # If the pool is not an exam pool, create normal tasks without known answers
         if not self.exam:
