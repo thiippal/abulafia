@@ -3,9 +3,9 @@
 # Import libraries
 from core import *
 from wasabi import Printer
+from toloka.streaming.event import AssignmentEvent
 import datetime
 import uuid
-import pandas as pd
 import toloka.client as toloka
 import toloka.client.project.template_builder as tb
 
@@ -41,6 +41,7 @@ class CrowdsourcingTask:
         # Unpack the configuration from JSON into attributes
         self.data_conf = self.conf['data']
         self.project_conf = self.conf['project']
+        self.action_conf = self.conf['actions']
         self.pool_conf = self.conf['pool']
         self.train_conf = self.conf['training']
         self.qual_conf = self.conf['quality_control']
@@ -80,24 +81,33 @@ class CrowdsourcingTask:
         # Load pool configuration
         self.load_pool(client=client)
 
-    def __call__(self, input_obj, **kwargs):
-        """
-        This function makes the CrowdsourcingTask class callable and checks the input provided.
+    def __call__(self, in_obj):
 
-        Parameters:
+        # If the object on which this CrowdSourcingTask object is called
+        # is an InputData object, proceed to create Toloka Task objects.
+        if type(in_obj) == InputData:
 
-            input_obj: Input object provided to the Task. Must be an InputData or a subclass of
-                        CrowdsourcingTask.
-            kwargs: Keywords and arguments.
+            # Assign the InputData object as previous task
+            self.prev_task = in_obj
 
-        Returns:
+            # TODO Create tasks
+            pass
 
-            Assigns the previous Task object under self.prev_task and the input data under
-            self.input_data as a Pandas DataFrame.
-        """
+        # If the object on which the CrowdSourcing task is called is a
+        # subclass of CrowdsourcingTask, set this object as the previous
+        # task under the self.prev_task attribute. This information will
+        # be used for creating a TaskSequence.
+        if issubclass(type(in_obj), CrowdsourcingTask):
 
-        # Check the input type
-        self.check_input(input_obj=input_obj, **kwargs)
+            self.prev_task = in_obj
+
+        # If the input is a list of AssignmentEvent objects, check if the
+        # incoming tasks were originally created by this CrowdsourcingTask.
+        if type(in_obj) == list and all(isinstance(item, AssignmentEvent) for item in in_obj):
+
+            # TODO Adjust overlap for rejected items
+            # TODO Create new tasks if necessary
+            pass
 
     def load_project(self, client, task_spec):
         """
@@ -142,6 +152,7 @@ class CrowdsourcingTask:
 
             # Create a new toloka-kit Project object
             self.project = toloka.Project(**self.project_conf['setup'])
+
             try:
 
                 # Load public instructions from a HTML file
@@ -249,7 +260,7 @@ class CrowdsourcingTask:
     def load_pool(self, client):
         """
         This function loads a main pool from Toloka or creates a new pool according to the
-        configuration in the JSON file under the key "pool".
+        configuration defined in the JSON file under the key "pool".
 
         Parameters:
 
@@ -260,8 +271,8 @@ class CrowdsourcingTask:
              Assigns a Toloka Pool object under self.pool.
         """
 
-        # If the configuration file contains a key named 'id' for 'pool', assume
-        # that an existing main pool should be used.
+        # If the configuration file contains a key named 'id' under 'pool', assume
+        # that an existing pool should be used for this task.
         if 'id' in self.pool_conf.keys():
 
             # Attempt to retrieve the main pool from Toloka
@@ -578,11 +589,12 @@ class CrowdsourcingTask:
 
         Parameters:
 
-            input_obj: an InputData object or a subclass of a CrowdsourcingTask object.
+            input_obj: an InputData object or a subclass of CrowdsourcingTask.
 
         Returns:
 
-            The input object and the input data as a Pandas DataFrame.
+            Assigns the input data under self.input_data or self.output_data, if
+            the task defines an exam pool.
         """
         # If the current task is an exam, set the input data directly as output data. The exam input is defined
         # separately in the configuration file under "data". Essentially, this skips over the exam pool.
@@ -603,47 +615,14 @@ class CrowdsourcingTask:
                             f'"forward" flag has been set to True. Check the output from the '
                             f'previous Task!')
 
-        else:
+        if not self.exam:
 
-            # Proceed to process InputData and CrowdsourcingTask objects
+            # Process InputData and CrowdsourcingTask objects
             if type(input_obj) == InputData or issubclass(type(input_obj), CrowdsourcingTask):
 
-                # Check that the input DataFrame contains matches for the input data defined in the JSON
-                if set(self.data_conf['output'].keys()).issubset(set(input_obj.input_data.columns)):
-
-                    # Set the input data for current task
-                    self.input_data = input_obj.input_data
-                    self.prev_task = input_obj
-
-                else:
-
-                    # Print status message and exit
-                    msg.fail(f'The input data does not contain columns for the data defined in '
-                             f'the JSON configuration. Does the input TSV have headers?', exits=0)
-
-    def get_results(self):
-
-        # Use the get_assignments() method to retrieve task suites from the current pool
-        suites = [suite for suite in self.client.get_assignments(pool_id=self.pool.id)]
-
-        # Define a placeholder for assignments retrieved from the task suites
-        assignments = {}
-
-        # Loop over each task suite
-        for suite in suites:
-
-            # Loop over tasks and solutions (answers) in each task suite
-            for i, (task, solution) in enumerate(zip(suite.tasks, suite.solutions)):
-
-                # Extract information from tasks and solutions
-                assignments[i] = {**task.input_values,
-                                  **solution.output_values,
-                                  'task_id': task.id,
-                                  'suite_id': suite.id,
-                                  'status': str(suite.status)}
-
-        # Return results as a pandas DataFrame
-        return pd.DataFrame.from_dict(assignments, orient='index')
+                # Set the input data for current task
+                self.input_data = input_obj.output_data
+                self.prev_task = input_obj
 
     def run(self):
 
@@ -681,7 +660,8 @@ class CrowdsourcingTask:
             # self.input_data. Use the dictionary of input variable names 'input_values' to retrieve
             # the correct columns from the DataFrame.
             self.tasks = [toloka.Task(pool_id=self.pool.id,
-                                      input_values={k: row[v] for k, v in input_values.items()})
+                                      input_values={k: row[v] for k, v in input_values.items()},
+                                      origin_task_id=self.name)
                           for _, row in self.input_data.iterrows()]
 
         # Get Task objects currently in the pool from Toloka
@@ -714,7 +694,7 @@ class CrowdsourcingTask:
                               pool=self.pool,
                               kind='main')
 
-        # Open main and training pools for workers
+        # Open the main pool. If training exists, open training pool as well.
         open_pool(client=self.client,
                   pool_id=self.pool.id
                   if self.training is None
@@ -723,7 +703,7 @@ class CrowdsourcingTask:
         # Track pool progress to print status messages
         track_pool_progress(client=self.client,
                             pool_id=self.pool.id,
-                            interval=0.25,
+                            interval=0.5,
                             exam=self.exam,
                             limit=None if not self.exam
                             else self.pool_conf['exam']['max_performers'])
@@ -738,7 +718,7 @@ class CrowdsourcingTask:
             msg.good(f'Successfully closed pool with ID {self.training.id}')
 
         # Get results and assign under the attribute 'results'
-        self.results = self.get_results()
+        self.results = get_results(client=self.client, pool_id=self.pool.id)
 
 
 class ImageClassificationTask(CrowdsourcingTask):
