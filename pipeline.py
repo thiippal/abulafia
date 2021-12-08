@@ -33,7 +33,7 @@ class TaskSequence:
         self.tasks = None           # A placeholder for tasks
 
         # Print status message
-        msg.info(f'Creating a Pipeline ...')
+        msg.info(f'Creating a task sequence ...')
 
         # Set parse to True to begin looping through the Tasks
         parse = True
@@ -51,7 +51,7 @@ class TaskSequence:
             tasks.append(current)
 
             # Print status message
-            msg.info(f'Added a task named {current.name} to the Pipeline')
+            msg.info(f'Added a task named {current.name} to the task sequence')
 
             # Attempt to update the 'current' variable by retrieving the previous task from the
             # Task that was last added to the list
@@ -140,6 +140,10 @@ class TaskSequence:
                         # it will be sent to the CrowdsourcingTask object defined in the configuration.
                         observer.on_accepted(task_objs[current_task.action_conf['on_accepted']])
 
+                        msg.info(f'Setting up a connection from {name} to '
+                                 f'{task_objs[current_task.action_conf["on_accepted"]].name} '
+                                 f'on acceptance ...')
+
                     except KeyError:
 
                         raise_error(f'Could not find a CrowdsourcingTask object named '
@@ -149,30 +153,38 @@ class TaskSequence:
 
                 if 'on_submitted' in current_task.action_conf:
 
-                    pass
+                    try:
+
+                        # Register the action with the AssignmentObserver. If a task is submitted,
+                        # it will be sent to the CrowdsourcingTask object defined in the configuration.
+                        observer.on_submitted(task_objs[current_task.action_conf['on_submitted']])
+
+                        msg.info(f'Setting up a connection from {name} to '
+                                 f'{task_objs[current_task.action_conf["on_submitted"]].name} '
+                                 f'on submission ...')
+
+                    except KeyError:
+
+                        raise_error(f'Could not find a CrowdsourcingTask object named '
+                                    f'{current_task.action_conf["on_submitted"]} in the '
+                                    f'TaskSequence. Please check the configuration '
+                                    f'under the key "actions"!')
 
                 if 'on_rejected' in current_task.action_conf:
 
-                    pass
+                    try:
 
-                if 'on_created' in current_task.action_conf:
+                        # Register the action with the AssignmentObserver. If a task is rejected,
+                        # it will be sent to the CrowdsourcingTask object defined in the configuration.
+                        observer.on_rejected(task_objs[current_task.action_conf['on_rejected']])
 
-                    # TODO Could this be used for monitoring?
-                    pass
+                        msg.info(f'Setting up a connection from {name} to '
+                                 f'{task_objs[current_task.action_conf["on_rejected"]].name} '
+                                 f'on rejection ...')
 
-        exit()
+                    except KeyError:
 
-        # TODO Use the configuration and AssignmentsObserver to handle task flow between pools as instructed here:
-        # https://github.com/Toloka/toloka-kit/blob/main/examples/6.streaming_pipelines/streaming_pipelines.ipynb
-
-        # TODO Start by creating a Toloka Pipeline object and register AssignmentObserver objects for each pool.
-        # TODO Create the AssignmentsObserver objects first and assign them into a dict
-
-        # TODO Next, use the AssignmentObserver on_submitted() and on_accepted() methods to handle task flow.
-
-        # TODO Then create a Pipeline and add the AssignmentsObservers to the Pipeline
-
-        # TODO This probably requires adding configuration parameters to JSON for task flow. Refer to the tasks
-        # by their name, e.g. "on_reject": "main_pool", "on_accept": "aggregation".
-
-        pass
+                        raise_error(f'Could not find a CrowdsourcingTask object named '
+                                    f'{current_task.action_conf["on_rejected"]} in the '
+                                    f'TaskSequence. Please check the configuration '
+                                    f'under the key "actions"!')

@@ -81,6 +81,13 @@ class CrowdsourcingTask:
         # Load pool configuration
         self.load_pool(client=client)
 
+        # If the pool is an exam pool, create exam tasks
+        if self.exam:
+
+            exam_tasks = self.create_exam_tasks()
+
+            self.add_tasks(exam_tasks)
+
     def __call__(self, in_obj):
 
         # If the object on which this CrowdSourcingTask object is called
@@ -90,8 +97,13 @@ class CrowdsourcingTask:
             # Assign the InputData object as previous task
             self.prev_task = in_obj
 
-            # TODO Create tasks
-            pass
+            # If the current pool is not an exam pool, create tasks from
+            # the InputData and add them to the pool
+            if not self.exam:
+
+                tasks = self.create_tasks(in_obj)
+
+                self.add_tasks(tasks=tasks)
 
         # If the object on which the CrowdSourcing task is called is a
         # subclass of CrowdsourcingTask, set this object as the previous
@@ -99,6 +111,7 @@ class CrowdsourcingTask:
         # be used for creating a TaskSequence.
         if issubclass(type(in_obj), CrowdsourcingTask):
 
+            # Assign the InputData object as previous task
             self.prev_task = in_obj
 
         # If the input is a list of AssignmentEvent objects, check if the
@@ -624,45 +637,50 @@ class CrowdsourcingTask:
                 self.input_data = input_obj.output_data
                 self.prev_task = input_obj
 
-    def run(self):
+    def create_tasks(self, input_data):
 
         # Print status message
         msg.info(f'Creating and adding tasks to pool with ID {self.pool.id}')
 
-        # If this is an exam pool, load data and create tasks with known answers
-        if self.exam:
+        # Fetch input variable names from the configuration. Create a dictionary with matching
+        # key and value pairs, which is updated when creating the toloka.Task objects below.
+        input_values = {n: n for n in list(self.conf['data']['input'].keys())}
 
-            # Load exam tasks from the path defined in the JSON configuration
-            exam_data = load_data(self.conf['data']['file'])
+        # Create a list of Toloka Task objects by looping over the input DataFrame stored under
+        # self.input_data. Use the dictionary of input variable names 'input_values' to retrieve
+        # the correct columns from the DataFrame.
+        tasks = [toloka.Task(pool_id=self.pool.id,
+                             input_values={k: row[v] for k, v in input_values.items()},
+                             origin_task_id=self.task_id)
+                 for _, row in input_data.input_data.iterrows()]
 
-            # Fetch input variable names from the configuration. Create a dictionary with matching
-            # key and value pairs, which is updated when creating the toloka.Task objects below.
-            input_values = {n: n for n in list(self.conf['data']['input'].keys())}
-            output_values = {n: n for n in list(self.conf['data']['output'].keys())}
+        return tasks
 
-            # Populate the pool with exam tasks that have known answers
-            self.tasks = [toloka.Task(pool_id=self.pool.id,
-                                      input_values={k: row[v] for k, v in input_values.items()},
-                                      known_solutions=[toloka.task.BaseTask.KnownSolution(
-                                          output_values={k: str(row[v]) for k, v in
-                                                         output_values.items()})],
-                                      infinite_overlap=True)
-                          for _, row in exam_data.iterrows()]
+    def create_exam_tasks(self):
 
-        # If the pool is not an exam pool, create normal tasks without known answers
-        if not self.exam:
+        # Print status message
+        msg.info(f'Creating and adding exam tasks to pool with ID {self.pool.id}')
 
-            # Fetch input variable names from the configuration. Create a dictionary with matching
-            # key and value pairs, which is updated when creating the toloka.Task objects below.
-            input_values = {n: n for n in list(self.conf['data']['input'].keys())}
+        # Load exam tasks from the path defined in the JSON configuration
+        exam_data = load_data(self.conf['data']['file'])
 
-            # Create a list of Toloka Task objects by looping over the input DataFrame stored under
-            # self.input_data. Use the dictionary of input variable names 'input_values' to retrieve
-            # the correct columns from the DataFrame.
-            self.tasks = [toloka.Task(pool_id=self.pool.id,
-                                      input_values={k: row[v] for k, v in input_values.items()},
-                                      origin_task_id=self.name)
-                          for _, row in self.input_data.iterrows()]
+        # Fetch input variable names from the configuration. Create a dictionary with matching
+        # key and value pairs, which is updated when creating the toloka.Task objects below.
+        input_values = {n: n for n in list(self.conf['data']['input'].keys())}
+        output_values = {n: n for n in list(self.conf['data']['output'].keys())}
+
+        # Populate the pool with exam tasks that have known answers
+        tasks = [toloka.Task(pool_id=self.pool.id,
+                             input_values={k: row[v] for k, v in input_values.items()},
+                             known_solutions=[toloka.task.BaseTask.KnownSolution(
+                                 output_values={k: str(row[v]) for k, v in
+                                                output_values.items()})],
+                             infinite_overlap=True)
+                 for _, row in exam_data.iterrows()]
+
+        return tasks
+
+    def add_tasks(self, tasks):
 
         # Get Task objects currently in the pool from Toloka
         old_tasks = [task for task in self.client.get_tasks(pool_id=self.pool.id)]
@@ -672,7 +690,7 @@ class CrowdsourcingTask:
 
             # Compare the existing tasks to those created above under self.tasks
             tasks_exist = compare_tasks(old_tasks=old_tasks,
-                                        new_tasks=self.tasks)
+                                        new_tasks=tasks)
 
             if tasks_exist:
 
@@ -690,9 +708,11 @@ class CrowdsourcingTask:
 
             # Add tasks to the main pool
             add_tasks_to_pool(client=self.client,
-                              tasks=self.tasks,
+                              tasks=tasks,
                               pool=self.pool,
                               kind='main')
+
+    def run(self):
 
         # Open the main pool. If training exists, open training pool as well.
         open_pool(client=self.client,
