@@ -2,7 +2,8 @@
 
 # Import libraries
 from wasabi import Printer, TracebackPrinter
-from typing import Union
+from toloka.client.task import Task
+from typing import Union, Type, List
 import json
 import pandas as pd
 import time
@@ -13,6 +14,118 @@ import traceback
 # Set up Printer and TracebackPrinter
 msg = Printer(pretty=True, timestamp=True, hide_animation=True)
 tracep = TracebackPrinter()
+
+
+def create_tasks(input_obj,
+                 input_data: pd.DataFrame) -> list:
+    """
+    This function creates Toloka Task objects from input data based on the JSON configuration.
+
+    Parameters:
+        input_obj: A subclass of CrowdsourcingTask.
+        input_data: a pandas DataFrame that contains the input data. The DataFrame should contain
+                    headers that match those defined in the configuration.
+
+    Returns:
+         A list of Toloka Task objects.
+    """
+
+    # Print status message
+    msg.info(f'Creating and adding tasks to pool with ID {input_obj.pool.id}')
+
+    # Fetch input variable names from the configuration. Create a dictionary with matching
+    # key and value pairs, which is updated when creating the toloka.Task objects below.
+    input_values = {n: n for n in list(input_obj.conf['data']['input'].keys())}
+
+    # Create a list of Toloka Task objects by looping over the input DataFrame. Use the
+    # dictionary of input variable names 'input_values' to retrieve the correct columns
+    # from the DataFrame.
+    tasks = [toloka.Task(pool_id=input_obj.pool.id,
+                         input_values={k: row[v] for k, v in input_values.items()},
+                         origin_task_id=input_obj.task_id)
+             for _, row in input_data.iterrows()]
+
+    return tasks
+
+
+def create_exam_tasks(input_obj) -> list:
+    """
+    This function creates Toloka Task objects with known solutions from input data based on the
+    JSON configuration.
+
+    Parameters:
+        input_obj: A subclass of CrowdsourcingTask.
+
+    Returns:
+         A list of Toloka Task objects with known solutions.
+    """
+
+    # Print status message
+    msg.info(f'Creating and adding exam tasks to pool with ID {input_obj.pool.id}')
+
+    # Load exam tasks from the path defined in the JSON configuration
+    exam_data = load_data(input_obj.conf['data']['file'])
+
+    # Fetch input variable names from the configuration. Create a dictionary with matching
+    # key and value pairs, which is updated when creating the toloka.Task objects below.
+    input_values = {n: n for n in list(input_obj.conf['data']['input'].keys())}
+    output_values = {n: n for n in list(input_obj.conf['data']['output'].keys())}
+
+    # Populate the pool with exam tasks that have known answers
+    tasks = [toloka.Task(pool_id=input_obj.pool.id,
+                         input_values={k: row[v] for k, v in input_values.items()},
+                         known_solutions=[toloka.task.BaseTask.KnownSolution(
+                             output_values={k: str(row[v]) for k, v in
+                                            output_values.items()})],
+                         infinite_overlap=True)
+             for _, row in exam_data.iterrows()]
+
+    return tasks
+
+
+def add_tasks(input_obj,
+              tasks: List[Task]) -> None:
+    """
+    This function adds Toloka Task objects to a pool on Toloka. The function first verifies that
+    these have not been added to the pool already.
+
+    Parameters:
+        input_obj: A subclass of CrowdsourcingTask.
+        tasks: A list of Toloka Task objects.
+
+    Returns:
+         The Task objects are added to the pool.
+    """
+
+    # Get Task objects currently in the pool from Toloka
+    old_tasks = [task for task in input_obj.client.get_tasks(pool_id=input_obj.pool.id)]
+
+    # If the request returns Tasks from Toloka
+    if len(old_tasks) > 0:
+
+        # Compare the existing tasks to those created above under self.tasks
+        tasks_exist = compare_tasks(old_tasks=old_tasks,
+                                    new_tasks=tasks)
+
+        if tasks_exist:
+
+            # Print status message
+            msg.warn(f'The tasks to be added already exist in the pool. Not adding '
+                     f'duplicates.')
+
+    else:
+
+        # If no tasks exist, set the flag to False
+        tasks_exist = False
+
+    # If tasks do not exist in the pool
+    if not tasks_exist:
+
+        # Add tasks to the main pool
+        add_tasks_to_pool(client=input_obj.client,
+                          tasks=tasks,
+                          pool=input_obj.pool,
+                          kind='main')
 
 
 def add_tasks_to_pool(client: toloka.TolokaClient,
@@ -58,14 +171,14 @@ def add_tasks_to_pool(client: toloka.TolokaClient,
 
 
 def compare_tasks(old_tasks: list,
-                  new_tasks: list):
+                  new_tasks: list) -> bool:
     """
     This function checks newly-defined Tasks against those that already exist in a given Pool.
 
     Parameters:
 
-        old_tasks:
-        new_tasks:
+        old_tasks: A list of Toloka Task objects.
+        new_tasks: A list of Toloka Task objects.
 
     Returns:
 
@@ -96,6 +209,45 @@ def compare_tasks(old_tasks: list,
     else:
 
         return False
+
+
+def get_results(client: toloka.TolokaClient,
+                pool_id: str) -> pd.DataFrame:
+    """
+    This function retrieves task suites from a pool on Toloka, extracts the
+    individual tasks and returns them in a pandas DataFrame.
+
+    Parameters:
+
+        client: A toloka.TolokaClient object with valid credentials.
+        pool_id: A string that contains a valid pool identifier.
+
+    Returns:
+
+        A pandas DataFrame with assignments from the pool.
+    """
+
+    # Use the get_assignments() method to retrieve task suites from the current pool
+    suites = [suite for suite in client.get_assignments(pool_id=pool_id)]
+
+    # Define a placeholder for assignments retrieved from the task suites
+    assignments = {}
+
+    # Loop over each task suite
+    for suite in suites:
+
+        # Loop over tasks and solutions (answers) in each task suite
+        for task, solution in zip(suite.tasks, suite.solutions):
+
+            # Extract information from tasks and solutions
+            assignments[len(assignments)] = {**task.input_values,
+                                             **solution.output_values,
+                                             'task_id': task.id,
+                                             'suite_id': suite.id,
+                                             'status': str(suite.status)}
+
+    # Return results as a pandas DataFrame
+    return pd.DataFrame.from_dict(assignments, orient='index')
 
 
 def load_data(data: str):
@@ -132,7 +284,8 @@ def load_data(data: str):
     return df
 
 
-def open_pool(client: toloka.TolokaClient, pool_id: Union[str, list]):
+def open_pool(client: toloka.TolokaClient,
+              pool_id: Union[str, list]):
     """
     This function opens pools for workers.
 

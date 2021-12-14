@@ -1,7 +1,6 @@
 # -*- coding: utf-8 -*-
 
-from core import *
-from tasks import InputData, CrowdsourcingTask
+from core_functions import *
 from toloka.streaming import AssignmentsObserver, Pipeline
 from wasabi import Printer
 
@@ -10,107 +9,62 @@ msg = Printer(pretty=True, timestamp=True, hide_animation=True)
 
 class TaskSequence:
     """
-    This class allows chaining together multiple InputData and CrowdsourcingTask objects into a
-    crowdsourcing pipeline.
+
     """
-    def __init__(self, first, last):
+    def __init__(self, sequence):
         """
-        This function initialises the class by looping through the Tasks in the Pipeline.
 
-        Parameters:
-
-            first: The first Task or InputData in the Pipeline.
-            last: The last Task in the Pipeline.
-
-        Returns:
-
-            A TaskSequence object.
         """
         # Set up attributes
         self.complete = False       # Tracks if all tasks have been completed
-        self.input_data = None      # The input data to a Pipeline is assumed to be in the first layer
-        self.output_data = None     # A placeholder for the output data
-        self.tasks = None           # A placeholder for tasks
+        self.sequence = sequence    # A list of CrowdsourcingTask objects
 
         # Print status message
         msg.info(f'Creating a task sequence ...')
 
-        # Set parse to True to begin looping through the Tasks
-        parse = True
+        # Loop over the tasks to verify that they are connected properly
+        for task in sequence:
 
-        # Create a list for tasks
-        tasks = []
+            # Set current task name
+            current = task.name
 
-        # Start from the end of the list by setting the last Task as current task
-        current = last
+            # Check if the next task has been defined
+            if task.action_conf and task.action_conf['next']:
 
-        # Enter a while loop for resolving the relations between Tasks
-        while parse:
+                next = task.action_conf['next']
 
-            # Start by appending the current Task into the list
-            tasks.append(current)
+                if next not in [task.name for task in sequence]:
 
-            # Print status message
-            msg.info(f'Added a task named {current.name} to the task sequence')
-
-            # Attempt to update the 'current' variable by retrieving the previous task from the
-            # Task that was last added to the list
-            try:
-
-                current = tasks[-1].prev_task
-
-            # If this raises an AttributeError, run the following block
-            except AttributeError:
-
-                # Check if the item last added to the 'tasks' list is the first one in the Pipeline
-                if tasks[-1] == first:
-
-                    # Quit parsing the relationships
-                    parse = False
-
-        # Reverse the order of the tasks in the list, since we began from the end
-        tasks.reverse()
-
-        # Assign tasks to attribute
-        self.tasks = tasks
-
-        # Get the input data for the first task and assign this to the pipeline
-        self.input_data = tasks[0].input_data
+                    raise_error(f'Cannot find a task named {next} in the task sequence. '
+                                f'Please check the name of the task under the key "actions/next" '
+                                f'in the configuration file.')
 
         # Set up
         msg.info(f'Printing tasks, inputs and outputs ...')
 
         # Set up headers and a placeholder for data
-        header = ('Name', 'Input values', 'Output values', 'Notes')
+        header = ('Name', 'Input', 'Output')
         data = []
 
         # Loop over the tasks
-        for task in tasks:
+        for task in sequence:
 
-            # Handle actual tasks first
-            if type(task) != InputData:
+            # Collect input and output data from the configuration
+            inputs = [f'{k} ({v})' for k, v in task.conf['data']['input'].items()]
+            outputs = [f'{k} ({v})' for k, v in task.conf['data']['output'].items()]
 
-                # Collect input and output data from the configuration
-                inputs = [f'{k} ({v})' for k, v in task.conf['data']['input'].items()]
-                outputs = [f'{k} ({v})' for k, v in task.conf['data']['output'].items()]
-
-                # Append data as a tuple to the list
-                data.append((task.name, ', '.join(inputs), ', '.join(outputs), 'exam' if task.exam else ''))
-
-            # Process InputData tasks
-            else:
-
-                data.append((task.name, 'n/a', 'n/a', 'input'))
+            # Append data as a tuple to the list
+            data.append((task.name, ', '.join(inputs), ', '.join(outputs)))
 
         # Print a table with inputs and outputs
         msg.table(data=data, header=header, divider=True)
 
     def start(self):
 
-        # Loop over the tasks and create an AssignmentsObserver object for each task
+        # Loop over the tasks and create an AssignmentsObserver object for each task.
+        # Exam tasks are excluded, because they do not require observers.
         observers = {task.name: AssignmentsObserver(task.client, task.pool.id)
-                     for task in self.tasks
-                     if type(task) != InputData}
+                     for task in self.sequence if not task.exam}
 
         # Create a Toloka Pipeline object and register observers
         pipeline = Pipeline()
@@ -120,8 +74,8 @@ class TaskSequence:
 
             pipeline.register(observer)
 
-        # Create a dictionary of CrowdsourcingTasks keyed by their names
-        task_objs = {task.name: task for task in self.tasks}
+        # Create a dictionary of CrowdsourcingTasks keyed by their names; exclude exams
+        task_objs = {task.name: task for task in self.sequence if not task.exam}
 
         # Loop over the observers and get the actions configuration to determine task flow
         for name, observer in observers.items():
@@ -134,22 +88,41 @@ class TaskSequence:
 
                 if 'on_accepted' in current_task.action_conf:
 
-                    try:
+                    if type(current_task.action_conf['on_accepted']) == str:
 
-                        # Register the action with the AssignmentObserver. If a task is accepted,
-                        # it will be sent to the CrowdsourcingTask object defined in the configuration.
-                        observer.on_accepted(task_objs[current_task.action_conf['on_accepted']])
+                        try:
 
-                        msg.info(f'Setting up a connection from {name} to '
-                                 f'{task_objs[current_task.action_conf["on_accepted"]].name} '
-                                 f'on acceptance ...')
+                            # Register the action with the AssignmentObserver. If a task is accepted,
+                            # it will be sent to the CrowdsourcingTask object defined in the
+                            # configuration.
+                            observer.on_accepted(task_objs[current_task.action_conf['on_accepted']])
 
-                    except KeyError:
+                            msg.info(f'Setting up a connection from {name} to '
+                                     f'{task_objs[current_task.action_conf["on_accepted"]].name} '
+                                     f'on acceptance ...')
 
-                        raise_error(f'Could not find a CrowdsourcingTask object named '
-                                    f'{current_task.action_conf["on_accepted"]} in the '
-                                    f'TaskSequence. Please check the configuration '
-                                    f'under the key "actions"!')
+                        except KeyError:
+
+                            raise_error(f'Could not find a CrowdsourcingTask object named '
+                                        f'{current_task.action_conf["on_accepted"]} in the '
+                                        f'TaskSequence. Please check the configuration '
+                                        f'under the key "actions"!')
+
+                    # TODO This needs to be completed.
+                    if type(current_task.action_conf['on_accepted']) == dict:
+
+                        for key, value in current_task.action_conf['on_accepted'].items():
+
+                            try:
+
+                                pass
+
+                            except KeyError:
+
+                                raise_error(f'Could not find a CrowdsourcingTask object named '
+                                            f'{current_task.action_conf["on_accepted"]} in the '
+                                            f'TaskSequence. Please check the configuration '
+                                            f'under the key "actions"!')
 
                 if 'on_submitted' in current_task.action_conf:
 
@@ -188,3 +161,5 @@ class TaskSequence:
                                     f'{current_task.action_conf["on_rejected"]} in the '
                                     f'TaskSequence. Please check the configuration '
                                     f'under the key "actions"!')
+
+        # TODO When the connections between tasks have been set, open all pools that contain tasks
