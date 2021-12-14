@@ -3,7 +3,7 @@
 # Import libraries
 from wasabi import Printer, TracebackPrinter
 from toloka.client.task import Task
-from typing import Union, Type, List
+from typing import Union, List
 import json
 import pandas as pd
 import time
