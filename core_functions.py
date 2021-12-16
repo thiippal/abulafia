@@ -41,8 +41,7 @@ def create_tasks(input_obj,
     # dictionary of input variable names 'input_values' to retrieve the correct columns
     # from the DataFrame.
     tasks = [toloka.Task(pool_id=input_obj.pool.id,
-                         input_values={k: row[v] for k, v in input_values.items()},
-                         origin_task_id=input_obj.task_id)
+                         input_values={k: row[v] for k, v in input_values.items()})
              for _, row in input_data.iterrows()]
 
     return tasks
@@ -402,6 +401,17 @@ def set_filter(filters, new_filters):
 
     # Return filters
     return filters
+
+
+def status_change(pool):
+
+    if pool.is_closed:
+
+        msg.info(f'Closed pool with ID {pool.id}')
+
+    if pool.is_open:
+
+        msg.info(f'Opened pool with ID {pool.id}')
 
 
 def track_pool_progress(client: toloka.TolokaClient,

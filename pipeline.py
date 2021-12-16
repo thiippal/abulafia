@@ -1,7 +1,9 @@
 # -*- coding: utf-8 -*-
 
+import asyncio
 from core_functions import *
-from toloka.streaming import AssignmentsObserver, Pipeline
+from toloka.util.async_utils import AsyncMultithreadWrapper
+from toloka.streaming import AssignmentsObserver, Pipeline, PoolStatusObserver
 from wasabi import Printer
 
 msg = Printer(pretty=True, timestamp=True, hide_animation=True)
@@ -11,39 +13,41 @@ class TaskSequence:
     """
 
     """
-    def __init__(self, sequence):
+    def __init__(self, sequence, client):
         """
 
         """
         # Set up attributes
         self.complete = False       # Tracks if all tasks have been completed
         self.sequence = sequence    # A list of CrowdsourcingTask objects
+        self.client = client        # A Toloka Client object
+        self.pipeline = None        # Placeholder for a Toloka Pipeline object
 
-        # Print status message
-        msg.info(f'Creating a task sequence ...')
+        msg.info(f'Creating a task sequence')
 
         # Loop over the tasks to verify that they are connected properly
         for task in sequence:
 
-            # Set current task name
-            current = task.name
+            # Check if actions have been defined in the configuration
+            if task.action_conf:
 
-            # Check if the next task has been defined
-            if task.action_conf and task.action_conf['next']:
+                # Check if the next task has been defined in the configuration
+                if task.action_conf['next']:
 
-                next = task.action_conf['next']
+                    # Fetch the name of the next task from the configuration
+                    next_task = task.action_conf['next']
 
-                if next not in [task.name for task in sequence]:
+                    # Check that the next task exists in the task sequence
+                    if next_task not in [task.name for task in sequence]:
 
-                    raise_error(f'Cannot find a task named {next} in the task sequence. '
-                                f'Please check the name of the task under the key "actions/next" '
-                                f'in the configuration file.')
+                        raise_error(f'Cannot find a task named {next_task} in the task sequence. '
+                                    f'Please check the name of the task under the key '
+                                    f'"actions/next" in the configuration file.')
 
-        # Set up
-        msg.info(f'Printing tasks, inputs and outputs ...')
+        msg.info(f'Printing tasks, inputs and outputs')
 
         # Set up headers and a placeholder for data
-        header = ('Name', 'Input', 'Output')
+        header = ('Name', 'Input', 'Output', 'Pool ID')
         data = []
 
         # Loop over the tasks
@@ -54,31 +58,87 @@ class TaskSequence:
             outputs = [f'{k} ({v})' for k, v in task.conf['data']['output'].items()]
 
             # Append data as a tuple to the list
-            data.append((task.name, ', '.join(inputs), ', '.join(outputs)))
+            data.append((task.name, ', '.join(inputs), ', '.join(outputs), task.pool.id))
 
         # Print a table with inputs and outputs
         msg.table(data=data, header=header, divider=True)
 
+        # Create the pipeline
+        self.create_pipeline()
+
     def start(self):
 
-        # Loop over the tasks and create an AssignmentsObserver object for each task.
-        # Exam tasks are excluded, because they do not require observers.
-        observers = {task.name: AssignmentsObserver(task.client, task.pool.id)
-                     for task in self.sequence if not task.exam}
+        # Create an event loop
+        loop = asyncio.get_event_loop()
+
+        try:
+
+            msg.info(f'Starting the task sequence')
+
+            # Open all pools in the sequence that contain tasks. Note that pools without tasks cannot
+            # be opened: they will be opened when tasks are added to them by these initial tasks.
+            for task in self.sequence:
+
+                if task.tasks is not None:
+
+                    # Open main pool
+                    self.client.open_pool(pool_id=task.pool.id)
+
+                if task.training is not None:
+
+                    # Open training pool
+                    self.client.open_pool(pool_id=task.training.id)
+
+            # Call the Toloka pipeline() method within the event loop
+            loop.run_until_complete(self.pipeline.run())
+
+        finally:
+
+            # Finish the event loop
+            loop.close()
+
+            msg.good(f'Successfully completed the task sequence')
+
+    def create_pipeline(self):
+
+        # Create an asyncronous client
+        async_client = AsyncMultithreadWrapper(self.client)
+
+        # Loop over the tasks and create an AssignmentsObserver object for each task. Exam tasks
+        # are excluded, because they do not require observers, as they do not generate further
+        # tasks.
+        a_observers = {task.name: AssignmentsObserver(async_client, task.pool.id)
+                       for task in self.sequence if not task.exam}
+
+        # Set up pool observers for monitoring all pool states
+        p_observers = {task.name: PoolStatusObserver(async_client, task.pool.id)
+                       for task in self.sequence}
 
         # Create a Toloka Pipeline object and register observers
-        pipeline = Pipeline()
+        self.pipeline = Pipeline()
 
-        # Register each observer from the list of observers with the Pipeline object
-        for observer in observers.values():
+        # Register each assignment observer with the Pipeline object
+        for name, a_observer in a_observers.items():
 
-            pipeline.register(observer)
+            self.pipeline.register(observer=a_observer)
 
-        # Create a dictionary of CrowdsourcingTasks keyed by their names; exclude exams
-        task_objs = {task.name: task for task in self.sequence if not task.exam}
+            msg.info(f'Registered an assignments observer for task {name}')
+
+        # Register each pool observer and actions
+        for name, p_observer in p_observers.items():
+
+            p_observer.on_closed(lambda pool: msg.info(f'Closed pool with ID {pool.id}'))
+            p_observer.on_open(lambda pool: msg.info(f'Opened pool with ID {pool.id}'))
+
+            self.pipeline.register(observer=p_observer)
+
+            msg.info(f'Registered a pool observer for task {name}')
+
+        # Create a dictionary of CrowdsourcingTasks keyed by their names
+        task_objs = {task.name: task for task in self.sequence}
 
         # Loop over the observers and get the actions configuration to determine task flow
-        for name, observer in observers.items():
+        for name, observer in a_observers.items():
 
             # Get the CrowdsourcingTask object from the TaskSequence by matching its name
             current_task = task_objs[name]
@@ -90,11 +150,11 @@ class TaskSequence:
 
                     if type(current_task.action_conf['on_accepted']) == str:
 
+                        # Attempt to register the action with the AssignmentObserver. If a task is
+                        # accepted, it will be sent to the CrowdsourcingTask object defined in the
+                        # configuration.
                         try:
 
-                            # Register the action with the AssignmentObserver. If a task is accepted,
-                            # it will be sent to the CrowdsourcingTask object defined in the
-                            # configuration.
                             observer.on_accepted(task_objs[current_task.action_conf['on_accepted']])
 
                             msg.info(f'Setting up a connection from {name} to '
@@ -107,22 +167,6 @@ class TaskSequence:
                                         f'{current_task.action_conf["on_accepted"]} in the '
                                         f'TaskSequence. Please check the configuration '
                                         f'under the key "actions"!')
-
-                    # TODO This needs to be completed.
-                    if type(current_task.action_conf['on_accepted']) == dict:
-
-                        for key, value in current_task.action_conf['on_accepted'].items():
-
-                            try:
-
-                                pass
-
-                            except KeyError:
-
-                                raise_error(f'Could not find a CrowdsourcingTask object named '
-                                            f'{current_task.action_conf["on_accepted"]} in the '
-                                            f'TaskSequence. Please check the configuration '
-                                            f'under the key "actions"!')
 
                 if 'on_submitted' in current_task.action_conf:
 
@@ -161,5 +205,3 @@ class TaskSequence:
                                     f'{current_task.action_conf["on_rejected"]} in the '
                                     f'TaskSequence. Please check the configuration '
                                     f'under the key "actions"!')
-
-        # TODO When the connections between tasks have been set, open all pools that contain tasks
