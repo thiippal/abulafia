@@ -3,11 +3,13 @@
 # Import libraries
 from wasabi import Printer, TracebackPrinter
 from toloka.client.task import Task
+from toloka.metrics import MetricCollector
 from typing import Union, List
 import json
 import pandas as pd
 import time
 import toloka.client as toloka
+import toloka.metrics as metrics
 import traceback
 
 
@@ -412,6 +414,36 @@ def status_change(pool):
     if pool.is_open:
 
         msg.info(f'Opened pool with ID {pool.id}')
+
+
+def create_collector(task_sequence):
+
+    a_metrics = []
+    p_metrics = []
+
+    # Create metrics
+    for task in task_sequence.sequence:
+
+        a_metric = metrics.AssignmentsInPool(pool_id=task.pool.id,
+                                             submitted_name=f'{task.name}-submitted',
+                                             accepted_name=f'{task.name}-accepted')
+
+        p_metric = metrics.pool_metrics.PoolCompletedPercentage(pool_id=task.pool.id,
+                                                                percents_name=f'{task.name}-pct',
+                                                                toloka_client=task_sequence.client)
+
+        p_metrics.append(p_metric)
+        a_metrics.append(a_metric)
+
+    # a_metrics = MetricCollector(a_metrics, process_metrics)
+    p_metrics = MetricCollector(p_metrics, process_metrics)
+
+    return p_metrics
+
+
+def process_metrics(metric_dict):
+
+    print(metric_dict)
 
 
 def track_pool_progress(client: toloka.TolokaClient,

@@ -89,13 +89,37 @@ class TaskSequence:
                     # Open training pool
                     self.client.open_pool(pool_id=task.training.id)
 
+            # Set up a Toloka MetricsCollector for all pools
+            collector = create_collector(task_sequence=self)
+
             # Call the Toloka pipeline() method within the event loop
+            # loop.run_until_complete(asyncio.gather(collector.run(), self.pipeline.run()))
+
             loop.run_until_complete(self.pipeline.run())
 
         finally:
 
-            # Finish the event loop
+            # Finish the event loop - note that this only cover the pools that are monitored by the
+            # pipeline.
             loop.close()
+
+            # Close all training and exam pools that may remain open after the pipeline finishes
+            for task in self.sequence:
+
+                if task.training is not None:
+
+                    # Close training pool
+                    self.client.close_pool(pool_id=task.training.id)
+
+                    msg.info(f'Closed pool with ID {task.training.id}')
+
+                # TODO This does not work – the exam pool is not closed!
+                if task.pool.is_open():
+
+                    # Close main pool
+                    self.client.close_pool(pool_id=task.pool.id)
+
+                    msg.info(f'Closed pool with ID {task.pool.id}')
 
             msg.good(f'Successfully completed the task sequence')
 
@@ -112,7 +136,7 @@ class TaskSequence:
 
         # Set up pool observers for monitoring all pool states
         p_observers = {task.name: PoolStatusObserver(async_client, task.pool.id)
-                       for task in self.sequence}
+                       for task in self.sequence if not task.exam}
 
         # Create a Toloka Pipeline object and register observers
         self.pipeline = Pipeline()
