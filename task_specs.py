@@ -110,3 +110,98 @@ class ImageClassificationTask(CrowdsourcingTask):
 
         # Return the task specification
         return task_spec
+
+
+class ImageSegmentationTask(CrowdsourcingTask):
+    """
+    This is a class for image segmentation tasks.
+    """
+
+    def __init__(self, configuration, client):
+        """
+        This function initialises the ImageSegmentationTask class, which inherits attributes
+        and methods from the superclass Task.
+        """
+
+        # Read the configuration from the JSON file
+        configuration = read_configuration(configuration=configuration)
+
+        # Specify task and task interface
+        task_spec = self.specify_task(configuration=configuration)
+
+        # Use the super() function to access the superclass Task and its methods and attributes.
+        # This will set up the project, pool and training as specified in the configuration JSON.
+        super().__init__(configuration, client, task_spec)
+
+    def __call__(self, input_obj, **kwargs):
+
+        # If the class is called, use the __call__() method from the superclass
+        super().__call__(input_obj, **kwargs)
+
+        # When called, return the ImageClassificationTask object
+        return self
+
+    @staticmethod
+    def specify_task(configuration):
+        """
+        This function specifies the task interface on Toloka.
+
+        Parameters:
+
+            configuration: A dictionary containing the configuration defined in the JSON file.
+
+        Returns:
+
+             A Toloka TaskSpec object.
+        """
+        # Read input and output data and create data specifications
+        data_in = {k: data_spec[v] for k, v in configuration['data']['input'].items()}
+        data_out = {k: data_spec[v] for k, v in configuration['data']['output'].items()}
+
+        # Get the names of input and output variables for setting up the interface
+        in_var = list(configuration['data']['input'].keys())[0]
+        out_var = list(configuration['data']['output'].keys())[0]
+
+        # Create the task interface; start by setting up the image segmentation interface
+        img_ui = tb.ImageAnnotationFieldV1(
+
+            # Set up the output data field
+            data=tb.OutputData(out_var),
+
+            # Set up the input data field
+            image=tb.InputData(in_var),
+
+            # Set up the allowed shapes: note that their order will define the order in the UI
+            shapes={'rectangle': True, 'polygon': True},
+
+            # Set minimum width in pixels
+            min_width=500,
+
+            # Set up validation
+            validation=tb.RequiredConditionV1(hint="Please select at least one area!"))
+
+        # Define the text prompt below the segmentation UI
+        prompt = tb.TextViewV1(content=configuration['interface']['prompt'])
+
+        # Add hotkey plugin
+        hotkey_plugin = tb.ImageAnnotationHotkeysPluginV1(cancel='s',
+                                                          confirm='a',
+                                                          polygon='e',
+                                                          rectangle='w',
+                                                          select='q')
+
+        # Combine the task interface elements into a view
+        interface = toloka.project.TemplateBuilderViewSpec(
+            view=tb.ListViewV1([img_ui, prompt]),
+            plugins=[hotkey_plugin]
+        )
+
+        # Create a task specification with interface and input/output data
+        task_spec = toloka.project.task_spec.TaskSpec(
+            input_spec=data_in,
+            output_spec=data_out,
+            view_spec=interface
+        )
+
+        # Return the task specification
+        return task_spec
