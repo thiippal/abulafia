@@ -89,13 +89,16 @@ class TaskSequence:
                     # Open training pool
                     self.client.open_pool(pool_id=task.training.id)
 
-            # Set up a Toloka MetricsCollector for all pools
-            collector = create_collector(task_sequence=self)
+            # Set up a Toloka MetricCollectors for all pools
+            proc_collector = create_process_collector(task_sequence=self)
+            assn_collector = create_assignment_collector(task_sequence=self)
 
-            # Call the Toloka pipeline() method within the event loop
-            # loop.run_until_complete(asyncio.gather(collector.run(), self.pipeline.run()))
-
-            loop.run_until_complete(self.pipeline.run())
+            # Call the Toloka pipeline.run() method within the event loop;
+            # start the collectors
+            # TODO Do not run the collectors for now
+            loop.run_until_complete(asyncio.gather(# proc_collector.run(),
+                                                   # assn_collector.run(),
+                                                   self.pipeline.run()))
 
         finally:
 
@@ -103,23 +106,47 @@ class TaskSequence:
             # pipeline.
             loop.close()
 
+            # Collect pool statuses here
+            status = []
+
             # Close all training and exam pools that may remain open after the pipeline finishes
-            for task in self.sequence:
+            while not self.complete:
 
-                if task.training is not None:
+                for task in self.sequence:
 
-                    # Close training pool
-                    self.client.close_pool(pool_id=task.training.id)
+                    if task.training is not None:
 
-                    msg.info(f'Closed pool with ID {task.training.id}')
+                        # Close main pool first, then the training
+                        self.client.close_pool(pool_id=task.pool.id)
 
-                # TODO This does not work – the exam pool is not closed!
-                if task.pool.is_open():
+                        # Append current status to the collector
+                        status.append(self.client.get_pool(pool_id=task.pool.id).is_open())
 
-                    # Close main pool
-                    self.client.close_pool(pool_id=task.pool.id)
+                        msg.info(f'Closed pool with ID {task.pool.id}')
 
-                    msg.info(f'Closed pool with ID {task.pool.id}')
+                        if self.client.get_pool(pool_id=task.training.id).is_open():
+
+                            # Close training pool
+                            self.client.close_pool(pool_id=task.training.id)
+
+                            # Append current training status to the collector
+                            status.append(self.client.get_pool(pool_id=task.training.id).is_open())
+
+                            msg.info(f'Closed pool with ID {task.training.id}')
+
+                    if task.pool.is_open():
+
+                        # Close main pool
+                        self.client.close_pool(pool_id=task.pool.id)
+
+                        # Append current status to the collector
+                        status.append(self.client.get_pool(pool_id=task.pool.id).is_open())
+
+                        msg.info(f'Closed pool with ID {task.pool.id}')
+
+                if not any(status):
+
+                    self.complete = True
 
             msg.good(f'Successfully completed the task sequence')
 

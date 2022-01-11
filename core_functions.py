@@ -416,34 +416,53 @@ def status_change(pool):
         msg.info(f'Opened pool with ID {pool.id}')
 
 
-def create_collector(task_sequence):
+def create_process_collector(task_sequence):
 
-    a_metrics = []
     p_metrics = []
 
     # Create metrics
     for task in task_sequence.sequence:
 
-        a_metric = metrics.AssignmentsInPool(pool_id=task.pool.id,
-                                             submitted_name=f'{task.name}-submitted',
-                                             accepted_name=f'{task.name}-accepted')
+        if not task.exam:
 
-        p_metric = metrics.pool_metrics.PoolCompletedPercentage(pool_id=task.pool.id,
-                                                                percents_name=f'{task.name}-pct',
-                                                                toloka_client=task_sequence.client)
+            p_metric = metrics.pool_metrics.PoolCompletedPercentage(pool_id=task.pool.id,
+                                                                    percents_name=f'{task.name}-pct',
+                                                                    toloka_client=task_sequence.client)
 
-        p_metrics.append(p_metric)
-        a_metrics.append(a_metric)
+            p_metrics.append(p_metric)
 
-    # a_metrics = MetricCollector(a_metrics, process_metrics)
     p_metrics = MetricCollector(p_metrics, process_metrics)
 
     return p_metrics
 
 
+def create_assignment_collector(task_sequence):
+
+    a_metrics = []
+
+    # Create metrics
+    for task in task_sequence.sequence:
+
+        a_metric = metrics.AssignmentEventsInPool(pool_id=task.pool.id,
+                                                  created_name=f'{task.name}-created',
+                                                  submitted_name=f'{task.name}-submitted',
+                                                  accepted_name=f'{task.name}-accepted',
+                                                  toloka_client=task_sequence.client)
+
+        a_metrics.append(a_metric)
+
+    a_metrics = MetricCollector(a_metrics, process_metrics)
+
+    return a_metrics
+
+
 def process_metrics(metric_dict):
 
-    print(metric_dict)
+    for name, pct in metric_dict.items():
+
+        msg.info(f'Pool {name.split("-")[0]} is now {pct[0][1]}% complete ...')
+
+    time.sleep(10)
 
 
 def track_pool_progress(client: toloka.TolokaClient,
