@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 
 import asyncio
+import datetime
 from core_functions import *
 from toloka.util.async_utils import AsyncMultithreadWrapper
 from toloka.streaming import AssignmentsObserver, Pipeline, PoolStatusObserver
@@ -68,9 +69,6 @@ class TaskSequence:
 
     def start(self):
 
-        # Create an event loop
-        loop = asyncio.get_event_loop()
-
         try:
 
             msg.info(f'Starting the task sequence')
@@ -91,20 +89,22 @@ class TaskSequence:
 
             # Set up a Toloka MetricCollectors for all pools
             proc_collector = create_process_collector(task_sequence=self)
-            assn_collector = create_assignment_collector(task_sequence=self)
 
-            # Call the Toloka pipeline.run() method within the event loop;
-            # start the collectors
-            # TODO Do not run the collectors for now
-            loop.run_until_complete(asyncio.gather(# proc_collector.run(),
-                                                   # assn_collector.run(),
-                                                   self.pipeline.run()))
+            # Define an asynchronous function to run the MetricCollector and
+            # the Pipeline objects at the same time
+            async def main():
+
+                # The 'ensure_future' method allows running the MetricCollector
+                # in a fire-and-forget manner
+                asyncio.ensure_future(proc_collector.run())
+
+                # The Pipeline object needs to be awaited
+                await asyncio.gather(self.pipeline.run())
+
+            # Call the asynchronous function to start the collectors and pipeline
+            asyncio.run(main())
 
         finally:
-
-            # Finish the event loop - note that this only cover the pools that are monitored by the
-            # pipeline.
-            loop.close()
 
             # Collect pool statuses here
             status = []
@@ -166,7 +166,7 @@ class TaskSequence:
                        for task in self.sequence if not task.exam}
 
         # Create a Toloka Pipeline object and register observers
-        self.pipeline = Pipeline()
+        self.pipeline = Pipeline(period=datetime.timedelta(seconds=12))
 
         # Register each assignment observer with the Pipeline object
         for name, a_observer in a_observers.items():
