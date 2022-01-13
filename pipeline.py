@@ -166,6 +166,23 @@ class TaskSequence:
 
             msg.good(f'Successfully completed the task sequence')
 
+            # Check the outputs
+            if self.complete:
+
+                # Check if tasks are supposed to output the results
+                for task in self.sequence:
+
+                    # Get the output DataFrame for each task; assign under attribute 'output_data'
+                    task.output_data = self.client.get_assignments_df(pool_id=task.pool.id)
+
+                    # Check if the output should be written to disk
+                    if task.action_conf['output']:
+
+                        # Write the DataFrame to disk
+                        task.output_data.to_csv(f'{task.name}_{task.pool.id}.csv')
+
+                        msg.good(f'Wrote data for task {task.name} ({task.pool.id}) to disk.')
+
     def create_pipeline(self):
 
         # Create an asyncronous client
