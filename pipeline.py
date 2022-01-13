@@ -7,6 +7,7 @@ from toloka.util.async_utils import AsyncMultithreadWrapper
 from toloka.streaming import AssignmentsObserver, Pipeline, PoolStatusObserver
 from wasabi import Printer
 
+# Set up Printer
 msg = Printer(pretty=True, timestamp=True, hide_animation=True)
 
 
@@ -48,18 +49,33 @@ class TaskSequence:
         msg.info(f'Printing tasks, inputs and outputs')
 
         # Set up headers and a placeholder for data
-        header = ('Name', 'Input', 'Output', 'Pool ID')
+        header = ('Name', 'Input', 'Output', 'Pool ID', 'Project ID', 'Pool type')
         data = []
 
         # Loop over the tasks
         for task in sequence:
+
+            # Check if training has been defined
+            if task.training:
+
+                # Collect input and output data from the configuration
+                inputs = [f'{k} ({v})' for k, v in task.conf['training']['data']['input'].items()]
+                outputs = [f'{k} ({v})' for k, v in task.conf['training']['data']['output'].items()]
+
+                # Append data as a tuple to the list
+                data.append((task.name, ', '.join(inputs), ', '.join(outputs), task.pool.id,
+                             task.training.id, 'Training'))
+
+            # Continue to process exam and ordinary pools
+            pool_type = 'Pool' if not task.exam else 'Exam'
 
             # Collect input and output data from the configuration
             inputs = [f'{k} ({v})' for k, v in task.conf['data']['input'].items()]
             outputs = [f'{k} ({v})' for k, v in task.conf['data']['output'].items()]
 
             # Append data as a tuple to the list
-            data.append((task.name, ', '.join(inputs), ', '.join(outputs), task.pool.id))
+            data.append((task.name, ', '.join(inputs), ', '.join(outputs), task.pool.id,
+                         task.project.id, pool_type))
 
         # Print a table with inputs and outputs
         msg.table(data=data, header=header, divider=True)
@@ -156,8 +172,7 @@ class TaskSequence:
         async_client = AsyncMultithreadWrapper(self.client)
 
         # Loop over the tasks and create an AssignmentsObserver object for each task. Exam tasks
-        # are excluded, because they do not require observers, as they do not generate further
-        # tasks.
+        # do not require observers, and they do not create further tasks.
         a_observers = {task.name: AssignmentsObserver(async_client, task.pool.id)
                        for task in self.sequence if not task.exam}
 
@@ -165,15 +180,18 @@ class TaskSequence:
         p_observers = {task.name: PoolStatusObserver(async_client, task.pool.id)
                        for task in self.sequence if not task.exam}
 
-        # Create a Toloka Pipeline object and register observers
+        # Create a Toloka Pipeline object and register observers; call observers every 15 seconds
         self.pipeline = Pipeline(period=datetime.timedelta(seconds=12))
+
+        # Create a dictionary of CrowdsourcingTasks in the pipeline keyed by their names
+        tasks = {task.name: task for task in self.sequence}
 
         # Register each assignment observer with the Pipeline object
         for name, a_observer in a_observers.items():
 
             self.pipeline.register(observer=a_observer)
 
-            msg.info(f'Registered an assignments observer for task {name}')
+            msg.info(f'Registered an assignments observer for task {name} ({tasks[name].pool.id})')
 
         # Register each pool observer and actions
         for name, p_observer in p_observers.items():
@@ -183,41 +201,37 @@ class TaskSequence:
 
             self.pipeline.register(observer=p_observer)
 
-            msg.info(f'Registered a pool observer for task {name}')
-
-        # Create a dictionary of CrowdsourcingTasks keyed by their names
-        task_objs = {task.name: task for task in self.sequence}
+            msg.info(f'Registered a pool observer for task {name} ({tasks[name].pool.id})')
 
         # Loop over the observers and get the actions configuration to determine task flow
         for name, observer in a_observers.items():
 
             # Get the CrowdsourcingTask object from the TaskSequence by matching its name
-            current_task = task_objs[name]
+            current_task = tasks[name]
 
             # Check if actions have been configured
             if current_task.action_conf is not None:
 
-                if 'on_accepted' in current_task.action_conf:
+                if type(current_task.action_conf['on_accepted']) == str:
 
-                    if type(current_task.action_conf['on_accepted']) == str:
+                    # Attempt to register the action with the AssignmentObserver. If a task is
+                    # accepted, it will be sent to the CrowdsourcingTask object defined in the
+                    # configuration.
+                    try:
 
-                        # Attempt to register the action with the AssignmentObserver. If a task is
-                        # accepted, it will be sent to the CrowdsourcingTask object defined in the
-                        # configuration.
-                        try:
+                        observer.on_accepted(tasks[current_task.action_conf['on_accepted']])
 
-                            observer.on_accepted(task_objs[current_task.action_conf['on_accepted']])
+                        msg.info(f'Setting up a connection from {name} ({current_task.pool.id})'
+                                 f' to {tasks[current_task.action_conf["on_accepted"]].name} '
+                                 f' ({tasks[current_task.action_conf["on_accepted"]].pool.id}) '
+                                 f'on acceptance ...')
 
-                            msg.info(f'Setting up a connection from {name} to '
-                                     f'{task_objs[current_task.action_conf["on_accepted"]].name} '
-                                     f'on acceptance ...')
+                    except KeyError:
 
-                        except KeyError:
-
-                            raise_error(f'Could not find a CrowdsourcingTask object named '
-                                        f'{current_task.action_conf["on_accepted"]} in the '
-                                        f'TaskSequence. Please check the configuration '
-                                        f'under the key "actions"!')
+                        raise_error(f'Could not find a CrowdsourcingTask object named '
+                                    f'{current_task.action_conf["on_accepted"]} in the '
+                                    f'TaskSequence. Please check the configuration '
+                                    f'under the key "actions"!')
 
                 if 'on_submitted' in current_task.action_conf:
 
@@ -225,10 +239,11 @@ class TaskSequence:
 
                         # Register the action with the AssignmentObserver. If a task is submitted,
                         # it will be sent to the CrowdsourcingTask object defined in the configuration.
-                        observer.on_submitted(task_objs[current_task.action_conf['on_submitted']])
+                        observer.on_submitted(tasks[current_task.action_conf['on_submitted']])
 
-                        msg.info(f'Setting up a connection from {name} to '
-                                 f'{task_objs[current_task.action_conf["on_submitted"]].name} '
+                        msg.info(f'Setting up a connection from {name} ({current_task.pool.id})'
+                                 f' to {tasks[current_task.action_conf["on_submitted"]].name} '
+                                 f' ({tasks[current_task.action_conf["on_submitted"]].pool.id}) '
                                  f'on submission ...')
 
                     except KeyError:
@@ -244,11 +259,12 @@ class TaskSequence:
 
                         # Register the action with the AssignmentObserver. If a task is rejected,
                         # it will be sent to the CrowdsourcingTask object defined in the configuration.
-                        observer.on_rejected(task_objs[current_task.action_conf['on_rejected']])
+                        observer.on_rejected(tasks[current_task.action_conf['on_rejected']])
 
-                        msg.info(f'Setting up a connection from {name} to '
-                                 f'{task_objs[current_task.action_conf["on_rejected"]].name} '
-                                 f'on rejection ...')
+                        msg.info(f'Setting up a connection from {name} ({current_task.pool.id})'
+                                 f' to {tasks[current_task.action_conf["on_rejected"]].name} '
+                                 f' ({tasks[current_task.action_conf["on_rejected"]].pool.id}) '
+                                 f'on rejected ...')
 
                     except KeyError:
 

@@ -6,7 +6,6 @@ from toloka.client.task import Task
 from toloka.client.pool import Pool
 from toloka.metrics import MetricCollector
 from typing import Union, List
-from pipeline import TaskSequence
 import json
 import pandas as pd
 import time
@@ -428,7 +427,7 @@ def status_change(pool: Pool) -> None:
         msg.info(f'Opened pool with ID {pool.id}')
 
 
-def create_process_collector(task_sequence: TaskSequence) -> MetricCollector:
+def create_process_collector(task_sequence) -> MetricCollector:
     """
     This function creates Toloka MetricCollector objects for tracking the progress of pools in a
     task sequence.
@@ -457,7 +456,7 @@ def create_process_collector(task_sequence: TaskSequence) -> MetricCollector:
             p_metrics.append(p_metric)
 
     # Create a MetricCollector object that holds the metrics. The second argument defines the
-    # function to be called.
+    # function to be called on the metrics collected.
     p_metrics = MetricCollector(p_metrics, process_metrics)
 
     return p_metrics
