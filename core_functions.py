@@ -3,8 +3,10 @@
 # Import libraries
 from wasabi import Printer, TracebackPrinter
 from toloka.client.task import Task
+from toloka.client.pool import Pool
 from toloka.metrics import MetricCollector
 from typing import Union, List
+from pipeline import TaskSequence
 import json
 import pandas as pd
 import time
@@ -405,8 +407,18 @@ def set_filter(filters, new_filters):
     return filters
 
 
-def status_change(pool):
+def status_change(pool: Pool) -> None:
+    """
+    This function monitors status changes in pools and print outs messages.
 
+    Parameters:
+
+        pool: A Toloka Pool object.
+
+    Returns:
+
+        Prints a status message to standard output.
+    """
     if pool.is_closed:
 
         msg.info(f'Closed pool with ID {pool.id}')
@@ -416,53 +428,57 @@ def status_change(pool):
         msg.info(f'Opened pool with ID {pool.id}')
 
 
-def create_process_collector(task_sequence):
+def create_process_collector(task_sequence: TaskSequence) -> MetricCollector:
+    """
+    This function creates Toloka MetricCollector objects for tracking the progress of pools in a
+    task sequence.
 
+    Parameters:
+        task_sequence: A TaskSequence object.
+
+    Returns:
+         A Toloka MetricCollector object.
+    """
+    # Set up a placeholder
     p_metrics = []
 
-    # Create metrics
+    # Create metrics for pools in the sequence
     for task in task_sequence.sequence:
 
+        # Skip exam pools, because they run infinitely
         if not task.exam:
 
+            # Create metric for percentage
             p_metric = metrics.pool_metrics.PoolCompletedPercentage(pool_id=task.pool.id,
                                                                     percents_name=f'{task.name}-pct',
                                                                     toloka_client=task_sequence.client)
 
+            # Append to the placeholder list
             p_metrics.append(p_metric)
 
+    # Create a MetricCollector object that holds the metrics. The second argument defines the
+    # function to be called.
     p_metrics = MetricCollector(p_metrics, process_metrics)
 
     return p_metrics
 
 
-def create_assignment_collector(task_sequence):
+def process_metrics(metric_dict: dict) -> None:
+    """
+    This function prints status messages about pool metrics.
 
-    a_metrics = []
+    Parameters:
+        metric_dict: A dictionary containing metrics for one or more pools.
 
-    # Create metrics
-    for task in task_sequence.sequence:
-
-        a_metric = metrics.AssignmentEventsInPool(pool_id=task.pool.id,
-                                                  created_name=f'{task.name}-created',
-                                                  submitted_name=f'{task.name}-submitted',
-                                                  accepted_name=f'{task.name}-accepted',
-                                                  toloka_client=task_sequence.client)
-
-        a_metrics.append(a_metric)
-
-    a_metrics = MetricCollector(a_metrics, process_metrics)
-
-    return a_metrics
-
-
-def process_metrics(metric_dict):
+    Returns:
+         Prints out a status message.
+    """
 
     for name, pct in metric_dict.items():
 
         msg.info(f'Pool {name.split("-")[0]} is now {pct[0][1]}% complete ...')
 
-    time.sleep(10)
+    time.sleep(15)
 
 
 def track_pool_progress(client: toloka.TolokaClient,
