@@ -1,0 +1,39 @@
+name: outline_text
+data:
+  input:
+    image: url
+  output:
+    result: json
+actions:
+  output: true
+interface:
+  prompt: Read the instructions first. Then outline all diagram elements that contain
+    text, letters or numbers.
+project:
+  id: 90808
+  setup:
+    public_name: Outline text, letters or numbers in diagrams
+    public_description: Look at diagrams from science textbooks and state if they
+      contain text, letters or numbers.
+  instructions: data/instructions.html
+training:
+pool:
+  setup:
+    private_name: Outline text
+    reward_per_assignment: 0.1
+    assignment_max_duration_seconds: 600
+    auto_accept_solutions: true
+  defaults:
+    default_overlap_for_new_tasks: 1
+    default_overlap_for_new_task_suites: 1
+  mixer:
+    real_tasks_count: 2
+    golden_tasks_count: 0
+    training_tasks_count: 0
+  filter:
+    languages:
+    - EN
+    client_type:
+    - TOLOKA_APP
+    - BROWSER
+quality_control:
