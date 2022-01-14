@@ -13,11 +13,16 @@ msg = Printer(pretty=True, timestamp=True, hide_animation=True)
 
 class TaskSequence:
     """
+    This class allows defining a sequence of crowdsourcing tasks on Toloka.
 
     """
     def __init__(self, sequence, client):
         """
+        This function initialises the TaskSequence class.
 
+        Parameters:
+            sequence: A list of objects that inherit from the CrowdsourcingTask class.
+            client: A TolokaClient object with valid credentials.
         """
         # Set up attributes
         self.complete = False       # Tracks if all tasks have been completed
@@ -27,58 +32,11 @@ class TaskSequence:
 
         msg.info(f'Creating a task sequence')
 
-        # Loop over the tasks to verify that they are connected properly
-        for task in sequence:
-
-            # Check if actions have been defined in the configuration
-            if task.action_conf:
-
-                # Check if the next task has been defined in the configuration
-                if task.action_conf['next']:
-
-                    # Fetch the name of the next task from the configuration
-                    next_task = task.action_conf['next']
-
-                    # Check that the next task exists in the task sequence
-                    if next_task not in [task.name for task in sequence]:
-
-                        raise_error(f'Cannot find a task named {next_task} in the task sequence. '
-                                    f'Please check the name of the task under the key '
-                                    f'"actions/next" in the configuration file.')
+        # Verify that connections between tasks have been specified in the configuration
+        verify_connections(self.sequence)
 
         msg.info(f'Printing tasks, inputs and outputs')
-
-        # Set up headers and a placeholder for data
-        header = ('Name', 'Input', 'Output', 'Pool ID', 'Project ID', 'Pool type')
-        data = []
-
-        # Loop over the tasks
-        for task in sequence:
-
-            # Check if training has been defined
-            if task.training:
-
-                # Collect input and output data from the configuration
-                inputs = [f'{k} ({v})' for k, v in task.conf['training']['data']['input'].items()]
-                outputs = [f'{k} ({v})' for k, v in task.conf['training']['data']['output'].items()]
-
-                # Append data as a tuple to the list
-                data.append((task.name, ', '.join(inputs), ', '.join(outputs), task.pool.id,
-                             task.training.id, 'Training'))
-
-            # Continue to process exam and ordinary pools
-            pool_type = 'Pool' if not task.exam else 'Exam'
-
-            # Collect input and output data from the configuration
-            inputs = [f'{k} ({v})' for k, v in task.conf['data']['input'].items()]
-            outputs = [f'{k} ({v})' for k, v in task.conf['data']['output'].items()]
-
-            # Append data as a tuple to the list
-            data.append((task.name, ', '.join(inputs), ', '.join(outputs), task.pool.id,
-                         task.project.id, pool_type))
-
-        # Print a table with inputs and outputs
-        msg.table(data=data, header=header, divider=True)
+        create_pool_table(self.sequence)
 
         # Create the pipeline
         self.create_pipeline()
@@ -176,12 +134,18 @@ class TaskSequence:
                     task.output_data = self.client.get_assignments_df(pool_id=task.pool.id)
 
                     # Check if the output should be written to disk
-                    if task.action_conf['output']:
+                    try:
 
-                        # Write the DataFrame to disk
-                        task.output_data.to_csv(f'{task.name}_{task.pool.id}.csv')
+                        if 'output' in task.action_conf:
 
-                        msg.good(f'Wrote data for task {task.name} ({task.pool.id}) to disk.')
+                            # Write the DataFrame to disk
+                            task.output_data.to_csv(f'{task.name}_{task.pool.id}.csv')
+
+                            msg.good(f'Wrote data for task {task.name} ({task.pool.id}) to disk.')
+
+                    except KeyError:
+
+                        pass
 
     def create_pipeline(self):
 
@@ -229,7 +193,7 @@ class TaskSequence:
             # Check if actions have been configured
             if current_task.action_conf is not None:
 
-                if type(current_task.action_conf['on_accepted']) == str:
+                if 'on_accepted' in current_task.action_conf:
 
                     # Attempt to register the action with the AssignmentObserver. If a task is
                     # accepted, it will be sent to the CrowdsourcingTask object defined in the

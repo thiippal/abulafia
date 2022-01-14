@@ -46,11 +46,9 @@ class ImageClassificationTask(CrowdsourcingTask):
         This function specifies the task interface on Toloka.
 
         Parameters:
-
             configuration: A dictionary containing the configuration defined in the JSON file.
 
         Returns:
-
              A Toloka TaskSpec object.
         """
 
