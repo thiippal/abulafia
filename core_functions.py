@@ -574,6 +574,7 @@ def create_pool_table(task_sequence: list) -> None:
 
         # Check if training has been defined
         if task.training:
+
             # Collect input and output data from the configuration
             inputs = [f'{k} ({v})' for k, v in task.conf['training']['data']['input'].items()]
             outputs = [f'{k} ({v})' for k, v in task.conf['training']['data']['output'].items()]

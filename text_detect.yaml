@@ -17,7 +17,6 @@ project:
     public_description: Look at diagrams from science textbooks and state if they
       contain text, letters or numbers.
   instructions: data/instructions.html
-training:
 pool:
   setup:
     private_name: Detect text
@@ -34,4 +33,3 @@ pool:
   filter:
     skill:
     - '9439': 70
-quality_control:

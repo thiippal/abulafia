@@ -56,4 +56,3 @@ pool:
     language: EN
     description: Has been trained and and taken an exam in image classification
     hidden: true
-quality_control:
