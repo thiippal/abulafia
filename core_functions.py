@@ -608,7 +608,6 @@ def verify_connections(task_sequence: list) -> None:
     Returns:
         Raises an error if a pool has been referred to but cannot be found.
     """
-
     for task in task_sequence:
 
         # Check if actions have been defined in the configuration

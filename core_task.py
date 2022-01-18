@@ -3,6 +3,9 @@
 # Import libraries
 from core_functions import *
 from wasabi import Printer
+from toloka.client.actions import ChangeOverlap
+from toloka.client.collectors import AssignmentsAssessment
+from toloka.client.conditions import AssessmentEvent
 from toloka.streaming.event import AssignmentEvent
 import datetime
 import uuid
@@ -107,8 +110,8 @@ class CrowdsourcingTask:
             # to task suites on Toloka. Their status may be accepted, rejected, submitted, etc.
             for event in in_obj:
 
-                # If the event type is accepted, proceed to create new tasks in the current pool
-                if event.event_type.value == 'ACCEPTED':
+                # If the event type is accepted or submitted, create new tasks in current pool
+                if event.event_type.value in ['ACCEPTED', 'SUBMITTED']:
 
                     # Get configuration
                     overlap = self.pool_conf['defaults']['default_overlap_for_new_tasks']
@@ -125,18 +128,22 @@ class CrowdsourcingTask:
                     self.client.create_tasks(tasks=new_tasks, open_pool=True)
 
                     # Print status message
-                    msg.good(f'Received {len(new_tasks)} accepted tasks from pool '
-                             f'{event.assignment.pool_id}; creating new tasks in '
+                    msg.good(f'Received {len(new_tasks)} {event.event_type.value.lower()} tasks '
+                             f'from pool {event.assignment.pool_id}; creating new tasks in '
                              f'pool {self.pool.id}')
 
-            # If the status is rejected, check if this pool originally created the Tasks.
-            # If this is indeed the case, use the quality control mechanism to add a ChangeOverlap
-            # action to the pool. Then update the pool configuration.
+                # If the status is rejected, check if this pool originally created the Tasks.
+                # If this is indeed the case, use the quality control mechanism to add ChangeOverlap
+                # action to the pool. Then update the pool configuration.
+                if event.event_type.value in ['REJECTED']:
 
-            # TODO Adjust overlap for rejected items
-            # TODO Create new tasks if necessary
-            # TODO Open pool – a pool cannot be opened if it contains no tasks
-            pass
+                    self.pool.quality_control.add_action(
+                        collector=AssignmentsAssessment(),
+                        conditions=[AssessmentEvent == AssessmentEvent.REJECT],
+                        action=(ChangeOverlap(delta=1, open_pool=True))
+                    )
+
+                    self.client.update(self.pool_id, self.pool)
 
     def load_project(self, client, task_spec):
         """
