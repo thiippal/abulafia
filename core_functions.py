@@ -170,6 +170,35 @@ def add_tasks_to_pool(client: toloka.TolokaClient,
                     f'the configuration file!')
 
 
+def check_io(configuration: dict, expected_input: set, expected_output: set):
+
+    # Read input and output data and create data specifications
+    data_in = {k: data_spec[v] for k, v in configuration['data']['input'].items()}
+    data_out = {k: data_spec[v] for k, v in configuration['data']['output'].items()}
+
+    # Create a dictionary mapping input data types to variable names.
+    input_data = {v: k for k, v in configuration['data']['input'].items()}
+
+    # Raise error if the expected input data types have been provided
+    if not set(input_data.keys()) == expected_input:
+
+        raise_error(f'Could not find the expected input types ({", ".join(expected_input)}) for '
+                    f'{configuration["name"]}. Please check the configuration under the '
+                    f'key data/input.')
+
+    # Create a dictionary mapping output data types to variable names.
+    output_data = {v: k for k, v in configuration['data']['output'].items()}
+
+    # Raise error if the expected input data types have been provided
+    if not set(output_data.keys()) == expected_output:
+
+        raise_error(f'Could not find the expected input types ({", ".join(expected_output)}) for '
+                    f'{configuration["name"]}. Please check the configuration under the '
+                    f'key data/input.')
+
+    return data_in, data_out, input_data, output_data
+
+
 def compare_tasks(old_tasks: list,
                   new_tasks: list) -> bool:
     """

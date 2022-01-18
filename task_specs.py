@@ -56,16 +56,16 @@ class ImageClassificationTask(CrowdsourcingTask):
         Returns:
              A Toloka TaskSpec object.
         """
-        # Read input and output data and create data specifications
-        data_in = {k: data_spec[v] for k, v in configuration['data']['input'].items()}
-        data_out = {k: data_spec[v] for k, v in configuration['data']['output'].items()}
+        # Define expected input and output types for the task
+        expected_i, expected_o = {'url'}, {'bool'}
 
-        # Get the names of input and output variables for setting up the interface
-        in_var = list(configuration['data']['input'].keys())[0]
-        out_var = list(configuration['data']['output'].keys())[0]
+        # Configure Toloka data specifications and check the expected input against configuration
+        data_in, data_out, input_data, output_data = check_io(configuration=configuration,
+                                                              expected_input=expected_i,
+                                                              expected_output=expected_o)
 
         # Create the task interface; start by setting up the image viewer
-        img_viewer = tb.ImageViewV1(url=tb.InputData(in_var),
+        img_viewer = tb.ImageViewV1(url=tb.InputData(input_data['url']),
                                     rotatable=True,
                                     ratio=[1, 1])
 
@@ -76,7 +76,7 @@ class ImageClassificationTask(CrowdsourcingTask):
         radio_group = tb.ButtonRadioGroupFieldV1(
 
             # Set up the output data field
-            data=tb.OutputData(out_var),
+            data=tb.OutputData(output_data['bool']),
 
             # Create radio buttons
             options=[
@@ -92,9 +92,9 @@ class ImageClassificationTask(CrowdsourcingTask):
         task_width_plugin = tb.TolokaPluginV1(kind='scroll', task_width=500)
 
         # Add hotkey plugin
-        hotkey_plugin = tb.HotkeysPluginV1(key_1=tb.SetActionV1(data=tb.OutputData(out_var),
+        hotkey_plugin = tb.HotkeysPluginV1(key_1=tb.SetActionV1(data=tb.OutputData(output_data['bool']),
                                                                 payload=True),
-                                           key_2=tb.SetActionV1(data=tb.OutputData(out_var),
+                                           key_2=tb.SetActionV1(data=tb.OutputData(output_data['bool']),
                                                                 payload=False))
 
         # Combine the task interface elements into a view
@@ -159,22 +159,22 @@ class ImageSegmentationTask(CrowdsourcingTask):
         Returns:
              A Toloka TaskSpec object.
         """
-        # Read input and output data and create data specifications
-        data_in = {k: data_spec[v] for k, v in configuration['data']['input'].items()}
-        data_out = {k: data_spec[v] for k, v in configuration['data']['output'].items()}
+        # Define expected input and output types for the task
+        expected_i, expected_o = {'url'}, {'json'}
 
-        # Get the names of input and output variables for setting up the interface
-        in_var = list(configuration['data']['input'].keys())[0]
-        out_var = list(configuration['data']['output'].keys())[0]
+        # Configure Toloka data specifications and check the expected input against configuration
+        data_in, data_out, input_data, output_data = check_io(configuration=configuration,
+                                                              expected_input=expected_i,
+                                                              expected_output=expected_o)
 
         # Create the task interface; start by setting up the image segmentation interface
         img_ui = tb.ImageAnnotationFieldV1(
 
             # Set up the output data field
-            data=tb.OutputData(out_var),
+            data=tb.OutputData(output_data['json']),
 
             # Set up the input data field
-            image=tb.InputData(in_var),
+            image=tb.InputData(input_data['url']),
 
             # Set up the allowed shapes: note that their order will define the order in the UI
             shapes={'rectangle': True, 'polygon': True},
@@ -257,16 +257,13 @@ class SegmentationVerificationTask(CrowdsourcingTask):
         Returns:
              A Toloka TaskSpec object.
         """
-        # Read input and output data and create data specifications
-        data_in = {k: data_spec[v] for k, v in configuration['data']['input'].items()}
-        data_out = {k: data_spec[v] for k, v in configuration['data']['output'].items()}
+        # Define expected input and output types for the task
+        expected_i, expected_o = {'url', 'json'}, {'bool'}
 
-        # Create a dictionary mapping data types to variable names. This task
-        # expects two kinds of inputs: 'url' for image and 'json' for outlines.
-        input_data = {v: k for k, v in configuration['data']['input'].items()}
-
-        # The output should consist of a single data type: a Boolean value under 'bool'.
-        output_data = {v: k for k, v in configuration['data']['output'].items()}
+        # Configure Toloka data specifications and check the expected input against configuration
+        data_in, data_out, input_data, output_data = check_io(configuration=configuration,
+                                                              expected_input=expected_i,
+                                                              expected_output=expected_o)
 
         # Create the task interface; start by setting up the image segmentation interface
         img_ui = tb.ImageAnnotationFieldV1(

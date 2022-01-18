@@ -113,9 +113,10 @@ class CrowdsourcingTask:
                 # If the event type is accepted or submitted, create new tasks in current pool
                 if event.event_type.value in ['ACCEPTED', 'SUBMITTED']:
 
-                    # Get configuration
+                    # Get configuration for task overlap
                     overlap = self.pool_conf['defaults']['default_overlap_for_new_tasks']
 
+                    # Create new Task objects
                     new_tasks = [Task(pool_id=self.pool.id,
                                       overlap=overlap,
                                       input_values={k: v for k, v in task.input_values.items()}
@@ -124,7 +125,7 @@ class CrowdsourcingTask:
                                  in zip(event.assignment.tasks,
                                         event.assignment.solutions)]
 
-                    # Create tasks
+                    # Add Tasks and open the pool
                     self.client.create_tasks(tasks=new_tasks, open_pool=True)
 
                     # Print status message
