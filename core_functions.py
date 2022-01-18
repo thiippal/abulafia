@@ -278,40 +278,6 @@ def load_data(data: str):
     return df
 
 
-def open_pool(client: toloka.TolokaClient,
-              pool_id: Union[str, list]):
-    """
-    This function opens pools for workers.
-
-    Parameters:
-        client: A toloka.TolokaClient object with valid credentials.
-        pool_id: A string that contains a valid pool identifier, or a list of pool identifiers.
-
-    Returns:
-        Opens the pools for workers on Toloka.
-    """
-    # Check if a single pool should be opened
-    if type(pool_id) == str:
-
-        # Open the pool for workers
-        client.open_pool(pool_id=pool_id)
-
-        # Print status message
-        msg.good(f'Successfully opened pool with ID {pool_id} for workers')
-
-    # If the 'pool_id' variable contains a list, open each pool in turn
-    elif type(pool_id) == list:
-
-        # Loop over the pool identifiers
-        for pid in pool_id:
-
-            # Open the pool for workers
-            client.open_pool(pool_id=pid)
-
-            # Print status message
-            msg.good(f'Successfully opened pool with ID {pid} for workers')
-
-
 def raise_error(message: str):
     """
     This function is used to raise error messages.
@@ -459,104 +425,9 @@ def process_metrics(metric_dict: dict) -> None:
     time.sleep(15)
 
 
-def track_pool_progress(client: toloka.TolokaClient,
-                        pool_id: str,
-                        interval: Union[int, float],
-                        exam: bool,
-                        **kwargs):
-    """
-    This function tracks the progress of a pool.
-
-    Parameters:
-        client: A toloka.TolokaClient object with valid credentials.
-        pool_id: A valid identifier for a pool on Toloka.
-        interval: An integer or float that defines how often a status message
-                  should be printed. The value corresponds to minutes.
-        exam: Whether the pool is an exam pool or not – progress cannot be measured on exam
-              pools with infinite overlap.
-        kwargs: Keywords and arguments.
-
-    Returns:
-        Prints a status message to standard output.
-    """
-    # Define the time that should pass between status messages
-    sleep = 60 * interval
-
-    # Retrieve the pool from Toloka
-    pool = client.get_pool(pool_id=pool_id)
-
-    # For main pools, run the following block while pool remains open
-    while not exam and not pool.is_closed():
-
-        # Retrieve analytics for completion percentage from the pool
-        op = client.get_analytics(
-            [toloka.analytics_request.CompletionPercentagePoolAnalytics(subject_id=pool.id)])
-
-        # Wait until the previous operation finishes
-        op = client.wait_operation(op)
-
-        # Retrieve the percentage value
-        percentage = op.details['value'][0]['result']['value']
-
-        # Print status message
-        msg.info(f'Pool with ID {pool.id} is {percentage}% complete.')
-
-        # Sleep until next message
-        time.sleep(sleep)
-
-        # Update pool information to check for completeness
-        pool = client.get_pool(pool_id=pool_id)
-
-    # For exam pools, run the following block while pool remains open
-    while exam and not pool.is_closed():
-
-        # Check if a limit has been set for the number of submitting users
-        if kwargs and 'limit' in kwargs:
-
-            # Set limit
-            limit = kwargs['limit']
-
-        else:
-
-            # Print status message
-            msg.fail(f'No limit has been set to the number of workers submitting to the exam pool. '
-                     f'This pool will run indefinitely.', exits=0)
-
-        # Retrieve analytics for completion percentage from the pool
-        op = client.get_analytics(
-            [toloka.analytics_request.UniqueSubmittersCountPoolAnalytics(subject_id=pool.id)])
-
-        # Wait until the previous operation finishes
-        op = client.wait_operation(op)
-
-        # Retrieve the percentage value
-        count = op.details['value'][0]['result']
-
-        # Print status message
-        msg.info(f'{count} workers submitted to pool with ID {pool.id}.')
-
-        # If the maximum number of performers has been reached
-        if count >= limit:
-
-            # Print status message
-            msg.info(f'Maximum number of submitting workers reached. Closing pool ...')
-
-            # Close the pool
-            client.close_pool(pool_id=pool_id)
-
-        # Sleep until next message
-        time.sleep(sleep)
-
-        # Update pool information to check for completeness
-        pool = client.get_pool(pool_id=pool_id)
-
-    # Print status message when pool is completed
-    msg.good(f'Successfully closed pool with ID {pool.id}')
-
-
 def create_pool_table(task_sequence: list) -> None:
     """
-    This function creates a table with essential information on pools in a task sequence.
+    This function creates a table with essential information on pools in a task sequence. A pool table. :-)
 
     Parameters:
         task_sequence: a list of CrowdsourcingTask objects.

@@ -132,9 +132,8 @@ class CrowdsourcingTask:
                              f'from pool {event.assignment.pool_id}; creating new tasks in '
                              f'pool {self.pool.id}')
 
-                # If the status is rejected, check if this pool originally created the Tasks.
-                # If this is indeed the case, use the quality control mechanism to add ChangeOverlap
-                # action to the pool. Then update the pool configuration.
+                # If the incoming assignment is rejected, add a ChangeOverlap action to the pool, which returns this
+                # assignment into the annotation queue.
                 if event.event_type.value in ['REJECTED']:
 
                     self.pool.quality_control.add_action(
@@ -143,6 +142,7 @@ class CrowdsourcingTask:
                         action=(ChangeOverlap(delta=1, open_pool=True))
                     )
 
+                    # Update the pool configuration for the action to take place.
                     self.client.update(self.pool_id, self.pool)
 
     def load_project(self, client, task_spec):
@@ -649,31 +649,3 @@ class CrowdsourcingTask:
 
             # Print status message
             msg.good(f'Successfully created a new pool with ID {self.pool.id} on Toloka')
-
-    def run(self):
-
-        # Open the main pool. If training exists, open training pool as well.
-        open_pool(client=self.client,
-                  pool_id=self.pool.id
-                  if self.training is None
-                  else [self.pool.id, self.training.id])
-
-        # # Track pool progress to print status messages
-        # track_pool_progress(client=self.client,
-        #                     pool_id=self.pool.id,
-        #                     interval=0.5,
-        #                     exam=self.exam,
-        #                     limit=None if not self.exam
-        #                     else self.pool_conf['exam']['max_performers'])
-        #
-        # # If the main pool is closed and a training pool exists
-        # if not self.pool.is_open() and self.training is not None:
-        #
-        #     # Close training pool
-        #     self.client.close_training(self.training.id)
-        #
-        #     # Print status
-        #     msg.good(f'Successfully closed pool with ID {self.training.id}')
-        #
-        # # Get results and assign under the attribute 'results'
-        # self.results = get_results(client=self.client, pool_id=self.pool.id)
