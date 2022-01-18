@@ -645,7 +645,7 @@ class CrowdsourcingTask:
                 msg.good(f'Successfully configured exam pool using skill {self.skill.id}')
 
             # Create pool on Toloka
-            self.pool = client.create_pool(self.pool)
+            self.pool = self.client.create_pool(self.pool)
 
             # Print status message
             msg.good(f'Successfully created a new pool with ID {self.pool.id} on Toloka')

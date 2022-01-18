@@ -15,14 +15,19 @@ class ImageClassificationTask(CrowdsourcingTask):
     """
     This is a class for image classification tasks.
     """
-
     def __init__(self, configuration, client):
         """
         This function initialises the ImageClassificationTask class, which inherits attributes
         and methods from the superclass Task.
-        """
 
-        # Read the configuration from the JSON file
+        Parameters:
+            configuration: A string object that defines a path to a YAML file with configuration.
+            client: A TolokaClient object with valid credentials.
+
+        Returns:
+            An ImageClassificationTask object.
+        """
+        # Read the configuration from the YAML file
         configuration = read_configuration(configuration=configuration)
 
         # Specify task and task interface
@@ -46,12 +51,11 @@ class ImageClassificationTask(CrowdsourcingTask):
         This function specifies the task interface on Toloka.
 
         Parameters:
-            configuration: A dictionary containing the configuration defined in the JSON file.
+            configuration: A dictionary containing the configuration defined in the YAML file.
 
         Returns:
              A Toloka TaskSpec object.
         """
-
         # Read input and output data and create data specifications
         data_in = {k: data_spec[v] for k, v in configuration['data']['input'].items()}
         data_out = {k: data_spec[v] for k, v in configuration['data']['output'].items()}
@@ -114,21 +118,26 @@ class ImageSegmentationTask(CrowdsourcingTask):
     """
     This is a class for image segmentation tasks.
     """
-
     def __init__(self, configuration, client):
         """
         This function initialises the ImageSegmentationTask class, which inherits attributes
         and methods from the superclass Task.
-        """
 
-        # Read the configuration from the JSON file
+        Parameters:
+            configuration: A string object that defines a path to a YAML file with configuration.
+            client: A TolokaClient object with valid credentials.
+
+        Returns:
+            An ImageSegmentationTask object.
+        """
+        # Read the configuration from the YAML file
         configuration = read_configuration(configuration=configuration)
 
         # Specify task and task interface
         task_spec = self.specify_task(configuration=configuration)
 
         # Use the super() function to access the superclass Task and its methods and attributes.
-        # This will set up the project, pool and training as specified in the configuration JSON.
+        # This will set up the project, pool and training as specified in the configuration file.
         super().__init__(configuration, client, task_spec)
 
     def __call__(self, input_obj, **kwargs):
@@ -145,11 +154,9 @@ class ImageSegmentationTask(CrowdsourcingTask):
         This function specifies the task interface on Toloka.
 
         Parameters:
-
-            configuration: A dictionary containing the configuration defined in the JSON file.
+            configuration: A dictionary containing the configuration defined in the YAML file.
 
         Returns:
-
              A Toloka TaskSpec object.
         """
         # Read input and output data and create data specifications
@@ -203,3 +210,121 @@ class ImageSegmentationTask(CrowdsourcingTask):
 
         # Return the task specification
         return task_spec
+
+
+class SegmentationVerificationTask(CrowdsourcingTask):
+    """
+    This is a class for binary verification tasks.
+    """
+    def __init__(self, configuration, client):
+        """
+        This function initialises the SegmentationVerificationTask class, which inherits attributes
+        and methods from the superclass Task.
+
+        Parameters:
+            configuration: A string object that defines a path to a YAML file with configuration.
+            client: A TolokaClient object with valid credentials.
+
+        Returns:
+            A SegmentationVerificationTask object.
+        """
+        # Read the configuration from the YAML file
+        configuration = read_configuration(configuration=configuration)
+
+        # Specify task and task interface
+        task_spec = self.specify_task(configuration=configuration)
+
+        # Use the super() function to access the superclass Task and its methods and attributes.
+        # This will set up the project, pool and training as specified in the configuration file.
+        super().__init__(configuration, client, task_spec)
+
+    def __call__(self, input_obj, **kwargs):
+
+        # If the class is called, use the __call__() method from the superclass
+        super().__call__(input_obj, **kwargs)
+
+        # When called, return the ImageClassificationTask object
+        return self
+
+    @staticmethod
+    def specify_task(configuration):
+        """
+        This function specifies the task interface on Toloka.
+
+        Parameters:
+            configuration: A dictionary containing the configuration defined in the YAML file.
+
+        Returns:
+             A Toloka TaskSpec object.
+        """
+        # Read input and output data and create data specifications
+        data_in = {k: data_spec[v] for k, v in configuration['data']['input'].items()}
+        data_out = {k: data_spec[v] for k, v in configuration['data']['output'].items()}
+
+        # Create a dictionary mapping data types to variable names. This task
+        # expects two kinds of inputs: 'url' for image and 'json' for outlines.
+        input_data = {v: k for k, v in configuration['data']['input'].items()}
+
+        # The output should consist of a single data type: a Boolean value under 'bool'.
+        output_data = {v: k for k, v in configuration['data']['output'].items()}
+
+        # Create the task interface; start by setting up the image segmentation interface
+        img_ui = tb.ImageAnnotationFieldV1(
+
+            # Set up the output data field
+            data=tb.InternalData(input_data['json'],
+                                 default=tb.InputData(input_data['json'])),
+
+            # Set up the input data field
+            image=tb.InputData(input_data['url']),
+
+            # Set minimum width in pixels
+            min_width=500,
+
+            # Disable annotation
+            disabled=True,
+
+            # Set up validation
+            validation=tb.RequiredConditionV1(hint="Please select at least one area!"))
+
+        # Define the text prompt below the segmentation UI
+        prompt = tb.TextViewV1(content=configuration['interface']['prompt'])
+
+        # Set up a radio group for labels
+        radio_group = tb.ButtonRadioGroupFieldV1(
+
+            # Set up the output data field
+            data=tb.OutputData(output_data['bool']),
+
+            # Create radio buttons
+            options=[
+                tb.fields.GroupFieldOption(value=True, label='Yes'),
+                tb.fields.GroupFieldOption(value=False, label='No')
+            ],
+
+            # Set up validation
+            validation=tb.RequiredConditionV1(hint="You must choose one response.")
+        )
+
+        # Add hotkey plugin
+        hotkey_plugin = tb.HotkeysPluginV1(key_1=tb.SetActionV1(data=tb.OutputData(output_data['bool']),
+                                                                payload=True),
+                                           key_2=tb.SetActionV1(data=tb.OutputData(output_data['bool']),
+                                                                payload=False))
+
+        # Combine the task interface elements into a view
+        interface = toloka.project.TemplateBuilderViewSpec(
+            view=tb.ListViewV1([img_ui, prompt, radio_group]),
+            plugins=[hotkey_plugin]
+        )
+
+        # Create a task specification with interface and input/output data
+        task_spec = toloka.project.task_spec.TaskSpec(
+            input_spec=data_in,
+            output_spec=data_out,
+            view_spec=interface
+        )
+
+        # Return the task specification
+        return task_spec
+

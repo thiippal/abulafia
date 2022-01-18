@@ -331,7 +331,7 @@ def raise_error(message: str):
 
 def read_configuration(configuration: str):
     """
-    This function reads the Task configuration from a JSON file.
+    This function reads the Task configuration from a YAML file.
 
     Parameters:
             configuration: A string object that defines the path to the configuration file.
