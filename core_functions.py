@@ -419,7 +419,7 @@ def create_process_collector(task_sequence) -> MetricCollector:
     for task in task_sequence.sequence:
 
         # Skip exam pools, because they run infinitely
-        if not task.exam:
+        if hasattr(task, 'pool') and not task.exam:
 
             # Create metric for percentage
             p_metric = metrics.pool_metrics.PoolCompletedPercentage(pool_id=task.pool.id,
@@ -428,6 +428,10 @@ def create_process_collector(task_sequence) -> MetricCollector:
 
             # Append to the placeholder list
             p_metrics.append(p_metric)
+
+        else:
+
+            continue
 
     # Create a MetricCollector object that holds the metrics. The second argument defines the
     # function to be called on the metrics collected.
@@ -456,13 +460,14 @@ def process_metrics(metric_dict: dict) -> None:
 
 def create_pool_table(task_sequence: list) -> None:
     """
-    This function creates a table with essential information on pools in a task sequence. A pool table. :-)
+    This function creates a table with essential information on pools in a task sequence.
+    A pool table. :-)
 
     Parameters:
-        task_sequence: a list of CrowdsourcingTask objects.
+        task_sequence: a list of CrowdsourcingTask objects and/or actions.
 
     Returns:
-         Prints a table with information on all pools to standard output.
+         Prints a table with information on all pools/actions to standard output.
     """
 
     # Set up headers and a placeholder for data
@@ -473,26 +478,43 @@ def create_pool_table(task_sequence: list) -> None:
     for task in task_sequence:
 
         # Check if training has been defined
-        if task.training:
+        try:
 
-            # Collect input and output data from the configuration
-            inputs = [f'{k} ({v})' for k, v in task.conf['training']['data']['input'].items()]
-            outputs = [f'{k} ({v})' for k, v in task.conf['training']['data']['output'].items()]
+            if task.training:
+
+                # Collect input and output data from the configuration
+                inputs = [f'{k} ({v})' for k, v in task.conf['training']['data']['input'].items()]
+                outputs = [f'{k} ({v})' for k, v in task.conf['training']['data']['output'].items()]
+
+                # Append data as a tuple to the list
+                data.append((task.name, ', '.join(inputs), ', '.join(outputs), task.training.id,
+                             task.training.project_id, 'Training'))
+
+        except AttributeError:
+
+            pass
+
+        try:
+
+            if task.pool:
+
+                obj_type = 'Pool' if not task.exam else 'Exam'
+
+                # Collect input and output data from the configuration
+                inputs = [f'{k} ({v})' for k, v in task.conf['data']['input'].items()]
+                outputs = [f'{k} ({v})' for k, v in task.conf['data']['output'].items()]
+
+                # Append data as a tuple to the list
+                data.append((task.name, ', '.join(inputs), ', '.join(outputs), task.pool.id,
+                             task.project.id, obj_type))
+
+        except AttributeError:
+
+            # If task.pool raises an attribute error, the object is an action
+            obj_type = 'Action'
 
             # Append data as a tuple to the list
-            data.append((task.name, ', '.join(inputs), ', '.join(outputs), task.training.id,
-                         task.training.project_id, 'Training'))
-
-        # Continue to process exam and ordinary pools
-        pool_type = 'Pool' if not task.exam else 'Exam'
-
-        # Collect input and output data from the configuration
-        inputs = [f'{k} ({v})' for k, v in task.conf['data']['input'].items()]
-        outputs = [f'{k} ({v})' for k, v in task.conf['data']['output'].items()]
-
-        # Append data as a tuple to the list
-        data.append((task.name, ', '.join(inputs), ', '.join(outputs), task.pool.id,
-                     task.project.id, pool_type))
+            data.append((task.name, '--', '--', '--', '--', obj_type))
 
     # Print a table with inputs and outputs
     msg.table(data=data, header=header, divider=True)
@@ -503,7 +525,7 @@ def verify_connections(task_sequence: list) -> None:
     This function verifies any connections between pools that have been configured.
 
     Parameters:
-        task_sequence: A list of CrowdsourcingTask objects.
+        task_sequence: A list of CrowdsourcingTask objects and/or actions.
 
     Returns:
         Raises an error if a pool has been referred to but cannot be found.
@@ -511,20 +533,22 @@ def verify_connections(task_sequence: list) -> None:
     for task in task_sequence:
 
         # Check if actions have been defined in the configuration
-        if task.action_conf:
+        if 'actions' in task.conf.keys():
 
             # Check if the next task has been defined in the configuration
             try:
 
-                # Fetch the name of the next task from the configuration
-                next_task = task.action_conf['next']
+                # Fetch a list of tasks defined in the actions
+                tasks = list(task.conf['actions'].values())
 
-                # Check that the next task exists in the task sequence
-                if next_task not in [task.name for task in task_sequence]:
+                # Check that the task exists in the task sequence
+                for next_task in tasks:
 
-                    raise_error(f'Cannot find a task named {next_task} in the task sequence. '
-                                f'Please check the name of the task under the key '
-                                f'"actions/next" in the configuration file.')
+                    if next_task not in [task.name for task in task_sequence]:
+
+                        raise_error(f'Cannot find a task named {next_task} in the task sequence. '
+                                    f'Please check the name of the task under the key '
+                                    f'"actions/next" in the configuration file.')
 
             except KeyError:
 

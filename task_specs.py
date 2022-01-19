@@ -7,6 +7,7 @@ from core_task import CrowdsourcingTask
 import toloka.client as toloka
 import toloka.client.project.template_builder as tb
 
+
 # Set up Printer
 msg = Printer(pretty=True, timestamp=True, hide_animation=True)
 
@@ -241,10 +242,7 @@ class SegmentationVerificationTask(CrowdsourcingTask):
     def __call__(self, input_obj, **kwargs):
 
         # If the class is called, use the __call__() method from the superclass
-        # super().__call__(input_obj, **kwargs)
-        # TODO Replace the usual call method with a custom function that
-        # TODO 1. Creates new tasks into the pool
-        # TODO 2. Checks the results and accepts/rejects assignments
+        super().__call__(input_obj, **kwargs)
 
         # When called, return the SegmentationVerificationTask object
         return self
