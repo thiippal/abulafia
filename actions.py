@@ -4,6 +4,7 @@
 from core_functions import *
 from wasabi import Printer
 from toloka.streaming.event import AssignmentEvent
+from typing import List
 import collections
 
 # Set up Printer
@@ -12,22 +13,20 @@ msg = Printer(pretty=True, timestamp=True, hide_animation=True)
 
 class HumanVerification:
     """
-    This class allows defining a human verification mechanism for a CrowdsourcingTask object within
-    a TaskSequence object.
+    This class defines an action for manually verifying crowdsourcing descriptions using other crowdsourced workers.
 
-    To add this mechanism to a TaskSequence, register this object with an assignments observer
-    using 'on_accepted'.
+    To add this action to a TaskSequence, register this object with AssignmentObserver using the 'on_accepted' method.
     """
     def __init__(self, task, configuration):
         """
-        This function initialises the human verification mechanism.
+        This function initialises the manual verification mechanism.
 
         Parameters:
             task: An object that inherits from the CrowdsourcingTask class.
             configuration: A string object that defines a path to a YAML file with configuration.
 
         Returns:
-            None.
+            None
         """
         self.conf = read_configuration(configuration)
         self.name = self.conf['name']
@@ -47,6 +46,8 @@ class HumanVerification:
 
                 # Add the answer to the queue
                 self.queue[task.input_values['assignment_id']].append(answer)
+
+                print(self.queue)
 
 
 

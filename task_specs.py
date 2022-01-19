@@ -270,20 +270,17 @@ class SegmentationVerificationTask(CrowdsourcingTask):
         img_ui = tb.ImageAnnotationFieldV1(
 
             # Set up the output data field
-            data=tb.InternalData(input_data['json'],
+            data=tb.InternalData(path=input_data['json'],
                                  default=tb.InputData(input_data['json'])),
 
             # Set up the input data field
-            image=tb.InputData(input_data['url']),
+            image=tb.InputData(path=input_data['url']),
 
             # Set minimum width in pixels
             min_width=500,
 
-            # Disable annotation
-            disabled=True,
-
-            # Set up validation
-            validation=tb.RequiredConditionV1(hint="Please select at least one area!"))
+            # Disable annotation interface
+            disabled=True)
 
         # Define the text prompt below the segmentation UI
         prompt = tb.TextViewV1(content=configuration['interface']['prompt'])

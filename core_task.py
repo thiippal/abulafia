@@ -101,7 +101,7 @@ class CrowdsourcingTask:
 
             add_tasks(self, self.tasks)
 
-    def __call__(self, in_obj, kwargs):
+    def __call__(self, in_obj):
 
         # Check that the input object is a list of AssignmentEvent objects
         if type(in_obj) == list and all(isinstance(item, AssignmentEvent) for item in in_obj):
