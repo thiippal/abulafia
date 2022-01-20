@@ -239,10 +239,10 @@ class SegmentationVerificationTask(CrowdsourcingTask):
         # This will set up the project, pool and training as specified in the configuration file.
         super().__init__(configuration, client, task_spec)
 
-    def __call__(self, input_obj, **kwargs):
+    def __call__(self, input_obj):
 
         # If the class is called, use the __call__() method from the superclass
-        super().__call__(input_obj, **kwargs)
+        super().__call__(input_obj, verify=True)
 
         # When called, return the SegmentationVerificationTask object
         return self

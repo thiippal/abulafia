@@ -101,7 +101,7 @@ class CrowdsourcingTask:
 
             add_tasks(self, self.tasks)
 
-    def __call__(self, in_obj):
+    def __call__(self, in_obj, **options):
 
         # Check that the input object is a list of AssignmentEvent objects
         if type(in_obj) == list and all(isinstance(item, AssignmentEvent) for item in in_obj):
@@ -113,17 +113,23 @@ class CrowdsourcingTask:
                 # If the event type is accepted or submitted, create new tasks in current pool
                 if event.event_type.value in ['ACCEPTED', 'SUBMITTED']:
 
-                    # Get configuration for task overlap
-                    overlap = self.pool_conf['defaults']['default_overlap_for_new_tasks']
-
                     # Create new Task objects
                     new_tasks = [Task(pool_id=self.pool.id,
-                                      overlap=overlap,
+                                      overlap=self.pool_conf['defaults']['default_overlap_for_new_tasks'],
                                       input_values={k: v for k, v in task.input_values.items()}
                                       )
                                  for task, solution
                                  in zip(event.assignment.tasks,
                                         event.assignment.solutions)]
+
+                    # If the assignments are for a verification pool, add the output values to the input of
+                    # the new task
+                    if options and 'verify' in options:
+
+                        new_tasks = [Task(pool_id=self.pool.id,
+                                          overlap=self.pool_conf['defaults']['default_overlap_for_new_tasks'],
+                                          input_values={**task.input_values, **solution.output_values})
+                                     for task, solution in zip(event.assignment.tasks, event.assignment.solutions)]
 
                     # Add Tasks and open the pool
                     self.client.create_tasks(tasks=new_tasks, open_pool=True)
@@ -131,7 +137,7 @@ class CrowdsourcingTask:
                     # Print status messages
                     msg.good(f'Received {len(new_tasks)} {event.event_type.value.lower()} tasks '
                              f'from pool {event.assignment.pool_id}')
-                    msg.good(f'Creating {len(new_tasks)} tasks in pool {self.pool_id}')
+                    msg.good(f'Creating {len(new_tasks)} new tasks in pool {self.pool.id}')
 
                 # If the incoming assignment is rejected, add a ChangeOverlap action to the pool, which returns this
                 # assignment into the annotation queue.

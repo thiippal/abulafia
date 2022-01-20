@@ -51,12 +51,12 @@ class TaskSequence:
             # be opened: they will be opened when tasks are added to them by these initial tasks.
             for task in self.sequence:
 
-                if task.tasks is not None:
+                if hasattr(task, 'tasks') and task.tasks is not None:
 
                     # Open main pool
                     self.client.open_pool(pool_id=task.pool.id)
 
-                if task.training is not None:
+                if hasattr(task, 'training') and task.training is not None:
 
                     # Open training pool
                     self.client.open_pool(pool_id=task.training.id)
@@ -88,7 +88,7 @@ class TaskSequence:
 
                 for task in self.sequence:
 
-                    if task.training is not None:
+                    if hasattr(task, 'training') and task.training is not None:
 
                         # Close main pool first, then the training
                         self.client.close_pool(pool_id=task.pool.id)
@@ -108,7 +108,7 @@ class TaskSequence:
 
                             msg.info(f'Closed pool with ID {task.training.id}')
 
-                    if task.pool.is_open():
+                    if hasattr(task, 'pool') and task.pool.is_open():
 
                         # Close main pool
                         self.client.close_pool(pool_id=task.pool.id)
@@ -130,22 +130,24 @@ class TaskSequence:
                 # Check if tasks are supposed to output the results
                 for task in self.sequence:
 
-                    # Get the output DataFrame for each task; assign under attribute 'output_data'
-                    task.output_data = self.client.get_assignments_df(pool_id=task.pool.id)
+                    if hasattr(task, 'pool'):
 
-                    # Check if the output should be written to disk
-                    try:
+                        # Get the output DataFrame for each task; assign under 'output_data'
+                        task.output_data = self.client.get_assignments_df(pool_id=task.pool.id)
 
-                        if 'output' in task.action_conf:
+                        # Check if the output should be written to disk
+                        try:
 
-                            # Write the DataFrame to disk
-                            task.output_data.to_csv(f'{task.name}_{task.pool.id}.csv')
+                            if 'output' in task.conf['actions']:
 
-                            msg.good(f'Wrote data for task {task.name} ({task.pool.id}) to disk.')
+                                # Write the DataFrame to disk
+                                task.output_data.to_csv(f'{task.name}_{task.pool.id}.csv')
 
-                    except KeyError:
+                                msg.good(f'Wrote data for task {task.name} ({task.pool.id}) to disk.')
 
-                        pass
+                        except KeyError:
+
+                            pass
 
     def create_pipeline(self):
 
@@ -155,14 +157,16 @@ class TaskSequence:
         # Loop over the tasks and create an AssignmentsObserver object for each task. Exam tasks
         # do not require observers, and they do not create further tasks.
         a_observers = {task.name: AssignmentsObserver(async_client, task.pool.id)
-                       for task in self.sequence if not task.exam}
+                       for task in self.sequence if hasattr(task, 'pool')
+                       and not task.exam if hasattr(task, 'pool')}
 
         # Set up pool observers for monitoring all pool states
         p_observers = {task.name: PoolStatusObserver(async_client, task.pool.id)
-                       for task in self.sequence if not task.exam}
+                       for task in self.sequence if hasattr(task, 'pool')
+                       and not task.exam if hasattr(task, 'pool')}
 
         # Create a Toloka Pipeline object and register observers; call observers every 15 seconds
-        self.pipeline = Pipeline(period=datetime.timedelta(seconds=12))
+        self.pipeline = Pipeline(period=datetime.timedelta(seconds=15))
 
         # Create a dictionary of CrowdsourcingTasks in the pipeline keyed by their names
         tasks = {task.name: task for task in self.sequence}
@@ -202,9 +206,8 @@ class TaskSequence:
 
                         observer.on_accepted(tasks[current_task.action_conf['on_accepted']])
 
-                        msg.info(f'Setting up a connection from {name} ({current_task.pool.id})'
-                                 f' to {tasks[current_task.action_conf["on_accepted"]].name} '
-                                 f' ({tasks[current_task.action_conf["on_accepted"]].pool.id}) '
+                        msg.info(f'Setting up a connection from {name} '
+                                 f'to {tasks[current_task.action_conf["on_accepted"]].name} '
                                  f'on acceptance ...')
 
                     except KeyError:
@@ -222,9 +225,8 @@ class TaskSequence:
                         # it will be sent to the CrowdsourcingTask object defined in the configuration.
                         observer.on_submitted(tasks[current_task.action_conf['on_submitted']])
 
-                        msg.info(f'Setting up a connection from {name} ({current_task.pool.id})'
-                                 f' to {tasks[current_task.action_conf["on_submitted"]].name} '
-                                 f' ({tasks[current_task.action_conf["on_submitted"]].pool.id}) '
+                        msg.info(f'Setting up a connection from {name} '
+                                 f'to {tasks[current_task.action_conf["on_submitted"]].name} '
                                  f'on submission ...')
 
                     except KeyError:
@@ -242,9 +244,8 @@ class TaskSequence:
                         # it will be sent to the CrowdsourcingTask object defined in the configuration.
                         observer.on_rejected(tasks[current_task.action_conf['on_rejected']])
 
-                        msg.info(f'Setting up a connection from {name} ({current_task.pool.id})'
-                                 f' to {tasks[current_task.action_conf["on_rejected"]].name} '
-                                 f' ({tasks[current_task.action_conf["on_rejected"]].pool.id}) '
+                        msg.info(f'Setting up a connection from {name}'
+                                 f'to {tasks[current_task.action_conf["on_rejected"]].name} '
                                  f'on rejected ...')
 
                     except KeyError:
