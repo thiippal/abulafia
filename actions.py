@@ -11,7 +11,7 @@ import collections
 msg = Printer(pretty=True, timestamp=True, hide_animation=True)
 
 
-class HumanVerification:
+class Verify:
     """
     This class defines an action for manually verifying crowdsourcing descriptions using other crowdsourced workers.
 
@@ -43,6 +43,10 @@ class HumanVerification:
                 # Retrieve the answer
                 answer = (solution.output_values[self.conf['data']['output']],
                           event.assignment.user_id)
+
+                print(task)
+                print(task.assignment.id)
+                exit()
 
                 # Add the answer to the queue
                 self.queue[task.input_values['assignment_id']].append(answer)

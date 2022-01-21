@@ -12,13 +12,13 @@ import toloka.client.project.template_builder as tb
 msg = Printer(pretty=True, timestamp=True, hide_animation=True)
 
 
-class ImageClassificationTask(CrowdsourcingTask):
+class ImageClassification(CrowdsourcingTask):
     """
     This is a class for image classification tasks.
     """
     def __init__(self, configuration, client):
         """
-        This function initialises the ImageClassificationTask class, which inherits attributes
+        This function initialises the ImageClassification class, which inherits attributes
         and methods from the superclass Task.
 
         Parameters:
@@ -26,7 +26,7 @@ class ImageClassificationTask(CrowdsourcingTask):
             client: A TolokaClient object with valid credentials.
 
         Returns:
-            An ImageClassificationTask object.
+            An ImageClassification object.
         """
         # Read the configuration from the YAML file
         configuration = read_configuration(configuration=configuration)
@@ -43,7 +43,7 @@ class ImageClassificationTask(CrowdsourcingTask):
         # If the class is called, use the __call__() method from the superclass
         super().__call__(input_obj, **kwargs)
 
-        # When called, return the ImageClassificationTask object
+        # When called, return the ImageClassification object
         return self
 
     @staticmethod
@@ -115,13 +115,13 @@ class ImageClassificationTask(CrowdsourcingTask):
         return task_spec
 
 
-class ImageSegmentationTask(CrowdsourcingTask):
+class ImageSegmentation(CrowdsourcingTask):
     """
     This is a class for image segmentation tasks.
     """
     def __init__(self, configuration, client):
         """
-        This function initialises the ImageSegmentationTask class, which inherits attributes
+        This function initialises the ImageSegmentation class, which inherits attributes
         and methods from the superclass Task.
 
         Parameters:
@@ -129,7 +129,7 @@ class ImageSegmentationTask(CrowdsourcingTask):
             client: A TolokaClient object with valid credentials.
 
         Returns:
-            An ImageSegmentationTask object.
+            An ImageSegmentation object.
         """
         # Read the configuration from the YAML file
         configuration = read_configuration(configuration=configuration)
@@ -146,7 +146,7 @@ class ImageSegmentationTask(CrowdsourcingTask):
         # If the class is called, use the __call__() method from the superclass
         super().__call__(input_obj, **kwargs)
 
-        # When called, return the ImageSegmentationTask object
+        # When called, return the ImageSegmentation object
         return self
 
     @staticmethod
@@ -213,13 +213,13 @@ class ImageSegmentationTask(CrowdsourcingTask):
         return task_spec
 
 
-class SegmentationVerificationTask(CrowdsourcingTask):
+class SegmentationVerification(CrowdsourcingTask):
     """
     This is a class for binary verification tasks.
     """
     def __init__(self, configuration, client):
         """
-        This function initialises the SegmentationVerificationTask class, which inherits attributes
+        This function initialises the SegmentationVerification class, which inherits attributes
         and methods from the superclass Task.
 
         Parameters:
@@ -227,7 +227,7 @@ class SegmentationVerificationTask(CrowdsourcingTask):
             client: A TolokaClient object with valid credentials.
 
         Returns:
-            A SegmentationVerificationTask object.
+            A SegmentationVerification object.
         """
         # Read the configuration from the YAML file
         configuration = read_configuration(configuration=configuration)
@@ -244,7 +244,7 @@ class SegmentationVerificationTask(CrowdsourcingTask):
         # If the class is called, use the __call__() method from the superclass
         super().__call__(input_obj, verify=True)
 
-        # When called, return the SegmentationVerificationTask object
+        # When called, return the SegmentationVerification object
         return self
 
     @staticmethod
@@ -265,6 +265,9 @@ class SegmentationVerificationTask(CrowdsourcingTask):
         data_in, data_out, input_data, output_data = check_io(configuration=configuration,
                                                               expected_input=expected_i,
                                                               expected_output=expected_o)
+
+        # Add assignment ID to the input data
+        data_in['assignment_id'] = data_spec['str']
 
         # Create the task interface; start by setting up the image segmentation interface
         img_ui = tb.ImageAnnotationFieldV1(

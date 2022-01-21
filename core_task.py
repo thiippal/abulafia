@@ -128,7 +128,9 @@ class CrowdsourcingTask:
 
                         new_tasks = [Task(pool_id=self.pool.id,
                                           overlap=self.pool_conf['defaults']['default_overlap_for_new_tasks'],
-                                          input_values={**task.input_values, **solution.output_values})
+                                          input_values={**task.input_values,
+                                                        **solution.output_values,
+                                                        'assignment_id': event.assignment.id})
                                      for task, solution in zip(event.assignment.tasks, event.assignment.solutions)]
 
                     # Add Tasks and open the pool
