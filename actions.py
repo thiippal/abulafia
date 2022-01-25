@@ -60,32 +60,36 @@ class Verify:
         # If no aggregation is to be performed, accept/reject incoming assignments
         else:
 
-            for assignment_id, result in self.queue.items():
+            # TODO This does not work as expected;
 
-                try:
+            for assignment_id, results in self.queue.items():
 
-                    if result is True:
+                for result in results:
 
-                        self.client.accept_assignment(assignment_id=assignment_id,
-                                                      public_comment=self.conf['messages']['accept'])
-                        
-                        msg.good(f'Accepted assignment {assignment_id}')
+                    try:
 
-                    if result is False:
+                        if result == True:
 
-                        self.client.reject_assignment(assignment_id=assignment_id,
-                                                      public_comment=self.conf['messages']['reject'])
+                            self.client.accept_assignment(assignment_id=assignment_id,
+                                                          public_comment=self.conf['messages']['accept'])
 
-                        msg.warn(f'Rejected assignment {assignment_id}')
+                            msg.good(f'Accepted assignment {assignment_id}')
 
-                # Catch the error that might be raised by manually accepting/rejecting tasks in
-                # the web interface
-                except IncorrectActionsApiError:
+                        if result == False:
 
-                    msg.warn(f'Could not {"accept" if result else "reject"} assignment {assignment_id}')
+                            self.client.reject_assignment(assignment_id=assignment_id,
+                                                          public_comment=self.conf['messages']['reject'])
 
-                # Delete the assignment from the queue
-                del self.queue[assignment_id]
+                            msg.warn(f'Rejected assignment {assignment_id}')
+
+                    # Catch the error that might be raised by manually accepting/rejecting tasks in
+                    # the web interface
+                    except IncorrectActionsApiError:
+
+                        msg.warn(f'Could not {"accept" if result else "reject"} assignment {assignment_id}')
+
+            # Delete the assignment from the queue
+            del self.queue[assignment_id]
 
 
 class Aggregate:
@@ -116,6 +120,3 @@ class Forward:
     def __call__(self):
 
         raise NotImplementedError
-
-
-

@@ -310,10 +310,13 @@ class SegmentationVerification(CrowdsourcingTask):
                                            key_2=tb.SetActionV1(data=tb.OutputData(output_data['bool']),
                                                                 payload=False))
 
+        # Set task width limit
+        task_width_plugin = tb.TolokaPluginV1(kind='scroll', task_width=500)
+
         # Combine the task interface elements into a view
         interface = toloka.project.TemplateBuilderViewSpec(
             view=tb.ListViewV1([img_ui, prompt, radio_group]),
-            plugins=[hotkey_plugin]
+            plugins=[hotkey_plugin, task_width_plugin]
         )
 
         # Create a task specification with interface and input/output data
