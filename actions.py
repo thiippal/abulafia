@@ -36,7 +36,7 @@ class Verify:
         self.queue = collections.defaultdict(list)
         self.aggregator = None
 
-    def __call__(self, events: List[AssignmentEvent], **options) -> None:
+    def __call__(self, events: List[AssignmentEvent]) -> None:
 
         # Loop over the list of incoming AssignmentEvent objects
         for event in events:
@@ -45,51 +45,47 @@ class Verify:
             for task, solution in zip(event.assignment.tasks, event.assignment.solutions):
 
                 # Retrieve the answer
-                answer = (solution.output_values[self.conf['data']['output']],
-                          event.assignment.user_id)
+                answer = solution.output_values[self.conf['data']['output']]
 
-                # Add the answer to the queue
+                # Add the answer to the queue under assignment id
                 self.queue[task.input_values['assignment_id']].append(answer)
 
-        if options and 'aggregate' in options:
+        # Set up a placeholder for processed task suites
+        processed = []
 
-            pass
+        # Loop over the assignments in the queue
+        for assignment_id, results in self.queue.items():
 
-            # TODO For some algorithms, one needs to get all annotations – monitor pool status?
+            try:
 
-        # If no aggregation is to be performed, accept/reject incoming assignments
-        else:
+                # Accept the task suite if all assignments in the suite have been verified as correct
+                if all(results) == True:
 
-            # TODO This does not work as expected;
+                    self.client.accept_assignment(assignment_id=assignment_id,
+                                                  public_comment=self.conf['messages']['accepted'])
 
-            for assignment_id, results in self.queue.items():
+                    msg.good(f'Accepted assignment {assignment_id}')
 
-                for result in results:
+                # Reject the task suite if all assignments in the suite have not been verified as correct
+                if all(results) != True:
 
-                    try:
+                    self.client.reject_assignment(assignment_id=assignment_id,
+                                                  public_comment=self.conf['messages']['rejected'])
 
-                        if result == True:
+                    msg.warn(f'Rejected assignment {assignment_id}')
 
-                            self.client.accept_assignment(assignment_id=assignment_id,
-                                                          public_comment=self.conf['messages']['accept'])
+            # Catch the error that might be raised by manually accepting/rejecting tasks in
+            # the web interface
+            except IncorrectActionsApiError:
 
-                            msg.good(f'Accepted assignment {assignment_id}')
+                msg.warn(f'Could not {"accept" if all(results) == True else "reject"} assignment {assignment_id}')
 
-                        if result == False:
+            processed.append(assignment_id)
 
-                            self.client.reject_assignment(assignment_id=assignment_id,
-                                                          public_comment=self.conf['messages']['reject'])
+        # Delete the assignment from the list of processed task suites
+        for assignment_id in processed:
 
-                            msg.warn(f'Rejected assignment {assignment_id}')
-
-                    # Catch the error that might be raised by manually accepting/rejecting tasks in
-                    # the web interface
-                    except IncorrectActionsApiError:
-
-                        msg.warn(f'Could not {"accept" if result else "reject"} assignment {assignment_id}')
-
-            # Delete the assignment from the queue
-            del self.queue[assignment_id]
+            processed.remove(assignment_id)
 
 
 class Aggregate:

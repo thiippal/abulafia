@@ -3,9 +3,6 @@
 # Import libraries
 from core_functions import *
 from wasabi import Printer
-from toloka.client.actions import ChangeOverlap
-from toloka.client.collectors import AssignmentsAssessment
-from toloka.client.conditions import AssessmentEvent
 from toloka.streaming.event import AssignmentEvent
 import datetime
 import uuid
@@ -140,19 +137,6 @@ class CrowdsourcingTask:
                     msg.good(f'Received {len(new_tasks)} {event.event_type.value.lower()} tasks '
                              f'from pool {event.assignment.pool_id}')
                     msg.good(f'Creating {len(new_tasks)} new tasks in pool {self.pool.id}')
-
-                # If the incoming assignment is rejected, add a ChangeOverlap action to the pool, which returns this
-                # assignment into the annotation queue.
-                if event.event_type.value in ['REJECTED']:
-
-                    self.pool.quality_control.add_action(
-                        collector=AssignmentsAssessment(),
-                        conditions=[AssessmentEvent == AssessmentEvent.REJECT],
-                        action=(ChangeOverlap(delta=1, open_pool=True))
-                    )
-
-                    # Update the pool configuration for the action to take place.
-                    self.client.update(self.pool_id, self.pool)
 
     def load_project(self, client, task_spec):
         """

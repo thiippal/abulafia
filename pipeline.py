@@ -3,6 +3,9 @@
 import asyncio
 import datetime
 from core_functions import *
+from toloka.client.actions import ChangeOverlap
+from toloka.client.collectors import AssignmentsAssessment
+from toloka.client.conditions import AssessmentEvent
 from toloka.util.async_utils import AsyncMultithreadWrapper
 from toloka.streaming import AssignmentsObserver, Pipeline, PoolStatusObserver
 from wasabi import Printer
@@ -208,7 +211,7 @@ class TaskSequence:
 
                         msg.info(f'Setting up a connection from {name} '
                                  f'to {tasks[current_task.action_conf["on_accepted"]].name} '
-                                 f'on acceptance ...')
+                                 f'on acceptance')
 
                     except KeyError:
 
@@ -227,7 +230,7 @@ class TaskSequence:
 
                         msg.info(f'Setting up a connection from {name} '
                                  f'to {tasks[current_task.action_conf["on_submitted"]].name} '
-                                 f'on submission ...')
+                                 f'on submission')
 
                     except KeyError:
 
@@ -238,19 +241,35 @@ class TaskSequence:
 
                 if 'on_rejected' in current_task.action_conf:
 
-                    try:
+                    # Check if rejected assignments tasks should be routed to the same pool
+                    if current_task.action_conf['on_rejected'] == name:
 
-                        # Register the action with the AssignmentObserver. If a task is rejected,
-                        # it will be sent to the CrowdsourcingTask object defined in the configuration.
-                        observer.on_rejected(tasks[current_task.action_conf['on_rejected']])
+                        # Add a ChangeOverlap action to the pool, which returns this assignment into annotation queue.
+                        current_task.pool.quality_control.add_action(
+                            collector=AssignmentsAssessment(),
+                            conditions=[AssessmentEvent == AssessmentEvent.REJECT],
+                            action=(ChangeOverlap(delta=1, open_pool=True)))
 
-                        msg.info(f'Setting up a connection from {name}'
-                                 f'to {tasks[current_task.action_conf["on_rejected"]].name} '
-                                 f'on rejected ...')
+                        # Update the pool configuration for the action to take place.
+                        self.client.update_pool(current_task.pool.id, current_task.pool)
 
-                    except KeyError:
+                        msg.info(f'Rejected tasks from pool {name} will be re-added to the pool')
 
-                        raise_error(f'Could not find a CrowdsourcingTask object named '
-                                    f'{current_task.action_conf["on_rejected"]} in the '
-                                    f'TaskSequence. Please check the configuration '
-                                    f'under the key "actions"!')
+                    else:
+
+                        try:
+
+                            # Register the action with the AssignmentObserver. If a task is rejected,
+                            # it will be sent to the CrowdsourcingTask object defined in the configuration.
+                            observer.on_rejected(tasks[current_task.action_conf['on_rejected']])
+
+                            msg.info(f'Setting up a connection from {name}'
+                                     f'to {tasks[current_task.action_conf["on_rejected"]].name} '
+                                     f'on rejected')
+
+                        except KeyError:
+
+                            raise_error(f'Could not find a CrowdsourcingTask object named '
+                                        f'{current_task.action_conf["on_rejected"]} in the '
+                                        f'TaskSequence. Please check the configuration '
+                                        f'under the key "actions"!')
