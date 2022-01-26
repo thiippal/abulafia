@@ -38,6 +38,10 @@ class Verify:
 
     def __call__(self, events: List[AssignmentEvent]) -> None:
 
+        # TODO Make the processing of results fairer by rejecting task suites only when a given percentage of tasks
+        # TODO are rejected. One possible solution would be to fetch rejected Task objects and send them back to the
+        # TODO origin pool for re-completion.
+
         # Loop over the list of incoming AssignmentEvent objects
         for event in events:
 
@@ -59,7 +63,7 @@ class Verify:
             try:
 
                 # Accept the task suite if all assignments in the suite have been verified as correct
-                if all(results) == True:
+                if all(results) is True:
 
                     self.client.accept_assignment(assignment_id=assignment_id,
                                                   public_comment=self.conf['messages']['accepted'])
@@ -67,7 +71,7 @@ class Verify:
                     msg.good(f'Accepted assignment {assignment_id}')
 
                 # Reject the task suite if all assignments in the suite have not been verified as correct
-                if all(results) != True:
+                if all(results) is not True:
 
                     self.client.reject_assignment(assignment_id=assignment_id,
                                                   public_comment=self.conf['messages']['rejected'])
@@ -80,6 +84,7 @@ class Verify:
 
                 msg.warn(f'Could not {"accept" if all(results) == True else "reject"} assignment {assignment_id}')
 
+            # Append the task suite to the list of processed suites
             processed.append(assignment_id)
 
         # Delete the assignment from the list of processed task suites
