@@ -435,7 +435,13 @@ def create_process_collector(task_sequence) -> MetricCollector:
 
     # Create a MetricCollector object that holds the metrics. The second argument defines the
     # function to be called on the metrics collected.
-    p_metrics = MetricCollector(p_metrics, process_metrics)
+    if p_metrics:
+
+        p_metrics = MetricCollector(p_metrics, process_metrics)
+
+    if not p_metrics:
+
+        p_metrics = None
 
     return p_metrics
 
@@ -533,7 +539,7 @@ def verify_connections(task_sequence: list) -> None:
     for task in task_sequence:
 
         # Check if actions have been defined in the configuration
-        if 'actions' in task.conf.keys():
+        if 'actions' in task.conf.keys() and task.conf['actions'] is not None:
 
             # Check if the next task has been defined in the configuration
             try:

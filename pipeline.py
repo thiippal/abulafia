@@ -2,6 +2,7 @@
 
 import asyncio
 import datetime
+from observers import AnalyticsObserver
 from core_functions import *
 from toloka.client.actions import ChangeOverlap
 from toloka.client.collectors import AssignmentsAssessment
@@ -73,7 +74,11 @@ class TaskSequence:
 
                 # The 'ensure_future' method allows running the MetricCollector
                 # in a fire-and-forget manner
-                asyncio.ensure_future(proc_collector.run())
+                if proc_collector is not None:
+
+                    asyncio.ensure_future(proc_collector.run())
+
+                # TODO The pipeline will not keep running without proc_collector
 
                 # The Pipeline object needs to be awaited
                 await asyncio.gather(self.pipeline.run())
@@ -91,7 +96,18 @@ class TaskSequence:
 
                 for task in self.sequence:
 
-                    if hasattr(task, 'training') and task.training is not None:
+                    if hasattr(task, 'pool') and task.pool.is_open() and task.pool.last_close_reason == 'COMPLETED':
+
+                        # Close main pool
+                        self.client.close_pool(pool_id=task.pool.id)
+
+                        # Append current status to the collector
+                        status.append(self.client.get_pool(pool_id=task.pool.id).is_open())
+
+                        msg.info(f'Closed pool with ID {task.pool.id}')
+
+                    if hasattr(task, 'training') and task.training is not None \
+                            and task.pool.last_close_reason == 'COMPLETED':
 
                         # Close main pool first, then the training
                         self.client.close_pool(pool_id=task.pool.id)
@@ -110,16 +126,6 @@ class TaskSequence:
                             status.append(self.client.get_pool(pool_id=task.training.id).is_open())
 
                             msg.info(f'Closed pool with ID {task.training.id}')
-
-                    if hasattr(task, 'pool') and task.pool.is_open():
-
-                        # Close main pool
-                        self.client.close_pool(pool_id=task.pool.id)
-
-                        # Append current status to the collector
-                        status.append(self.client.get_pool(pool_id=task.pool.id).is_open())
-
-                        msg.info(f'Closed pool with ID {task.pool.id}')
 
                 if not any(status):
 
@@ -141,7 +147,7 @@ class TaskSequence:
                         # Check if the output should be written to disk
                         try:
 
-                            if 'output' in task.conf['actions']:
+                            if task.conf['actions'] is not None and 'output' in task.conf['actions']:
 
                                 # Write the DataFrame to disk
                                 task.output_data.to_csv(f'{task.name}_{task.pool.id}.csv')
@@ -168,6 +174,12 @@ class TaskSequence:
                        for task in self.sequence if hasattr(task, 'pool')
                        and not task.exam if hasattr(task, 'pool')}
 
+        # Set up pool analytics observers for monitoring exam pools
+        pa_observers = {task.name: AnalyticsObserver(async_client, task.pool.id,
+                                                     max_performers=task.pool_conf['exam']['max_performers'])
+                        for task in self.sequence if hasattr(task, 'pool')
+                        and task.exam if hasattr(task, 'pool')}
+
         # Create a Toloka Pipeline object and register observers; call observers every 15 seconds
         self.pipeline = Pipeline(period=datetime.timedelta(seconds=15))
 
@@ -190,6 +202,13 @@ class TaskSequence:
             self.pipeline.register(observer=p_observer)
 
             msg.info(f'Registered a pool observer for task {name} ({tasks[name].pool.id})')
+
+        # Register each pool analytics observer
+        for name, pa_observer in pa_observers.items():
+
+            self.pipeline.register(observer=pa_observer)
+
+            msg.info(f'Registered a pool analytics observer for task {name} ({tasks[name].pool.id})')
 
         # Loop over the observers and get the actions configuration to determine task flow
         for name, observer in a_observers.items():
