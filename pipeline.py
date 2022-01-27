@@ -47,8 +47,6 @@ class TaskSequence:
 
     def start(self):
 
-        try:
-
             msg.info(f'Starting the task sequence')
 
             # Open all pools in the sequence that contain tasks. Note that pools without tasks cannot
@@ -86,8 +84,6 @@ class TaskSequence:
             # Call the asynchronous function to start the collectors and pipeline
             asyncio.run(main())
 
-        finally:
-
             # Collect pool statuses here
             status = []
 
@@ -96,45 +92,53 @@ class TaskSequence:
 
                 for task in self.sequence:
 
-                    if hasattr(task, 'pool') and task.pool.is_open() and task.pool.last_close_reason == 'COMPLETED':
+                    # Check if a pool exists (to filter out actions) and has been completed.
+                    if hasattr(task, 'pool'):
 
-                        # Close main pool
-                        self.client.close_pool(pool_id=task.pool.id)
+                        pool_status = self.client.get_pool(pool_id=task.pool.id).last_close_reason
 
-                        # Append current status to the collector
-                        status.append(self.client.get_pool(pool_id=task.pool.id).is_open())
+                        if pool_status is not None and pool_status.value == 'COMPLETED':
 
-                        msg.info(f'Closed pool with ID {task.pool.id}')
+                            self.client.close_pool(pool_id=task.pool.id)
 
-                    if hasattr(task, 'training') and task.training is not None \
-                            and task.pool.last_close_reason == 'COMPLETED':
+                            status.append(self.client.get_pool(pool_id=task.pool.id).is_open())
 
-                        # Close main pool first, then the training
-                        self.client.close_pool(pool_id=task.pool.id)
+                            msg.info(f'Closed pool with ID {task.pool.id}')
 
-                        # Append current status to the collector
-                        status.append(self.client.get_pool(pool_id=task.pool.id).is_open())
+                    if hasattr(task, 'training') and task.training is not None:
 
-                        msg.info(f'Closed pool with ID {task.pool.id}')
+                        pool_status = self.client.get_pool(pool_id=task.pool.id).last_close_reason
 
-                        if self.client.get_pool(pool_id=task.training.id).is_open():
+                        if pool_status is not None and pool_status.value == 'COMPLETED':
 
-                            # Close training pool
-                            self.client.close_pool(pool_id=task.training.id)
+                            # Close main pool first, then the training
+                            self.client.close_pool(pool_id=task.pool.id)
 
-                            # Append current training status to the collector
-                            status.append(self.client.get_pool(pool_id=task.training.id).is_open())
+                            # Append current status to the collector
+                            status.append(self.client.get_pool(pool_id=task.pool.id).is_open())
 
-                            msg.info(f'Closed pool with ID {task.training.id}')
+                            msg.info(f'Closed pool with ID {task.pool.id}')
 
-                if not any(status):
+                            if self.client.get_pool(pool_id=task.training.id).is_open():
+
+                                # Close training pool
+                                self.client.close_pool(pool_id=task.training.id)
+
+                                # Append current training status to the collector
+                                status.append(self.client.get_pool(pool_id=task.training.id).is_open())
+
+                                msg.info(f'Closed pool with ID {task.training.id}')
+
+                if all(status):
 
                     self.complete = True
 
-            msg.good(f'Successfully completed the task sequence')
+                    msg.good(f'Successfully completed the task sequence')
 
             # Check the outputs
             if self.complete:
+                
+                exit()
 
                 # Check if tasks are supposed to output the results
                 for task in self.sequence:
@@ -175,7 +179,7 @@ class TaskSequence:
                        and not task.exam if hasattr(task, 'pool')}
 
         # Set up pool analytics observers for monitoring exam pools
-        pa_observers = {task.name: AnalyticsObserver(async_client, task.pool.id,
+        pa_observers = {task.name: AnalyticsObserver(async_client, task.pool,
                                                      max_performers=task.pool_conf['exam']['max_performers'])
                         for task in self.sequence if hasattr(task, 'pool')
                         and task.exam if hasattr(task, 'pool')}
