@@ -50,7 +50,7 @@ class TaskSequence:
         msg.info(f'Starting the task sequence')
 
         # Open all pools in the sequence that contain tasks. Note that pools without tasks cannot
-        # be opened: they will be opened when tasks are added to them by these initial tasks.
+        # be opened: they will be opened when tasks are added to them by these tasks.
         for task in self.sequence:
 
             if hasattr(task, 'tasks') and task.tasks is not None:
@@ -61,24 +61,24 @@ class TaskSequence:
 
                 self.client.open_pool(pool_id=task.training.id)
 
-        # Set up a Toloka MetricCollectors for all pools
-        proc_collector = create_process_collector(task_sequence=self)
+        # Set up MetricCollectors for all pools
+        metrics_collector = create_metrics(task_sequence=self)
 
         # Define an asynchronous function to run the MetricCollector and
         # the Pipeline objects at the same time
-        async def run_sequence(process_collector):
+        async def run_sequence(metrics):
 
             # The 'ensure_future' method allows running the MetricCollector
             # in a fire-and-forget manner
-            if process_collector is not None:
+            if metrics is not None:
 
-                asyncio.ensure_future(process_collector.run())
+                asyncio.ensure_future(metrics.run())
 
             # The Pipeline object needs to be awaited
             await asyncio.gather(self.pipeline.run())
 
         # Call the asynchronous function to start the collectors and pipeline
-        asyncio.run(run_sequence(process_collector=proc_collector))
+        asyncio.run(run_sequence(metrics=metrics_collector))
 
         # Collect pool statuses here
         status = []
@@ -86,44 +86,37 @@ class TaskSequence:
         # Close all training and exam pools that may remain open after the pipeline finishes
         while not self.complete:
 
-            for task in self.sequence:
+            # Loop over tasks in the sequence and filter out actions by checking for pools
+            for task in (t for t in self.sequence if hasattr(t, 'pool')):
 
-                # Check if a pool exists (to filter out actions) and has been completed.
-                if hasattr(task, 'pool'):
+                # Get the last reason for closing a pool: should be 'MANUAL' or 'COMPLETED',
+                # can also be None.
+                pool_status = self.client.get_pool(pool_id=task.pool.id).last_close_reason
 
-                    pool_status = self.client.get_pool(pool_id=task.pool.id).last_close_reason
+                if pool_status is not None and pool_status.value in ['COMPLETED', 'MANUAL']:
 
-                    if pool_status is not None and pool_status.value == 'COMPLETED':
+                    if self.client.get_pool(pool_id=task.pool.id).is_closed():
+
+                        status.append(True)
+
+                    else:
 
                         self.client.close_pool(pool_id=task.pool.id)
 
-                        status.append(self.client.get_pool(pool_id=task.pool.id).is_open())
-
                         msg.info(f'Closed pool with ID {task.pool.id}')
 
+                # Check if there is a training pool that should be closed
                 if hasattr(task, 'training') and task.training is not None:
 
-                    pool_status = self.client.get_pool(pool_id=task.pool.id).last_close_reason
+                    if self.client.get_pool(pool_id=task.training.id).is_closed():
 
-                    if pool_status is not None and pool_status.value == 'COMPLETED':
+                        status.append(True)
 
-                        # Close main pool first, then the training
-                        self.client.close_pool(pool_id=task.pool.id)
+                    else:
 
-                        # Append current status to the collector
-                        status.append(self.client.get_pool(pool_id=task.pool.id).is_open())
+                        self.client.close_pool(pool_id=task.training.id)
 
-                        msg.info(f'Closed pool with ID {task.pool.id}')
-
-                        if self.client.get_pool(pool_id=task.training.id).is_open():
-
-                            # Close training pool
-                            self.client.close_pool(pool_id=task.training.id)
-
-                            # Append current training status to the collector
-                            status.append(self.client.get_pool(pool_id=task.training.id).is_open())
-
-                            msg.info(f'Closed pool with ID {task.training.id}')
+                        msg.info(f'Closed pool with ID {task.training.id}')
 
             if all(status):
 
@@ -202,7 +195,7 @@ class TaskSequence:
 
             self.pipeline.register(observer=p_observer)
 
-            msg.info(f'Registered a pool observer for task {name} ({tasks[name].pool.id})')
+            msg.info(f'Registered a pool status observer for task {name} ({tasks[name].pool.id})')
 
         # Register each pool analytics observer
         for name, pa_observer in pa_observers.items():

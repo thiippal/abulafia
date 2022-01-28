@@ -401,7 +401,7 @@ def status_change(pool: Pool) -> None:
         msg.info(f'Opened pool with ID {pool.id}')
 
 
-def create_process_collector(task_sequence) -> MetricCollector:
+def create_metrics(task_sequence) -> MetricCollector:
     """
     This function creates Toloka MetricCollector objects for tracking the progress of pools in a
     task sequence.
