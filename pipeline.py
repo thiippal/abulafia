@@ -2,7 +2,7 @@
 
 import asyncio
 import datetime
-from observers import AnalyticsObserver, NeverStops
+from observers import AnalyticsObserver
 from core_functions import *
 from toloka.client.actions import ChangeOverlap
 from toloka.client.collectors import AssignmentsAssessment
