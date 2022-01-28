@@ -2,7 +2,7 @@
 
 import asyncio
 import datetime
-from observers import AnalyticsObserver
+from observers import AnalyticsObserver, NeverStops
 from core_functions import *
 from toloka.client.actions import ChangeOverlap
 from toloka.client.collectors import AssignmentsAssessment
@@ -47,120 +47,116 @@ class TaskSequence:
 
     def start(self):
 
-            msg.info(f'Starting the task sequence')
+        msg.info(f'Starting the task sequence')
 
-            # Open all pools in the sequence that contain tasks. Note that pools without tasks cannot
-            # be opened: they will be opened when tasks are added to them by these initial tasks.
+        # Open all pools in the sequence that contain tasks. Note that pools without tasks cannot
+        # be opened: they will be opened when tasks are added to them by these initial tasks.
+        for task in self.sequence:
+
+            if hasattr(task, 'tasks') and task.tasks is not None:
+
+                self.client.open_pool(pool_id=task.pool.id)
+
+            if hasattr(task, 'training') and task.training is not None:
+
+                self.client.open_pool(pool_id=task.training.id)
+
+        # Set up a Toloka MetricCollectors for all pools
+        proc_collector = create_process_collector(task_sequence=self)
+
+        # Define an asynchronous function to run the MetricCollector and
+        # the Pipeline objects at the same time
+        async def run_sequence(process_collector):
+
+            # The 'ensure_future' method allows running the MetricCollector
+            # in a fire-and-forget manner
+            if process_collector is not None:
+
+                asyncio.ensure_future(process_collector.run())
+
+            # The Pipeline object needs to be awaited
+            await asyncio.gather(self.pipeline.run())
+
+        # Call the asynchronous function to start the collectors and pipeline
+        asyncio.run(run_sequence(process_collector=proc_collector))
+
+        # Collect pool statuses here
+        status = []
+
+        # Close all training and exam pools that may remain open after the pipeline finishes
+        while not self.complete:
+
             for task in self.sequence:
 
-                if hasattr(task, 'tasks') and task.tasks is not None:
+                # Check if a pool exists (to filter out actions) and has been completed.
+                if hasattr(task, 'pool'):
 
-                    # Open main pool
-                    self.client.open_pool(pool_id=task.pool.id)
+                    pool_status = self.client.get_pool(pool_id=task.pool.id).last_close_reason
+
+                    if pool_status is not None and pool_status.value == 'COMPLETED':
+
+                        self.client.close_pool(pool_id=task.pool.id)
+
+                        status.append(self.client.get_pool(pool_id=task.pool.id).is_open())
+
+                        msg.info(f'Closed pool with ID {task.pool.id}')
 
                 if hasattr(task, 'training') and task.training is not None:
 
-                    # Open training pool
-                    self.client.open_pool(pool_id=task.training.id)
+                    pool_status = self.client.get_pool(pool_id=task.pool.id).last_close_reason
 
-            # Set up a Toloka MetricCollectors for all pools
-            proc_collector = create_process_collector(task_sequence=self)
+                    if pool_status is not None and pool_status.value == 'COMPLETED':
 
-            # Define an asynchronous function to run the MetricCollector and
-            # the Pipeline objects at the same time
-            async def main():
+                        # Close main pool first, then the training
+                        self.client.close_pool(pool_id=task.pool.id)
 
-                # The 'ensure_future' method allows running the MetricCollector
-                # in a fire-and-forget manner
-                if proc_collector is not None:
+                        # Append current status to the collector
+                        status.append(self.client.get_pool(pool_id=task.pool.id).is_open())
 
-                    asyncio.ensure_future(proc_collector.run())
+                        msg.info(f'Closed pool with ID {task.pool.id}')
 
-                # TODO The pipeline will not keep running without proc_collector
+                        if self.client.get_pool(pool_id=task.training.id).is_open():
 
-                # The Pipeline object needs to be awaited
-                await asyncio.gather(self.pipeline.run())
+                            # Close training pool
+                            self.client.close_pool(pool_id=task.training.id)
 
-            # Call the asynchronous function to start the collectors and pipeline
-            asyncio.run(main())
+                            # Append current training status to the collector
+                            status.append(self.client.get_pool(pool_id=task.training.id).is_open())
 
-            # Collect pool statuses here
-            status = []
+                            msg.info(f'Closed pool with ID {task.training.id}')
 
-            # Close all training and exam pools that may remain open after the pipeline finishes
-            while not self.complete:
+            if all(status):
 
-                for task in self.sequence:
+                self.complete = True
 
-                    # Check if a pool exists (to filter out actions) and has been completed.
-                    if hasattr(task, 'pool'):
+                msg.good(f'Successfully completed the task sequence')
 
-                        pool_status = self.client.get_pool(pool_id=task.pool.id).last_close_reason
+        # Check the outputs
+        if self.complete:
 
-                        if pool_status is not None and pool_status.value == 'COMPLETED':
+            exit()
 
-                            self.client.close_pool(pool_id=task.pool.id)
+            # Check if tasks are supposed to output the results
+            for task in self.sequence:
 
-                            status.append(self.client.get_pool(pool_id=task.pool.id).is_open())
+                if hasattr(task, 'pool'):
 
-                            msg.info(f'Closed pool with ID {task.pool.id}')
+                    # Get the output DataFrame for each task; assign under 'output_data'
+                    task.output_data = self.client.get_assignments_df(pool_id=task.pool.id)
 
-                    if hasattr(task, 'training') and task.training is not None:
+                    # Check if the output should be written to disk
+                    try:
 
-                        pool_status = self.client.get_pool(pool_id=task.pool.id).last_close_reason
+                        if task.conf['actions'] is not None and 'output' in task.conf['actions']:
 
-                        if pool_status is not None and pool_status.value == 'COMPLETED':
+                            # Write the DataFrame to disk
+                            task.output_data.to_csv(f'{task.name}_{task.pool.id}.csv')
 
-                            # Close main pool first, then the training
-                            self.client.close_pool(pool_id=task.pool.id)
+                            msg.good(f'Wrote data for task {task.name} ({task.pool.id}) to disk.')
 
-                            # Append current status to the collector
-                            status.append(self.client.get_pool(pool_id=task.pool.id).is_open())
+                    except KeyError:
 
-                            msg.info(f'Closed pool with ID {task.pool.id}')
-
-                            if self.client.get_pool(pool_id=task.training.id).is_open():
-
-                                # Close training pool
-                                self.client.close_pool(pool_id=task.training.id)
-
-                                # Append current training status to the collector
-                                status.append(self.client.get_pool(pool_id=task.training.id).is_open())
-
-                                msg.info(f'Closed pool with ID {task.training.id}')
-
-                if all(status):
-
-                    self.complete = True
-
-                    msg.good(f'Successfully completed the task sequence')
-
-            # Check the outputs
-            if self.complete:
-                
-                exit()
-
-                # Check if tasks are supposed to output the results
-                for task in self.sequence:
-
-                    if hasattr(task, 'pool'):
-
-                        # Get the output DataFrame for each task; assign under 'output_data'
-                        task.output_data = self.client.get_assignments_df(pool_id=task.pool.id)
-
-                        # Check if the output should be written to disk
-                        try:
-
-                            if task.conf['actions'] is not None and 'output' in task.conf['actions']:
-
-                                # Write the DataFrame to disk
-                                task.output_data.to_csv(f'{task.name}_{task.pool.id}.csv')
-
-                                msg.good(f'Wrote data for task {task.name} ({task.pool.id}) to disk.')
-
-                        except KeyError:
-
-                            pass
+                        pass
 
     def create_pipeline(self):
 
@@ -168,15 +164,16 @@ class TaskSequence:
         async_client = AsyncMultithreadWrapper(self.client)
 
         # Loop over the tasks and create an AssignmentsObserver object for each task. Exam tasks
-        # do not require observers, and they do not create further tasks.
+        # do not require AssignmentsObservers, because they do not create further tasks to be
+        # forwarded.
         a_observers = {task.name: AssignmentsObserver(async_client, task.pool.id)
                        for task in self.sequence if hasattr(task, 'pool')
                        and not task.exam if hasattr(task, 'pool')}
 
-        # Set up pool observers for monitoring all pool states
+        # Set up pool observers for monitoring all pool states, including exams. These observers
+        # are needed for the Pipeline to run correctly: a Pipeline cannot run without observers.
         p_observers = {task.name: PoolStatusObserver(async_client, task.pool.id)
-                       for task in self.sequence if hasattr(task, 'pool')
-                       and not task.exam if hasattr(task, 'pool')}
+                       for task in self.sequence if hasattr(task, 'pool')}
 
         # Set up pool analytics observers for monitoring exam pools
         pa_observers = {task.name: AnalyticsObserver(async_client, task.pool,
@@ -214,7 +211,7 @@ class TaskSequence:
 
             msg.info(f'Registered a pool analytics observer for task {name} ({tasks[name].pool.id})')
 
-        # Loop over the observers and get the actions configuration to determine task flow
+        # Loop over the assignment observers and get the actions configuration to determine task flow
         for name, observer in a_observers.items():
 
             # Get the CrowdsourcingTask object from the TaskSequence by matching its name
