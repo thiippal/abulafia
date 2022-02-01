@@ -61,7 +61,7 @@ class AnalyticsObserver(BaseObserver):
                         msg.info(f'{response["result"]} workers submitted to pool {self.pool.id}')
 
             # If the operation is completed, reset the operation
-            if operation.status in ['SUCCESS', 'FAIL']:
+            if operation.status.value in ['SUCCESS', 'FAIL']:
 
                 self.operation = None
 
