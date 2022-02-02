@@ -3,7 +3,7 @@
 import asyncio
 import datetime
 from observers import AnalyticsObserver
-from core_functions import *
+from functions.core_functions import *
 from toloka.client.actions import ChangeOverlap
 from toloka.client.collectors import AssignmentsAssessment
 from toloka.client.conditions import AssessmentEvent

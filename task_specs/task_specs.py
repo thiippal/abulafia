@@ -1,9 +1,9 @@
 # -*- coding: utf-8 -*-
 
 # Import libraries
-from core_functions import *
+from functions.core_functions import *
 from wasabi import Printer
-from core_task import CrowdsourcingTask
+from .core_task import CrowdsourcingTask
 import toloka.client as toloka
 import toloka.client.project.template_builder as tb
 
