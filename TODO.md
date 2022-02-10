@@ -3,6 +3,7 @@
 ## Resources
 
 - Documentation for [Toloka-Kit](https://toloka.ai/docs/toloka-kit/)
+- Repository for Toloka-Kit [examples](https://github.com/Toloka/toloka-kit/tree/main/examples)
 - [Toloka Sandbox](https://sandbox.toloka.yandex.com/) and [documentation](https://toloka.ai/docs/guide/concepts/sandbox.html)
 
 ## Bigger things
