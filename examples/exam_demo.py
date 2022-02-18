@@ -8,7 +8,7 @@ import json
 import toloka.client as toloka
 
 # Read the credentials from the JSON file
-with open('creds.json') as cred_f:
+with open('../creds.json') as cred_f:
 
     creds = json.loads(cred_f.read())
     tclient = toloka.TolokaClient(creds['token'], creds['mode'])
