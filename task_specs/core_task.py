@@ -528,11 +528,11 @@ class CrowdsourcingTask:
                 if 'fast_responses' in self.qual_conf:
 
                     # Unpack rules into variables
-                    history_size = self.qual_conf['fast_responses'][0]
-                    count = self.qual_conf['fast_responses'][1]
-                    threshold = self.qual_conf['fast_responses'][2]
-                    duration = self.qual_conf['fast_responses'][3]
-                    units = self.qual_conf['fast_responses'][4].upper()
+                    history_size = self.qual_conf['fast_responses']['history_size']
+                    count = self.qual_conf['fast_responses']['count']
+                    threshold = self.qual_conf['fast_responses']['threshold']
+                    duration = self.qual_conf['fast_responses']['ban_duration']
+                    units = self.qual_conf['fast_responses']['ban_units'].upper()
 
                     # Add quality control rule to the pool
                     self.pool.quality_control.add_action(
@@ -556,9 +556,9 @@ class CrowdsourcingTask:
                 if 'skipped_assignments' in self.qual_conf:
 
                     # Unpack rules into variables
-                    count = self.qual_conf['skipped_assignments'][0]
-                    duration = self.qual_conf['fast_responses'][3]
-                    units = self.qual_conf['fast_responses'][4].upper()
+                    count = self.qual_conf['skipped_assignments']['count']
+                    duration = self.qual_conf['fast_responses']['ban_duration']
+                    units = self.qual_conf['fast_responses']['ban_units'].upper()
 
                     # Add quality control rule to the pool
                     self.pool.quality_control.add_action(
@@ -567,10 +567,14 @@ class CrowdsourcingTask:
                         action=toloka.actions.RestrictionV2(
                             scope=toloka.user_restriction.UserRestriction.PROJECT,
                             duration=duration,
-                            units=units,
+                            duration_unit=units,
                             private_comment='Skipped assignments'
                         )
                     )
+
+                    # Print status message
+                    msg.good(f'Added quality control rule: ban for {duration} {units.lower()} if '
+                             f'user skipped {count} assignments in a row.')
 
                 # Set up quality control rule for re-assigning work from banned users
                 if 'redo_banned' in self.qual_conf:
@@ -584,6 +588,36 @@ class CrowdsourcingTask:
                                         == toloka.conditions.PoolAccessRevokedReason.RESTRICTION],
                             action=toloka.actions.ChangeOverlap(delta=1, open_pool=True)
                         )
+
+                
+                # Set up captcha quality control
+                if 'captcha' in self.qual_conf:
+
+                    # Unpack rules into variables 
+                    freq = self.qual_conf['captcha']['frequency'].upper()
+                    success_rate = self.qual_conf['captcha']['success_rate']
+                    duration = self.qual_conf['captcha']['ban_duration']
+                    units = self.qual_conf['captcha']['ban_units'].upper()
+
+                    # Set captcha frequency according to configuration
+                    self.pool.set_captcha_frequency(freq)
+
+                    # Add quality control rule to the pool
+                    self.pool.quality_control.add_action(
+                        collector=toloka.collectors.Captcha(),
+                        conditions=[toloka.conditions.SuccessRate < success_rate],
+                        action=toloka.actions.RestrictionV2(
+                            scope=toloka.user_restriction.UserRestriction.PROJECT,
+                            duration=duration,
+                            duration_unit=units,
+                            private_comment="Too many Captcha mistakes"
+                        )
+                    )
+
+                    # Print status message
+                    msg.good(f"Added quality control rule: ban for {duration} {units.lower()} if "
+                             f"user's CAPTCHA sucesss rate is less than {success_rate}%. "
+                             f"CAPTCHA frequency is set to {freq}.")
 
             # Check if the pool is an exam pool
             if 'exam' in self.pool_conf.keys():
