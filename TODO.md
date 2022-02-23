@@ -14,6 +14,7 @@
 
 ## Smaller things
 
+- Enable user to configure task forwarding based on assignment result (e.g. if the result is True, forward to pool X; if False, forward to pool Y). ⛔
 - Implement aggregation methods e.g. using [Crowd-Kit](https://github.com/Toloka/crowd-kit) into the [Actions](https://github.com/crowdsrc-uh/abulafia/blob/main/actions/actions.py) submodule ⛔
 - Add new interfaces for various basic tasks (text annotation, classification, etc.) ⛔
 - Remove deprecated [filters](https://toloka.ai/docs/guide/concepts/filters.html?lang=en), such as [rating](https://github.com/crowdsrc-uh/abulafia/blob/c186307d53d4f584e1bc4de939f0c56f6116bc70/task_specs/core_task.py#L413) ⛔
