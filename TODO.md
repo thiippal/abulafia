@@ -24,5 +24,6 @@
 
 ## Nice-to-haves
 
-- Improved pool tracking (e.g. prevent printing updates to stdout if no progress has been made) ⛔
+- Improved pool tracking (e.g. prevent printing updates to stdout if no progress has been made) ✅
+- Improved pool tracking for [pool progress](https://github.com/crowdsrc-uh/abulafia/blob/main/functions/core_functions.py#L449) ⛔
 - Better handling of Toloka-specific errors (e.g. "operation not allowed" etc.) ⛔
