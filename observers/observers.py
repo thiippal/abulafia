@@ -22,6 +22,7 @@ class AnalyticsObserver(BaseObserver):
         self.pool = pool
         self.limit = options['max_performers'] if options and 'max_performers' in options else None
         self.limit_reached = False
+        self.prev_result = None
 
     async def __call__(self):
 
@@ -58,7 +59,12 @@ class AnalyticsObserver(BaseObserver):
 
                     if response['request']['name'] == 'unique_workers_count' and not self.limit_reached:
 
-                        msg.info(f'{response["result"]} workers submitted to pool {self.pool.id}')
+                        # Check if number of submissions has changed: only print update 
+                        # if there has been a change.
+                        if response['result'] != self.prev_result:
+                            
+                            msg.info(f'{response["result"]} workers submitted to pool {self.pool.id}')
+                            self.prev_result = response["result"]
 
             # If the operation is completed, reset the operation
             if operation.status.value in ['SUCCESS', 'FAIL']:
