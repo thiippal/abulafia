@@ -409,6 +409,8 @@ class CrowdsourcingTask:
                         self.pool.filter = set_filter(filters=self.pool.filter,
                                                       new_filters=clients)
 
+                # TODO remove deprecated filters (rating)
+
                 # Check if workers should be filtered based on rating
                 if 'rating' in self.pool_conf['filter'].keys():
 
@@ -477,6 +479,8 @@ class CrowdsourcingTask:
                             # Check for existing filters and set
                             self.pool.filter = set_filter(filters=self.pool.filter,
                                                           new_filters=skill)
+                                                        
+                # TODO missing filters: AdultAllowed, City, Country, Gender, DateOfBirth, UserAgentType?
 
                 # Print status message
                 msg.good(f'Finished adding filters to the pool')
@@ -616,8 +620,92 @@ class CrowdsourcingTask:
 
                     # Print status message
                     msg.good(f"Added quality control rule: ban for {duration} {units.lower()} if "
-                             f"user's CAPTCHA sucesss rate is less than {success_rate}%. "
+                             f"user's CAPTCHA success rate is less than {success_rate}%. "
                              f"CAPTCHA frequency is set to {freq}.")
+
+                # Set up GoldenSet quality control (performance on control tasks)
+                if 'golden_set' in self.qual_conf:
+
+                    # How many previous answers to control tasks to consider
+                    history_size = self.qual_conf['golden_set']['history_size']
+
+                    # Ban user if they fail control tasks with a rate higher than the threshold
+                    if 'ban_rules' in self.qual_conf['golden_set']:
+
+                        # Unpack rules into variables
+                        incorrect_threshold = self.qual_conf['golden_set']['ban_rules']['incorrect_threshold']
+                        ban_duration = self.qual_conf['golden_set']['ban_rules']['ban_duration']
+                        ban_units = self.qual_conf['golden_set']['ban_rules']['ban_units']
+
+                        self.pool.quality_control.add_action(
+                            collector=toloka.collectors.GoldenSet(history_size=history_size),
+                            conditions=[toloka.conditions.GoldenSetIncorrectAnswersRate > incorrect_threshold],
+                            action=toloka.actions.RestrictionV2(
+                                scope=toloka.user_restriction.UserRestriction.PROJECT,
+                                duration=ban_duration,
+                                duration_unit=ban_units,
+                                private_comment="Fails control tasks too often"
+                            )
+                        )
+
+                        # Print status message
+                        msg.good(f"Added quality control rule: ban for {ban_duration} {ban_units.lower()} if "
+                                 f"user fails over {incorrect_threshold}% of control tasks.")
+                    
+                    # Automatically reject assignments from user if they often fail control tasks
+                    if 'reject_rules' in self.qual_conf['golden_set']:
+
+                        incorrect_threshold = self.qual_conf['golden_set']['reject_rules']['incorrect_threshold']
+
+                        self.pool.quality_control.add_action(
+                            collector=toloka.collectors.GoldenSet(history_size=history_size),
+                            conditions=[toloka.conditions.GoldenSetIncorrectAnswersRate > incorrect_threshold],
+                            action=toloka.actions.RejectAllAssignments(
+                                public_comment="Failed too many control tasks"
+                            )
+                        )
+
+                        # Print status message
+                        msg.good(f"Added quality control rule: Reject all user's assignments if "
+                                 f"user fails over {incorrect_threshold}% of control tasks.")
+                    
+
+                    # Automatically approve assignments from user if they are successful in control tasks
+                    if 'approve_rules' in self.qual_conf['golden_set']:
+
+                        correct_threshold = self.qual_conf['golden_set']['approve_rules']['correct_threshold']
+
+                        self.pool.quality_control.add_action(
+                            collector=toloka.collectors.GoldenSet(history_size=history_size),
+                            conditions=[toloka.conditions.GoldenSetCorrectAnswersRate > correct_threshold],
+                            action=toloka.actions.ApproveAllAssignments()
+                        )
+
+                        # Print status message
+                        msg.good(f"Added quality control rule: Approve all user's assignments if "
+                                 f"user successfully completes over {correct_threshold}% of control tasks.")
+
+
+                    # Set a skill for user if they are successful in control tasks
+                    if 'skill_rules' in self.qual_conf['golden_set']:
+                        
+                        # Unpack rules into variables
+                        correct_threshold = self.qual_conf['golden_set']['skill_rules']['correct_threshold']
+                        skill_id = self.qual_conf['golden_set']['skill_rules']['skill_id']
+                        skill_value = self.qual_conf['golden_set']['skill_rules']['skill_value']
+
+                        self.pool.quality_control.add_action(
+                            collector=toloka.collectors.GoldenSet(history_size=history_size),
+                            conditions=[toloka.conditions.GoldenSetCorrectAnswersRate > correct_threshold],
+                            action=toloka.actions.SetSkill(skill_id=skill_id, skill_value=skill_value)
+                        )
+
+                        # Print status message
+                        msg.good(f"Added quality control rule: Grant user a skill value {skill_value} for skill "
+                                 f"{skill_id} if user successfully completes over {correct_threshold}% of control tasks.")
+
+                # TODO rest of quality control rules
+
 
             # Check if the pool is an exam pool
             if 'exam' in self.pool_conf.keys():
