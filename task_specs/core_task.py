@@ -480,7 +480,151 @@ class CrowdsourcingTask:
                             self.pool.filter = set_filter(filters=self.pool.filter,
                                                           new_filters=skill)
                                                         
-                # TODO missing filters: AdultAllowed, City, Country, Gender, DateOfBirth, UserAgentType?
+                                                        
+                # Check if workers should be filtered based on gender
+                if 'gender' in self.pool_conf['filter'].keys():
+
+                    choice = self.pool_conf['filter']['gender'].upper()
+                    gender = (toloka.filter.Gender == choice)
+
+                    self.pool.filter = set_filter(filters=self.pool.filter,
+                                                  new_filters=gender)
+
+                
+                # Check if workers should be filtered based on whether they allow
+                # adult content or not
+                if 'adult_allowed' in self.pool_conf['filter'].keys():
+
+                    choice = bool(self.pool_conf['filter']['adult_allowed'])
+
+                    adult_allowed = (toloka.filter.AdultAllowed == choice)
+
+                    self.pool.filter = set_filter(filters=self.pool.filter,
+                                                  new_filters=adult_allowed)
+
+                
+                # Check if workers should be filtered based on country
+                if 'country' in self.pool_conf['filter'].keys():
+
+                    # Check if only one country has been defined
+                    if len(self.pool_conf['filter']['country']) == 1:
+
+                        # Create filter
+                        country = (toloka.filter.Country ==
+                                   self.pool_conf['filter']['country'][0].upper())
+
+                        # Check for existing filters and set
+                        self.pool.filter = set_filter(filters=self.pool.filter,
+                                                      new_filters=country)
+
+                    # Check if more than one country has been defined
+                    if len(self.pool_conf['filter']['country']) > 1:
+
+                        # Create filters
+                        levels = [(toloka.filter.Country == c.upper()) for c in
+                                  self.pool_conf['filter']['country']]
+
+                        # Combine filters
+                        levels = toloka.filter.FilterOr(levels)
+
+                        # Check for existing filters and set
+                        self.pool.filter = set_filter(filters=self.pool.filter,
+                                                      new_filters=levels)
+                    
+                
+                # Check if workers should be filtered based on city
+                if 'city' in self.pool_conf['filter'].keys():
+
+                    # Check if only one city has been defined
+                    if len(self.pool_conf['filter']['city']) == 1:
+
+                        # Create filter
+                        city = (toloka.filter.City ==
+                                   int(self.pool_conf['filter']['city'][0]))
+
+                        # Check for existing filters and set
+                        self.pool.filter = set_filter(filters=self.pool.filter,
+                                                      new_filters=city)
+
+                    # Check if more than one city has been defined
+                    if len(self.pool_conf['filter']['city']) > 1:
+
+                        # Create filters
+                        levels = [(toloka.filter.City == int(c)) for c in
+                                  self.pool_conf['filter']['city']]
+
+                        # Combine filters
+                        levels = toloka.filter.FilterOr(levels)
+
+                        # Check for existing filters and set
+                        self.pool.filter = set_filter(filters=self.pool.filter,
+                                                      new_filters=levels)
+
+
+                # Filter performers by date of birth (before or after a certain date or both)
+                # Note that date of birth needs to be expressed as a UNIX timestamp
+
+                # TODO converter from datetime to UNIX timestamp, so date can be configured as 
+                # a date in the configuration file
+                if 'date_of_birth' in self.pool_conf['filter'].keys():
+
+                    if len(self.pool_conf['filter']['date_of_birth']) == 1:
+                        
+                        if 'before' in self.pool_conf['filter']['date_of_birth'].keys():
+                            
+                            before = self.pool_conf['filter']['date_of_birth']['before']
+                            b_filter = (toloka.filter.DateOfBirth <= before)
+                            self.pool.filter = set_filter(filters=self.pool.filter,
+                                                          new_filters=b_filter)
+
+                        if 'after' in self.pool_conf['filter']['date_of_birth'].keys():
+                            
+                            after = self.pool_conf['filter']['date_of_birth']['after']
+                            a_filter = (toloka.filter.DateOfBirth >= after)
+                            self.pool.filter = set_filter(filters=self.pool.filter,
+                                                          new_filters=a_filter)
+
+                    if len(self.pool_conf['filter']['date_of_birth']) > 1:
+
+                        before = self.pool_conf['filter']['date_of_birth']['before']
+                        after = self.pool_conf['filter']['date_of_birth']['after']
+
+                        ba_filters = [(toloka.filter.DateOfBirth <= before), (toloka.filter.DateOfBirth >= after)]
+                        levels = toloka.filter.FilterAnd(ba_filters)
+
+                        self.pool.filter = set_filter(filters=self.pool.filter,
+                                                      new_filters=levels)
+
+                    
+                # Check if workers should be filtered based on UserAgentType
+                if 'user_agent_type' in self.pool_conf['filter'].keys():
+
+                    # Check if only one agent type has been defined
+                    if len(self.pool_conf['filter']['user_agent_type']) == 1:
+
+                        # Create filter
+                        agent = (toloka.filter.UserAgentType ==
+                                   self.pool_conf['filter']['user_agent_type'][0].upper())
+
+                        # Check for existing filters and set
+                        self.pool.filter = set_filter(filters=self.pool.filter,
+                                                      new_filters=agent)
+
+                    # Check if more than one user agent has been defined
+                    if len(self.pool_conf['filter']['user_agent_type']) > 1:
+
+                        # Create filters
+                        levels = [(toloka.filter.UserAgentType == agent.upper()) for agent in
+                                  self.pool_conf['filter']['user_agent_type']]
+
+                        # Combine filters
+                        levels = toloka.filter.FilterOr(levels)
+
+                        # Check for existing filters and set
+                        self.pool.filter = set_filter(filters=self.pool.filter,
+                                                      new_filters=levels)
+
+                # TODO missing filters
 
                 # Print status message
                 msg.good(f'Finished adding filters to the pool')

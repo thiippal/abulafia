@@ -9,7 +9,7 @@ interface:
   prompt: Does the diagram contain text, letters or numbers?
 project:
   setup:
-    public_name: Check if an image contains text, letters or numbers
+    public_name: FILTER TEST Check if an image contains text, letters or numbers
     public_description: Look at diagrams from science textbooks and state if they
       contain text, letters or numbers.
   instructions: data/instructions.html
@@ -27,6 +27,12 @@ pool:
     golden_tasks_count: 0
     training_tasks_count: 0
   filter:
+    gender: FEMALE
+    adult_allowed: true
+    country:
+      - FI
+    date_of_birth:
+      after: 326066400
 quality_control:
   fast_responses:
     history_size: 5
