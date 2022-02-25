@@ -13,11 +13,11 @@ with open('../creds.json') as cred_f:
     creds = json.loads(cred_f.read())
     tclient = toloka.TolokaClient(creds['token'], creds['mode'])
 
-# Create an ImageClassification task
-outline = ImageClassification(configuration='tasks/test_qa_2.yaml', client=tclient)
+# Create an ImageClassification task with training and exam
+exam = ImageClassification(configuration='tasks/test_qa.yaml', client=tclient)
 
 # Add the task into a TaskSequence
-sequence = TaskSequence(sequence=[outline], client=tclient)
+sequence = TaskSequence(sequence=[exam], client=tclient)
 
 # Start the sequence; create tasks on Toloka
 sequence.start()

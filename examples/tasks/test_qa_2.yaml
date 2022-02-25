@@ -1,0 +1,58 @@
+name: detect_text
+data:
+  file: data/ai2d-rst_test_5.tsv
+  input:
+    image: url
+  output:
+    result: bool
+interface:
+  prompt: Does the diagram contain text, letters or numbers?
+project:
+  setup:
+    public_name: Check if an image contains text, letters or numbers
+    public_description: Look at diagrams from science textbooks and state if they
+      contain text, letters or numbers.
+  instructions: data/instructions.html
+pool:
+  setup:
+    private_name: Detect text
+    reward_per_assignment: 0.1
+    assignment_max_duration_seconds: 600
+    auto_accept_solutions: false
+  defaults:
+    default_overlap_for_new_tasks: 1
+    default_overlap_for_new_task_suites: 1
+  mixer:
+    real_tasks_count: 2
+    golden_tasks_count: 0
+    training_tasks_count: 0
+  filter:
+quality_control:
+  fast_responses:
+    history_size: 5
+    count: 3
+    threshold: 2
+    ban_duration: 7
+    ban_units: DAYS
+  skipped_assignments:
+    count: 3
+    ban_duration: 7
+    ban_units: DAYS
+  redo_banned:
+  captcha:
+    frequency: HIGH
+    success_rate: 100
+    ban_duration: 7
+    ban_units: DAYS
+  golden_set:
+    history_size: 10
+    ban_rules:
+      incorrect_threshold: 20
+      ban_duration: 7
+      ban_units: DAYS
+    reject_rules:
+      incorrect_threshold: 20
+    approve_rules:
+      correct_threshold: 80
+
+    
