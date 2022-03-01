@@ -4,6 +4,7 @@ import asyncio
 import datetime
 from observers import AnalyticsObserver
 from functions.core_functions import *
+from actions import Forward
 from toloka.client.actions import ChangeOverlap
 from toloka.client.collectors import AssignmentsAssessment
 from toloka.client.conditions import AssessmentEvent
@@ -182,9 +183,20 @@ class TaskSequence:
 
         # Register each assignment observer with the Pipeline object
         for name, a_observer in a_observers.items():
+            
+            if tasks[name].conf['forward'] is not None:
+
+                # Initialize a Forward object that forwards assignments to pools based on
+                # output value
+                forwarder = Forward(tasks[name].conf, tasks[name])
+
+                # Call forwarder on each assignment submission
+                a_observer.on_submitted(lambda a: forwarder(a))
+
+                msg.info(f"Added forwarder to assignments observer")
 
             self.pipeline.register(observer=a_observer)
-
+            
             msg.info(f'Registered an assignments observer for task {name} ({tasks[name].pool.id})')
 
         # Register each pool observer and actions

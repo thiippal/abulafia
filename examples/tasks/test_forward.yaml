@@ -9,7 +9,7 @@ interface:
   prompt: Does the diagram contain text, letters or numbers?
 project:
   setup:
-    public_name: FILTER TEST Check if an image contains text, letters or numbers
+    public_name: FORWARD TEST Check if an image contains text, letters or numbers
     public_description: Look at diagrams from science textbooks and state if they
       contain text, letters or numbers.
   instructions: data/instructions.html
@@ -23,16 +23,13 @@ pool:
     default_overlap_for_new_tasks: 1
     default_overlap_for_new_task_suites: 1
   mixer:
-    real_tasks_count: 2
+    real_tasks_count: 1
     golden_tasks_count: 0
     training_tasks_count: 0
   filter:
-    gender: FEMALE
     adult_allowed: true
     country:
       - FI
-    date_of_birth:
-      after: 326066400
 quality_control:
   fast_responses:
     history_size: 5
@@ -46,8 +43,8 @@ quality_control:
     ban_units: DAYS
   redo_banned:
   captcha:
-    frequency: HIGH
-    success_rate: 100
+    frequency: LOW
+    success_rate: 80
     ban_duration: 7
     ban_units: DAYS
   golden_set:
@@ -60,5 +57,21 @@ quality_control:
       incorrect_threshold: 20
     approve_rules:
       correct_threshold: 80
-
-    
+forward:
+  boolean:
+    # Pools need to exist
+    true_pool: 
+      id: 1117533
+    false_pool: 
+      id: 1117531
+  # Rough idea for how to forward string outputs; not actually implemented
+  string:
+    pool1:
+      id: 1117417
+      output: output1
+    pool2:
+      id: 1117408
+      output: output2
+    pool3:
+      id: 1117386
+      output: output3

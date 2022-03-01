@@ -14,7 +14,7 @@ with open('../creds.json') as cred_f:
     tclient = toloka.TolokaClient(creds['token'], creds['mode'])
 
 # Create an ImageClassification task
-outline = ImageClassification(configuration='tasks/test_qa_2.yaml', client=tclient)
+outline = ImageClassification(configuration='tasks/test_forward.yaml', client=tclient)
 
 # Add the task into a TaskSequence
 sequence = TaskSequence(sequence=[outline], client=tclient)

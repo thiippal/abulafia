@@ -3,6 +3,7 @@
 # Import libraries
 from functions.core_functions import *
 from wasabi import Printer
+import toloka.client as toloka
 from toloka.streaming.event import AssignmentEvent
 from toloka.client.exceptions import IncorrectActionsApiError
 from typing import List
@@ -97,7 +98,7 @@ class Aggregate:
     """
     This class can be used to aggregate crowdsourced answers.
     """
-    def __init__(self, configuration):
+    def __init__(self, configuration, task):
 
         self.conf = read_configuration(configuration)
 
@@ -112,12 +113,88 @@ class Forward:
 
     For example, if a task receives the value True, it can be forwarded to Pool 1, whereas tasks with value False
     will be forwarded to Pool 2.
+
+    Parameters:
+        configuration: A dict that includes the configuration for a CrowdsourcingTask object.
+        task: An object that inherits from the CrowdsourcingTask class.
+
+    Returns:
+        None
     """
 
-    def __init__(self, configuration):
+    def __init__(self, configuration, task):
 
-        self.conf = read_configuration(configuration)
+        self.conf = configuration
+        self.forward_conf = self.conf['forward']
+        self.client = task.client
 
-    def __call__(self):
+        # Assignments with output value 'true'
+        self.true_list = []
 
-        raise NotImplementedError
+        # Assignments with output value 'false'
+        self.false_list = []
+        
+
+    def __call__(self, events: List[AssignmentEvent]) -> None:
+
+        # Check if forwarding for boolean outputs is configured
+        if 'boolean' in self.forward_conf.keys():
+
+            # ID of pool where to forward 'true' assignments
+            true_id = self.forward_conf['boolean']['true_pool']['id']
+
+            # ID of pool where to forward 'false' assignments
+            false_id = self.forward_conf['boolean']['false_pool']['id']
+
+            # Loop over the list of incoming AssignmentEvent objects
+            for event in events:
+
+                try:
+                    # Add tasks to their defined lists based on output value
+                    self.true_list.extend([
+                        toloka.Task(
+                            pool_id=true_id,
+                            input_values=event.assignment.tasks[i].input_values
+                        )
+                        for i in range(len(event.assignment.tasks)) 
+                        if event.assignment.solutions[i].output_values['result'] == True
+                    ])
+                
+                # Catch errors
+                except toloka.exceptions.ValidationApiError:
+
+                    # Raise error
+                    raise_error(f'Failed to forward to True pool with ID {true_id} from Toloka')
+
+                try:
+                    self.false_list.extend([
+                        toloka.Task(
+                            pool_id=false_id,
+                            input_values=event.assignment.tasks[i].input_values
+                        )
+                        for i in range(len(event.assignment.tasks)) 
+                        if event.assignment.solutions[i].output_values['result'] == False
+                    ])
+                
+                except toloka.exceptions.ValidationApiError:
+
+                    # Raise error
+                    raise_error(f'Failed to forward to False pool with ID {false_id} from Toloka')
+
+            # Add tasks to defined pools
+            self.client.create_tasks(self.true_list+self.false_list, 
+                                     allow_defaults=True, open_pool=True)
+
+            # Print status if any tasks were forwarded on this call
+            if len(self.true_list) > 0:
+                msg.good(f"Successfully forwarded {len(self.true_list)} {'tasks' if len(self.true_list) > 1 else 'task'} "
+                         f"with output value True to pool {true_id}")
+
+            if len(self.false_list) > 0:
+                msg.good(f"Successfully forwarded {len(self.false_list)} {'tasks' if len(self.false_list) > 1 else 'task'} "
+                         f"with output value False to pool {false_id}")
+
+            # Tasks currently in lists have been forwarded, so reset lists
+            self.true_list = []
+            self.false_list = []
+
