@@ -13,10 +13,12 @@ project:
     public_description: Look at diagrams from science textbooks and state if they
       contain text, letters or numbers.
   instructions: data/instructions.html
+actions:
+  on_result: forward
 pool:
   setup:
     private_name: Detect text
-    reward_per_assignment: 0.1
+    reward_per_assignment: 0.01
     assignment_max_duration_seconds: 600
     auto_accept_solutions: false
   defaults:
@@ -26,52 +28,3 @@ pool:
     real_tasks_count: 1
     golden_tasks_count: 0
     training_tasks_count: 0
-  filter:
-    adult_allowed: true
-    country:
-      - FI
-quality_control:
-  fast_responses:
-    history_size: 5
-    count: 3
-    threshold: 2
-    ban_duration: 7
-    ban_units: DAYS
-  skipped_assignments:
-    count: 3
-    ban_duration: 7
-    ban_units: DAYS
-  redo_banned:
-  captcha:
-    frequency: LOW
-    success_rate: 80
-    ban_duration: 7
-    ban_units: DAYS
-  golden_set:
-    history_size: 10
-    ban_rules:
-      incorrect_threshold: 20
-      ban_duration: 7
-      ban_units: DAYS
-    reject_rules:
-      incorrect_threshold: 20
-    approve_rules:
-      correct_threshold: 80
-forward:
-  boolean:
-    # Pools need to exist
-    true_pool: 
-      id: 1117533
-    false_pool: 
-      id: 1117531
-  # Rough idea for how to forward string outputs; not actually implemented
-  string:
-    pool1:
-      id: 1117417
-      output: output1
-    pool2:
-      id: 1117408
-      output: output2
-    pool3:
-      id: 1117386
-      output: output3

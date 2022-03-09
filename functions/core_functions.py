@@ -550,7 +550,18 @@ def verify_connections(task_sequence: list) -> None:
                 # Check that the task exists in the task sequence
                 for next_task in tasks:
 
-                    if next_task not in [task.name for task in task_sequence]:
+                    # Check if multiple next tasks are configured and validate each individually
+                    if type(next_task) == dict:
+
+                        for n_task in next_task.values():
+
+                            if n_task not in [task.name for task in task_sequence]:
+
+                                raise_error(f'Cannot find a task named {n_task} in the task sequence. '
+                                            f'Please check the name of the task under the key '
+                                            f'"actions/next" in the configuration file.')
+
+                    elif next_task not in [task.name for task in task_sequence]:
 
                         raise_error(f'Cannot find a task named {next_task} in the task sequence. '
                                     f'Please check the name of the task under the key '

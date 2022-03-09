@@ -122,79 +122,54 @@ class Forward:
         None
     """
 
-    def __init__(self, configuration, task):
+    def __init__(self, configuration, task, forward_pools):
 
-        self.conf = configuration
-        self.forward_conf = self.conf['forward']
-        self.client = task.client
+        self.conf = read_configuration(configuration)
+        self.name = self.conf['name']
+        self.task = task
+        self.client = self.task.client
+        self.forward_pools = forward_pools
 
-        # Assignments with output value 'true'
-        self.true_list = []
+        # Possible outputs for the task (e.g. true and false)
+        self.outputs = self.conf['actions']['on_result'].keys()
 
-        # Assignments with output value 'false'
-        self.false_list = []
+        self.tasks_to_forward = collections.defaultdict(list)
         
 
     def __call__(self, events: List[AssignmentEvent]) -> None:
 
-        # Check if forwarding for boolean outputs is configured
-        if 'boolean' in self.forward_conf.keys():
+        # Loop over the list of incoming AssignmentEvent objects
+        for event in events:
 
-            # ID of pool where to forward 'true' assignments
-            true_id = self.forward_conf['boolean']['true_pool']['id']
+                for i in range(len(event.assignment.tasks)):
 
-            # ID of pool where to forward 'false' assignments
-            false_id = self.forward_conf['boolean']['false_pool']['id']
+                    solution = event.assignment.solutions[i].output_values['result']
 
-            # Loop over the list of incoming AssignmentEvent objects
-            for event in events:
+                    try:
 
-                try:
-                    # Add tasks to their defined lists based on output value
-                    self.true_list.extend([
-                        toloka.Task(
-                            pool_id=true_id,
+                        task = toloka.Task(
+                            pool_id = self.forward_pools[solution].pool.id,
                             input_values=event.assignment.tasks[i].input_values
                         )
-                        for i in range(len(event.assignment.tasks)) 
-                        if event.assignment.solutions[i].output_values['result'] == True
-                    ])
-                
-                # Catch errors
-                except toloka.exceptions.ValidationApiError:
+                        self.tasks_to_forward[solution].append(task)
 
-                    # Raise error
-                    raise_error(f'Failed to forward to True pool with ID {true_id} from Toloka')
+                    # Catch errors
+                    except toloka.exceptions.ValidationApiError:
 
-                try:
-                    self.false_list.extend([
-                        toloka.Task(
-                            pool_id=false_id,
-                            input_values=event.assignment.tasks[i].input_values
-                        )
-                        for i in range(len(event.assignment.tasks)) 
-                        if event.assignment.solutions[i].output_values['result'] == False
-                    ])
-                
-                except toloka.exceptions.ValidationApiError:
+                        # Raise error
+                        raise_error(f'Failed to forward to pool {self.forward_pools[solution]}')
+              
 
-                    # Raise error
-                    raise_error(f'Failed to forward to False pool with ID {false_id} from Toloka')
+        tasks_list = [task for l in self.tasks_to_forward.values() for task in l]
 
-            # Add tasks to defined pools
-            self.client.create_tasks(self.true_list+self.false_list, 
-                                     allow_defaults=True, open_pool=True)
+        # Add tasks to defined pools
+        self.client.create_tasks(tasks_list, allow_defaults=True, open_pool=True)
 
-            # Print status if any tasks were forwarded on this call
-            if len(self.true_list) > 0:
-                msg.good(f"Successfully forwarded {len(self.true_list)} {'tasks' if len(self.true_list) > 1 else 'task'} "
-                         f"with output value True to pool {true_id}")
+        # Print status if any tasks were forwarded on this call
+        if len(tasks_list) > 0:
+            msg.good(f"Successfully forwarded {len(tasks_list)} {'tasks' if len(tasks_list) > 1 else 'task'}.")
 
-            if len(self.false_list) > 0:
-                msg.good(f"Successfully forwarded {len(self.false_list)} {'tasks' if len(self.false_list) > 1 else 'task'} "
-                         f"with output value False to pool {false_id}")
-
-            # Tasks currently in lists have been forwarded, so reset lists
-            self.true_list = []
-            self.false_list = []
+        # Tasks currently in lists have been forwarded, so reset lists
+        self.tasks_to_forward = collections.defaultdict(list)
+        tasks_list = []
 

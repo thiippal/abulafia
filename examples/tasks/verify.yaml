@@ -10,7 +10,6 @@ actions:
 interface:
   prompt: Read the instructions first. Is the diagram annotated according to the instructions?
 project:
-  id: 94594
   setup:
     public_name: Verify outlines for text, letters or numbers in diagrams
     public_description: Look at diagrams from science textbooks and verify if they have
@@ -18,7 +17,6 @@ project:
   instructions: data/instructions.html
 training:
 pool:
-  id: 1093920
   setup:
     private_name: Verify outlines
     reward_per_assignment: 0.1
