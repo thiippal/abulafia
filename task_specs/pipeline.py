@@ -183,8 +183,6 @@ class TaskSequence:
 
         # Register each assignment observer with the Pipeline object
         for name, a_observer in a_observers.items():
-                
-            msg.info(f"Added forwarder to assignments observer")
 
             self.pipeline.register(observer=a_observer)
             
@@ -297,11 +295,10 @@ class TaskSequence:
 
                         setup = current_task.conf['pool']['setup']
 
-                    # If current pool is an action, use setup from pool that forwards 
-                    # tasks to current action 
+                    # If current pool is an action, use setup from source pool 
                     else:
 
-                        setup = tasks[current_task.pool_from].pool.setup
+                        setup = tasks[current_task.source].pool.setup
 
                     try:
 
@@ -330,9 +327,8 @@ class TaskSequence:
                                 
                                 observer.on_accepted(tasks[current_task.action_conf['on_result']])
 
-                        msg.info(f'Setting up a connection from {name} '
-                                f'to {tasks[current_task.action_conf["on_result"]].name} '
-                                f'on submission')
+                        msg.info(f'Tasks from {name} will be forwarded with {tasks[current_task.action_conf["on_result"]].name} '
+                                 f'on result according to configuration')
 
                     except KeyError:
 

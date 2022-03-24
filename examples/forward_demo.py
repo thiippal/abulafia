@@ -18,8 +18,8 @@ with open('../creds.json') as cred_f:
 detect = ImageClassification(configuration='tasks/test_forward.yaml', client=tclient)
 pool_1 = ImageClassification(configuration='tasks/pool1.yaml', client=tclient)
 pool_2 = ImageClassification(configuration='tasks/pool2.yaml', client=tclient)
-forward = Forward(configuration='tasks/forward.yaml', task=detect, forward_pools={True: pool_1, False: pool_2})
+forward = Forward(configuration='tasks/forward.yaml', client=tclient, targets=[pool_1, pool_2])
 
-y = TaskSequence(sequence=[detect, pool_1, pool_2, forward], client=tclient)
+y = TaskSequence(sequence=[detect, forward, pool_1, pool_2], client=tclient)
 
 y.start()

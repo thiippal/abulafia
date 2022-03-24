@@ -1,0 +1,10 @@
+name: forward
+data:
+  output: result
+source: verify_outlines
+actions:
+  on_result:
+    partially_correct: fix
+    incorrect: reject
+    correct: accept
+    

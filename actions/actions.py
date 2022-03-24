@@ -122,17 +122,33 @@ class Forward:
         None
     """
 
-    def __init__(self, configuration, task, forward_pools):
+    def __init__(self, configuration, client, targets):
 
         self.conf = read_configuration(configuration)
         self.name = self.conf['name']
-        self.task = task
-        self.client = self.task.client
-        self.forward_pools = forward_pools
+        self.client = client
 
-        # Possible outputs for the task (e.g. true and false)
-        self.outputs = self.conf['actions']['on_result'].keys()
+        # Possible outputs for the task (e.g. true and false) and their forward pools
+        self.outputs = self.conf['actions']['on_result']
 
+        # Check if some outputs shoulf be accepted or rejected (these are not forwarded like other tasks,
+        # but accepted or rejected based on the output) and remove these from outputs
+        self.reject = [k for k, v in self.outputs.items() if v == 'reject']
+        [self.outputs.pop(k) for k in self.reject]
+
+        self.accept = [k for k, v in self.outputs.items() if v == 'accept']
+        [self.outputs.pop(k) for k in self.accept]
+
+        # If no forward pools are configured for some outputs, they will not be forwarded
+        self.dont_forward = [k for k, v in self.outputs.items() if v == None]
+        [self.outputs.pop(k) for k in self.dont_forward]
+
+        # Create mapping for output and the configured CrowdsourcingTask object of the forward pool
+        self.name_mapping = {pool.name: pool for pool in targets}
+        self.forward_pools = {output: self.name_mapping[name] for (output, name) in self.outputs.items()}
+
+        # Initialize dictionary of key-list pairs. Keys are possible outputs for the task
+        # and the lists are tasks to be forwarded.
         self.tasks_to_forward = collections.defaultdict(list)
         
 
@@ -143,31 +159,53 @@ class Forward:
 
                 for i in range(len(event.assignment.tasks)):
 
-                    solution = event.assignment.solutions[i].output_values['result']
+                    solution = event.assignment.solutions[i].output_values[self.conf['data']['output']]
 
-                    try:
+                    # If performer verified the task as incorrect, reject the original assignment
+                    # and, if configured in source pool under "on_reject", re-add the task to the pool
+                    if solution in self.reject:
 
-                        task = toloka.Task(
-                            pool_id = self.forward_pools[solution].pool.id,
-                            input_values=event.assignment.tasks[i].input_values
-                        )
-                        self.tasks_to_forward[solution].append(task)
+                        self.client.reject_assignment(assignment_id=event.assignment.tasks[i].input_values['assignment_id'],
+                                                      public_comment="Assignment was verified incorrect by another user.")
+                        msg.warn(f'Rejected assignment {event.assignment.tasks[i].input_values["assignment_id"]}')
 
-                    # Catch errors
-                    except toloka.exceptions.ValidationApiError:
+                    # If performer verified the task as correct, accept original assignment and don't forward task
+                    elif solution in self.accept:
 
-                        # Raise error
-                        raise_error(f'Failed to forward to pool {self.forward_pools[solution]}')
+                        self.client.accept_assignment(assignment_id=event.assignment.tasks[i].input_values['assignment_id'],
+                                                      public_comment="Assignment was verified correct by another user.")
+                        msg.good(f'Accepted assignment {event.assignment.tasks[i].input_values["assignment_id"]}')
+
+                    # If no forward pool was configured, submit task without forwarding/accepting/rejecting
+                    elif solution in self.dont_forward:
+
+                        msg.good(f'Received a submitted assignment with output "{solution}"')
+
+                    # Else, forward task according to configuration
+                    else:
+
+                        try:
+                            task = toloka.Task(
+                                pool_id = self.forward_pools[solution].pool.id,
+                                input_values=event.assignment.tasks[i].input_values
+                            )
+                            self.tasks_to_forward[solution].append(task)
+
+                        # Catch errors
+                        except toloka.exceptions.ValidationApiError:
+
+                            # Raise error
+                            raise_error(f'Failed to forward assignment {event.assignment.tasks[i].input_values["assignment_id"]}')
               
-
         tasks_list = [task for l in self.tasks_to_forward.values() for task in l]
 
-        # Add tasks to defined pools
-        self.client.create_tasks(tasks_list, allow_defaults=True, open_pool=True)
+        if tasks_list:
+            
+            # Add tasks to defined pools
+            self.client.create_tasks(tasks_list, allow_defaults=True, open_pool=True)
 
-        # Print status if any tasks were forwarded on this call
-        if len(tasks_list) > 0:
-            msg.good(f"Successfully forwarded {len(tasks_list)} {'tasks' if len(tasks_list) > 1 else 'task'}.")
+            # Print status if any tasks were forwarded on this call
+            msg.good(f"Successfully forwarded {len(tasks_list)} {'tasks' if len(tasks_list) > 1 else 'task'}")
 
         # Tasks currently in lists have been forwarded, so reset lists
         self.tasks_to_forward = collections.defaultdict(list)

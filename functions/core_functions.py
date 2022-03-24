@@ -289,10 +289,18 @@ def load_data(data: str):
     # Print status
     msg.info(f'Loading data from {data}')
 
-    # Load data from the CSV file into a pandas DataFrame
+    # Make sure that a TSV-file is used, otherwise raise error
     try:
 
-        # Read the CSV file – assume that header is provide on the first row
+        assert data[-4:] == ".tsv"
+
+    except:
+        raise_error("Please use a TSV-file for the tasks!")
+
+    # Load data from the TSV file into a pandas DataFrame
+    try:
+
+        # Read the TSV file – assume that header is provide on the first row
         df = pd.read_csv(data, sep='\t', header=0)
 
         # Print message
@@ -559,7 +567,7 @@ def verify_connections(task_sequence: list) -> None:
 
                                 raise_error(f'Cannot find a task named {n_task} in the task sequence. '
                                             f'Please check the name of the task under the key '
-                                            f'"actions/next" in the configuration file.')
+                                            f'"actions" in the configuration file.')
 
                     elif next_task not in [task.name for task in task_sequence]:
 
@@ -570,6 +578,16 @@ def verify_connections(task_sequence: list) -> None:
             except KeyError:
 
                 pass
+        
+        # Check if source pool is configured to current action
+        if 'source' in task.conf.keys() and task.conf['source'] is not None:
+
+            if task.conf['source'] not in [task.name for task in task_sequence]:
+
+                raise_error(f'Cannot find a task named {task.conf["source"]} in the task sequence. '
+                            f'Please check the name of the task under the key '
+                            f'"source" in the configuration file.')
+
 
 
 # Map JSON entries to Toloka objects for input/output

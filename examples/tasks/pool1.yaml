@@ -1,6 +1,6 @@
 name: pool_1
 data:
-  file: data/ai2d-rst_test_2.tsv
+#  file: data/ai2d-rst_test_2.tsv
   input:
     image: url
   output:

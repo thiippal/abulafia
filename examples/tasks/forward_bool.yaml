@@ -1,8 +1,9 @@
-name: forward
+name: forward_bool
 data:
   output: result
 source: detect_text
 actions:
   on_result:
-    true: pool_1
-    false: pool_2
+    true: outline_text
+    false: 
+    
