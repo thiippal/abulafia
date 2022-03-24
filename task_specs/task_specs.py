@@ -213,6 +213,104 @@ class ImageSegmentation(CrowdsourcingTask):
         return task_spec
 
 
+class FixImageSegmentation(CrowdsourcingTask):
+    """
+    This is a class for fixing partially correct image segmentation tasks: modifying
+    existing outlines and/or creating new ones.
+    """
+    def __init__(self, configuration, client):
+        """
+        This function initialises the FixImageSegmentation class, which inherits attributes
+        and methods from the superclass Task.
+
+        Parameters:
+            configuration: A string object that defines a path to a YAML file with configuration.
+            client: A TolokaClient object with valid credentials.
+
+        Returns:
+            A FixImageSegmentation object.
+        """
+        # Read the configuration from the YAML file
+        configuration = read_configuration(configuration=configuration)
+
+        # Specify task and task interface
+        task_spec = self.specify_task(configuration=configuration)
+
+        # Use the super() function to access the superclass Task and its methods and attributes.
+        # This will set up the project, pool and training as specified in the configuration file.
+        super().__init__(configuration, client, task_spec)
+
+    def __call__(self, input_obj, **kwargs):
+
+        # If the class is called, use the __call__() method from the superclass
+        super().__call__(input_obj, **kwargs)
+
+        # When called, return the FixImageSegmentation object
+        return self
+
+    @staticmethod
+    def specify_task(configuration):
+        """
+        This function specifies the task interface on Toloka.
+
+        Parameters:
+            configuration: A dictionary containing the configuration defined in the YAML file.
+
+        Returns:
+             A Toloka TaskSpec object.
+        """
+        # Define expected input and output types for the task
+        expected_i, expected_o = {'url', 'json'}, {'json'}
+
+        # Configure Toloka data specifications and check the expected input against configuration
+        data_in, data_out, input_data, output_data = check_io(configuration=configuration,
+                                                              expected_input=expected_i,
+                                                              expected_output=expected_o)
+
+        # Add assignment ID to the input data
+        data_in['assignment_id'] = data_spec['str']
+
+        # Create the task interface; start by setting up the image segmentation interface
+        img_ui = tb.ImageAnnotationFieldV1(
+
+            # Set up the output data field
+            data=tb.OutputData(path=output_data['json'],
+                               default=tb.InputData(input_data['json'])),
+
+            # Set up the input data field
+            image=tb.InputData(input_data['url']),
+
+            # Set up the allowed shapes: note that their order will define the order in the UI
+            shapes={'rectangle': True, 'polygon': True},
+
+            # Set minimum width in pixels
+            min_width=500,
+
+            # Set up validation
+            validation=tb.RequiredConditionV1(hint="Please select at least one area!"),
+
+            disabled=False
+        )
+
+        # Define the text prompt below the segmentation UI
+        prompt = tb.TextViewV1(content=configuration['interface']['prompt'])
+
+        # Combine the task interface elements into a view
+        interface = toloka.project.TemplateBuilderViewSpec(
+            view=tb.ListViewV1([img_ui, prompt])
+        )
+
+        # Create a task specification with interface and input/output data
+        task_spec = toloka.project.task_spec.TaskSpec(
+            input_spec=data_in,
+            output_spec=data_out,
+            view_spec=interface
+        )
+
+        # Return the task specification
+        return task_spec
+
+
 class SegmentationVerification(CrowdsourcingTask):
     """
     This is a class for binary verification tasks.
@@ -317,6 +415,117 @@ class SegmentationVerification(CrowdsourcingTask):
         interface = toloka.project.TemplateBuilderViewSpec(
             view=tb.ListViewV1([img_ui, prompt, radio_group]),
             plugins=[hotkey_plugin, task_width_plugin]
+        )
+
+        # Create a task specification with interface and input/output data
+        task_spec = toloka.project.task_spec.TaskSpec(
+            input_spec=data_in,
+            output_spec=data_out,
+            view_spec=interface
+        )
+
+        # Return the task specification
+        return task_spec
+
+
+class MulticlassVerification(CrowdsourcingTask):
+    """
+    This is a class for multiclass verification tasks.
+    """
+    def __init__(self, configuration, client):
+        """
+        This function initialises the MulticlassVerification class, which inherits attributes
+        and methods from the superclass Task.
+
+        Parameters:
+            configuration: A string object that defines a path to a YAML file with configuration.
+            client: A TolokaClient object with valid credentials.
+
+        Returns:
+            A MulticlassVerification object.
+        """
+        # Read the configuration from the YAML file
+        configuration = read_configuration(configuration=configuration)
+
+        # Specify task and task interface
+        task_spec = self.specify_task(configuration=configuration)
+
+        # Use the super() function to access the superclass Task and its methods and attributes.
+        # This will set up the project, pool and training as specified in the configuration file.
+        super().__init__(configuration, client, task_spec)
+
+    def __call__(self, input_obj):
+
+        # If the class is called, use the __call__() method from the superclass
+        super().__call__(input_obj, verify=True)
+
+        # When called, return the SegmentationVerification object
+        return self
+
+    @staticmethod
+    def specify_task(configuration):
+        """
+        This function specifies the task interface on Toloka.
+
+        Parameters:
+            configuration: A dictionary containing the configuration defined in the YAML file.
+
+        Returns:
+             A Toloka TaskSpec object.
+        """
+        # Define expected input and output types for the task
+        expected_i, expected_o = {'url', 'json'}, {'str'}
+
+        # Configure Toloka data specifications and check the expected input against configuration
+        data_in, data_out, input_data, output_data = check_io(configuration=configuration,
+                                                              expected_input=expected_i,
+                                                              expected_output=expected_o)
+
+        # Add assignment ID to the input data
+        data_in['assignment_id'] = data_spec['str']
+
+        # Create the task interface; start by setting up the image segmentation interface
+        img_ui = tb.ImageAnnotationFieldV1(
+
+            # Set up the output data field
+            data=tb.InternalData(path=input_data['json'],
+                                 default=tb.InputData(input_data['json'])),
+
+            # Set up the input data field
+            image=tb.InputData(path=input_data['url']),
+
+            # Set minimum width in pixels
+            min_width=500,
+
+            # Disable annotation interface
+            disabled=True)
+
+        # Define the text prompt below the segmentation UI
+        prompt = tb.TextViewV1(content=configuration['interface']['prompt'])
+
+        options = [tb.fields.GroupFieldOption(value=value, label=label) for (value, label) 
+                   in configuration['options'].items()]
+
+        # Set up a radio group for labels
+        radio_group = tb.ButtonRadioGroupFieldV1(
+
+            # Set up the output data field
+            data=tb.OutputData(output_data['str']),
+
+            # Create radio buttons
+            options=options,
+
+            # Set up validation
+            validation=tb.RequiredConditionV1(hint="You must choose one response.")
+        )
+
+        # Set task width limit
+        task_width_plugin = tb.TolokaPluginV1(kind='scroll', task_width=500)
+
+        # Combine the task interface elements into a view
+        interface = toloka.project.TemplateBuilderViewSpec(
+            view=tb.ListViewV1([img_ui, prompt, radio_group]),
+            plugins=[task_width_plugin]
         )
 
         # Create a task specification with interface and input/output data

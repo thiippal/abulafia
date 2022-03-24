@@ -1,32 +1,30 @@
 name: detect_text
 data:
   file: data/ai2d-rst_test_5.tsv
-  input: 
+  input:
     image: url
   output:
     result: bool
-actions:
-#  on_accepted: outline_text
-#  next: outline_text
-  on_result: forward_bool
 interface:
   prompt: Does the diagram contain text, letters or numbers?
 project:
   setup:
-    public_name: 1 Check if an image contains text, letters or numbers
+    public_name: FORWARD TEST Check if an image contains text, letters or numbers
     public_description: Look at diagrams from science textbooks and state if they
       contain text, letters or numbers.
   instructions: data/instructions.html
+actions:
+  on_result: forward
 pool:
   setup:
     private_name: Detect text
-    reward_per_assignment: 0.1
+    reward_per_assignment: 0.01
     assignment_max_duration_seconds: 600
-    auto_accept_solutions: true
+    auto_accept_solutions: false
   defaults:
     default_overlap_for_new_tasks: 1
     default_overlap_for_new_task_suites: 1
   mixer:
-    real_tasks_count: 2
+    real_tasks_count: 1
     golden_tasks_count: 0
     training_tasks_count: 0

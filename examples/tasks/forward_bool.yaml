@@ -1,0 +1,9 @@
+name: forward_bool
+data:
+  output: result
+source: detect_text
+actions:
+  on_result:
+    true: outline_text
+    false: 
+    

@@ -1,0 +1,8 @@
+name: forward
+data:
+  output: result
+source: detect_text
+actions:
+  on_result:
+    true: pool_1
+    false: pool_2

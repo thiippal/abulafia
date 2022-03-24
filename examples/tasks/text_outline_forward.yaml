@@ -1,6 +1,5 @@
 name: outline_text
 data:
-  file: data/ai2d-rst_test_2.tsv
   input:
     image: url
   output:
@@ -13,7 +12,7 @@ interface:
     text, letters or numbers.
 project:
   setup:
-    public_name: Outline text, letters or numbers in diagrams for verification
+    public_name: 2 Outline text, letters or numbers in diagrams for verification
     public_description: Look at diagrams from science textbooks and state if they
       contain text, letters or numbers.
   instructions: data/instructions.html

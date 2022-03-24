@@ -4,6 +4,7 @@ import asyncio
 import datetime
 from observers import AnalyticsObserver
 from functions.core_functions import *
+from actions import Verify, Forward
 from toloka.client.actions import ChangeOverlap
 from toloka.client.collectors import AssignmentsAssessment
 from toloka.client.conditions import AssessmentEvent
@@ -184,7 +185,7 @@ class TaskSequence:
         for name, a_observer in a_observers.items():
 
             self.pipeline.register(observer=a_observer)
-
+            
             msg.info(f'Registered an assignments observer for task {name} ({tasks[name].pool.id})')
 
         # Register each pool observer and actions
@@ -286,3 +287,52 @@ class TaskSequence:
                                         f'{current_task.action_conf["on_rejected"]} in the '
                                         f'TaskSequence. Please check the configuration '
                                         f'under the key "actions"!')
+
+                if 'on_result' in current_task.action_conf:
+
+                    # If current pool is not an action, use setup from current pool
+                    if hasattr(current_task, 'pool'):
+
+                        setup = current_task.conf['pool']['setup']
+
+                    # If current pool is an action, use setup from source pool 
+                    else:
+
+                        setup = tasks[current_task.source].pool.setup
+
+                    try:
+
+                        # If tasks are not automatically accepted, forward using 'on_submitted'
+                        if setup['auto_accept_solutions'] == False:
+
+                            # Check if multiple forward pools are configured
+                            if type(tasks[current_task.action_conf['on_result']]) == dict:
+
+                                for pool in tasks[current_task.action_conf['on_result']].values():
+                                    observer.on_submitted(pool)
+                            
+                            else:
+                                observer.on_submitted(tasks[current_task.action_conf['on_result']])
+
+                        # If tasks are automatically accepted, forward using 'on_accepted'
+                        if setup['auto_accept_solutions'] == True:
+
+                            # Check if multiple forward pools are configured
+                            if type(tasks[current_task.action_conf['on_result']]) == dict:
+
+                                for pool in tasks[current_task.action_conf['on_result']].values():
+                                    observer.on_accepted(pool)
+
+                            else:
+                                
+                                observer.on_accepted(tasks[current_task.action_conf['on_result']])
+
+                        msg.info(f'Tasks from {name} will be forwarded with {tasks[current_task.action_conf["on_result"]].name} '
+                                 f'on result according to configuration')
+
+                    except KeyError:
+
+                        raise_error(f'Could not find a CrowdsourcingTask object named '
+                                    f'{current_task.action_conf["on_result"]} in the '
+                                    f'TaskSequence. Please check the configuration '
+                                    f'under the key "actions"!')
