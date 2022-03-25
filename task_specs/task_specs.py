@@ -266,10 +266,10 @@ class FixImageSegmentation(CrowdsourcingTask):
         data_in, data_out, input_data, output_data = check_io(configuration=configuration,
                                                               expected_input=expected_i,
                                                               expected_output=expected_o)
-
+        
         # Add assignment ID to the input data
-        data_in['assignment_id'] = data_spec['str']
-
+        data_in['assignment_id'] = toloka.project.StringSpec(required=False)
+        
         # Create the task interface; start by setting up the image segmentation interface
         img_ui = tb.ImageAnnotationFieldV1(
 
@@ -365,7 +365,7 @@ class SegmentationVerification(CrowdsourcingTask):
                                                               expected_output=expected_o)
 
         # Add assignment ID to the input data
-        data_in['assignment_id'] = data_spec['str']
+        data_in['assignment_id'] = toloka.project.StringSpec(required=False)
 
         # Create the task interface; start by setting up the image segmentation interface
         img_ui = tb.ImageAnnotationFieldV1(
@@ -482,7 +482,7 @@ class MulticlassVerification(CrowdsourcingTask):
                                                               expected_output=expected_o)
 
         # Add assignment ID to the input data
-        data_in['assignment_id'] = data_spec['str']
+        data_in['assignment_id'] = toloka.project.StringSpec(required=False)
 
         # Create the task interface; start by setting up the image segmentation interface
         img_ui = tb.ImageAnnotationFieldV1(

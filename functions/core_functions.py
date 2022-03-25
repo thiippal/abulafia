@@ -12,6 +12,7 @@ import time
 import toloka.client as toloka
 import toloka.metrics as metrics
 import traceback
+import json
 
 
 # Set up Printer and TracebackPrinter
@@ -66,7 +67,7 @@ def create_exam_tasks(input_obj) -> list:
     msg.info(f'Creating and adding exam tasks to pool with ID {input_obj.pool.id}')
 
     # Load exam tasks from the path defined in the JSON configuration
-    exam_data = load_data(input_obj.conf['data']['file'])
+    exam_data = load_data(input_obj.conf['data']['file'], input_obj.conf['data']['input'])
 
     # Fetch input variable names from the configuration. Create a dictionary with matching
     # key and value pairs, which is updated when creating the toloka.Task objects below.
@@ -275,7 +276,7 @@ def get_results(client: toloka.TolokaClient,
     return pd.DataFrame.from_dict(assignments, orient='index')
 
 
-def load_data(data: str):
+def load_data(data: str, inputs: dict):
     """
     This function loads data from a TSV file and returns a pandas DataFrame.
 
@@ -300,9 +301,14 @@ def load_data(data: str):
     # Load data from the TSV file into a pandas DataFrame
     try:
 
-        # Read the TSV file – assume that header is provide on the first row
+        # Read the TSV file – assume that header is provided on the first row
         df = pd.read_csv(data, sep='\t', header=0)
 
+        # Convert JSON inputs from string to JSON
+        json_inputs = [k for k, v in inputs.items() if v == "json"]
+        for i in json_inputs:
+            df[i] = df[i].apply(lambda x: json.loads(x))
+            
         # Print message
         msg.good(f'Successfully loaded {len(df)} rows of data from {data}')
 
