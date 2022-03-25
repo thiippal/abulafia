@@ -3,3 +3,4 @@ creds.json
 .DS_Store
 __pycache__
 tests/
+functions/clean_sandbox.py
