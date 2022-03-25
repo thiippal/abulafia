@@ -91,7 +91,7 @@ class CrowdsourcingTask:
         if not self.exam and 'file' in self.data_conf:
 
             # Load data
-            data = load_data(self.data_conf['file'])
+            data = load_data(self.data_conf['file'], self.data_conf['input'])
 
             # Create tasks and add them to the pool
             self.tasks = create_tasks(self, data)
@@ -261,7 +261,7 @@ class CrowdsourcingTask:
                 msg.good(f'Successfully created a new training pool')
 
                 # Load training data
-                self.train_data = load_data(self.conf['training']['data']['file'])
+                self.train_data = load_data(self.conf['training']['data']['file'], self.conf['training']['data']['input'])
 
                 # Get the input and output variable names
                 input_values = {n: n for n in list(self.conf['training']['data']['input'].keys())}
