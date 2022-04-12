@@ -4,3 +4,5 @@
 
 - Create crowdsourcing tasks using pre-defined Python classes and YAML configuration files
 - Combine different tasks into pipelines and deploy them on the Yandex [Toloka](https://toloka.ai) crowdsourcing platform
+
+<img src="examples/screenshot.png" width=700>
