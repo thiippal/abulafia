@@ -1,0 +1,7 @@
+name: aggregate_detect
+source: detect_text
+actions:
+  on_result: forward_bool
+method: dawid_skene
+accept: False
+reject: False

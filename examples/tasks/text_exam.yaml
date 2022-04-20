@@ -32,6 +32,7 @@ pool:
   exam:
     history_size: 13
     min_answers: 13
+    # How many performers can take the exam. When reached, pool closes.
     max_performers: 1
   setup:
     private_name: Exam for detecting text

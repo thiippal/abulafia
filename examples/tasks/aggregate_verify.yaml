@@ -1,0 +1,7 @@
+name: aggregate_verify
+source: verify_outlines
+actions:
+  on_result: forward_str
+method: dawid_skene
+accept: False
+reject: False

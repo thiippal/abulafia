@@ -6,6 +6,7 @@ from wasabi import Printer
 from .core_task import CrowdsourcingTask
 import toloka.client as toloka
 import toloka.client.project.template_builder as tb
+from collections import OrderedDict
 
 
 # Set up Printer
@@ -445,7 +446,7 @@ class MulticlassVerification(CrowdsourcingTask):
             A MulticlassVerification object.
         """
         # Read the configuration from the YAML file
-        configuration = read_configuration(configuration=configuration)
+        configuration = OrderedDict(read_configuration(configuration=configuration))
 
         # Specify task and task interface
         task_spec = self.specify_task(configuration=configuration)
@@ -522,10 +523,16 @@ class MulticlassVerification(CrowdsourcingTask):
         # Set task width limit
         task_width_plugin = tb.TolokaPluginV1(kind='scroll', task_width=500)
 
+        hotkey_dict = {f'key_{i+1}': tb.SetActionV1(data=tb.OutputData(output_data['str']),
+                                                    payload=list(configuration['options'].keys())[i]) 
+                                                    for i in range(len(configuration['options']))}
+
+        hotkey_plugin = tb.HotkeysPluginV1(**hotkey_dict)
+
         # Combine the task interface elements into a view
         interface = toloka.project.TemplateBuilderViewSpec(
             view=tb.ListViewV1([img_ui, prompt, radio_group]),
-            plugins=[task_width_plugin]
+            plugins=[task_width_plugin, hotkey_plugin]
         )
 
         # Create a task specification with interface and input/output data

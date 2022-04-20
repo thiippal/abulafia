@@ -119,11 +119,23 @@ class TaskSequence:
 
                         msg.info(f'Closed pool with ID {task.training.id}')
 
+            for action in (a for a in self.sequence if hasattr(a, 'aggregator')):
+
+                if action.complete == True:
+                    
+                    status.append(True)
+
             if all(status):
 
-                self.complete = True
+                # Wait for a minute to ensure that no new tasks are added to pools in the pipeline
+                # before ending the task sequence
+                time.sleep(60)
 
-                msg.good(f'Successfully completed the task sequence')
+                if all(status):
+
+                    self.complete = True
+
+                    msg.good(f'Successfully completed the task sequence')
 
         # Check the outputs
         if self.complete:
@@ -193,6 +205,17 @@ class TaskSequence:
 
             p_observer.on_closed(lambda pool: msg.info(f'Closed pool with ID {pool.id}'))
             p_observer.on_open(lambda pool: msg.info(f'Opened pool with ID {pool.id}'))
+
+            current_task = tasks[name]
+
+            # Register possible Aggregate-actions to activate when pool is closed
+            if current_task.action_conf is not None:
+
+                if 'on_closed' in current_task.action_conf:
+
+                    p_observer.on_closed(tasks[current_task.action_conf['on_closed']])
+
+                    msg.info(f'Results from {name} will be aggregated with {tasks[current_task.action_conf["on_closed"]].name}')
 
             self.pipeline.register(observer=p_observer)
 
@@ -288,7 +311,7 @@ class TaskSequence:
                                         f'TaskSequence. Please check the configuration '
                                         f'under the key "actions"!')
 
-                if 'on_result' in current_task.action_conf:
+                if ('on_result' in current_task.action_conf) and ('on_closed' not in current_task.action_conf):
 
                     # If current pool is not an action, use setup from current pool
                     if hasattr(current_task, 'pool'):
