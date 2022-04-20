@@ -1,7 +1,6 @@
 name: aggregate_verify
-source: verify_outlines
-actions:
+source: verify_outlines   # Pool from which tasks are forwarded to the Aggregate-action
+actions:                  # What happens to tasks after aggregation
   on_result: forward_str
-method: dawid_skene
-accept: False
-reject: False
+method: dawid_skene       # Aggregation method. For options, see https://toloka.ai/en/docs/crowd-kit/
+                          # For now, methods for categorical responses are supported

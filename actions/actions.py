@@ -111,7 +111,6 @@ class Aggregate:
         self.task = task
         self.conf = read_configuration(configuration)
         self.name = self.conf['name']
-        self.aggregator = True
 
         self.forward = forward
 
@@ -123,8 +122,6 @@ class Aggregate:
         self.zero_based_skill = True if self.conf['method'] == 'zero_based_skill' else False
         self.glad = True if self.conf['method'] == "glad" else False
 
-        self.accept = bool(self.conf['accept'])
-        self.reject = bool(self.conf['reject'])
         self.result = None
         self.prev_assignments = set()
 
