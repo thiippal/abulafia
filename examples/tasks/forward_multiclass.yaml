@@ -1,9 +1,13 @@
-name: forward
+name: forward_str             # Name of the action: this is how pools and actions refer to each other
 data:
-  output: result
-source: verify_outlines
+  output: result              # What the action outputs
+source: aggregate_verify      # Pool from which tasks are forwarded to this action
+#source: verify_outlines
 actions:
-  on_result:
+  on_result:                  # Keys: possible outputs to the task
+                              # Values: pools to which assignments with the output are forwarded
+                              # Special cases: value "accept" automatically accepts task, "reject" automatically rejects task
+                              #                empty value simply submits task (does not forward, reject or accept)
     partially_correct: fix
     incorrect: reject
     correct: accept

@@ -120,14 +120,15 @@ class CrowdsourcingTask:
                                         event.assignment.solutions)]
 
                     # If the assignments are for a verification pool, add the output values to the input of
-                    # the new task
+                    # the new task and make the verification task unavailable for the performer
                     if options and 'verify' in options:
 
                         new_tasks = [Task(pool_id=self.pool.id,
                                           overlap=self.pool_conf['defaults']['default_overlap_for_new_tasks'],
                                           input_values={**task.input_values,
                                                         **solution.output_values,
-                                                        'assignment_id': event.assignment.id})
+                                                        'assignment_id': event.assignment.id},
+                                          unavailable_for=[event.assignment.user_id])
                                      for task, solution in zip(event.assignment.tasks, event.assignment.solutions)]
 
                     # Add Tasks and open the pool

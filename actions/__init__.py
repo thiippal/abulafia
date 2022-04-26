@@ -1,3 +1,3 @@
 __all__ = []
 
-from .actions import Verify, Forward
+from .actions import Verify, Forward, Aggregate
