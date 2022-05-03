@@ -9,7 +9,7 @@ options:                                  # Answer options for the task. Keys: v
                                           #                              Values: what is written in the answer buttons
   correct: Correct
   incorrect: Incorrect
-  partially_correct: Partially correct
+  human_error: Partially correct
 actions:                                  # Actions: what to do to tasks next
                                           # If next action is an Aggregate-object, specify it with the key on_closed
                                           # If next action is a Forward-object, specify it with the key on_result

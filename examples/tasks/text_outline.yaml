@@ -1,5 +1,6 @@
 name: outline_text
 data:
+  file: data/ai2d-rst_test_2.tsv
   input:
     image: url
   output:
@@ -15,6 +16,7 @@ project:
   instructions: data/instructions.html
 training:
 pool:
+  estimated_time_per_suite: 120
   setup:
     private_name: Outline text
     reward_per_assignment: 0.1
