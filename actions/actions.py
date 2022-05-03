@@ -276,6 +276,12 @@ class Forward:
                         # Else, forward task according to configuration
                         else:
 
+                            if solution == "human_error":
+
+                                self.client.accept_assignment(assignment_id=event.assignment.tasks[i].input_values['assignment_id'],
+                                                              public_comment="Assignment was verified partially correct by another user.")
+                                msg.good(f'Accepted human error assignment {event.assignment.tasks[i].input_values["assignment_id"]}')
+
                             try:
                                 task = toloka.Task(
                                     pool_id = self.forward_pools[solution].pool.id,
@@ -333,6 +339,13 @@ class Forward:
 
                 # Else, forward task according to configuration
                 else:
+
+                    if solution == "human_error":
+
+                        self.client.accept_assignment(assignment_id=event["input_data"]["assignment_id"],
+                                                      public_comment="Assignment was verified partially correct by another user.")
+                        msg.good(f'Accepted human error assignment {event["input_data"]["assignment_id"]}')
+
 
                     try:
                         task = toloka.Task(

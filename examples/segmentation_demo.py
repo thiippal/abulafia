@@ -14,7 +14,7 @@ with open('../creds.json') as cred_f:
     tclient = toloka.TolokaClient(creds['token'], creds['mode'])
 
 # Create an ImageSegmentation task using the configuration file
-outline = ImageSegmentation(configuration='tasks/text_outline.json', client=tclient)
+outline = ImageSegmentation(configuration='tasks/text_outline.yaml', client=tclient)
 
 # Add the task into a TaskSequence
 sequence = TaskSequence(sequence=[outline], client=tclient)

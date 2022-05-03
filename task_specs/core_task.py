@@ -348,6 +348,22 @@ class CrowdsourcingTask:
             # Print status message
             msg.good(f'Successfully configured a new main pool')
 
+
+            if 'estimated_time_per_suite' not in self.pool_conf.keys():
+                msg.warn(f"Parameter estimated_time_per_suite is not configured in pool settings for {self.name}. "
+                         f"Consider adding it to verify that the reward_per_assignment you have set results in a fair "
+                         f"hourly wage of at least $12. Do you wish to proceed with the current configuration anyway (y/n)?")
+                choice = input("")
+
+                if choice == "n":
+                    msg.info("Cancelling pipeline")
+                    exit()
+
+            else:
+                check_reward(self.pool_conf['estimated_time_per_suite'], 
+                             self.pool_conf['setup']['reward_per_assignment'],
+                             self.name)
+
             # Check if filters have been defined
             if 'filter' in self.pool_conf.keys() and self.pool_conf['filter'] is not None:
 

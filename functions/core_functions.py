@@ -291,12 +291,7 @@ def load_data(data: str, inputs: dict):
     msg.info(f'Loading data from {data}')
 
     # Make sure that a TSV-file is used, otherwise raise error
-    try:
-
-        assert data[-4:] == ".tsv"
-
-    except:
-        raise_error("Please use a TSV-file for the tasks!")
+    assert data[-4:] == ".tsv", raise_error("Please use a TSV-file for the tasks!")
 
     # Load data from the TSV file into a pandas DataFrame
     try:
@@ -594,6 +589,32 @@ def verify_connections(task_sequence: list) -> None:
                             f'Please check the name of the task under the key '
                             f'"source" in the configuration file.')
 
+def check_reward(time_per_suite: int, reward: Union[int, float], name: str) -> None:
+    """
+    Calculates a fair reward per task suite and checks if the configured reward reaches that.
+
+    Parameters:
+        time_per_suite: estimated time it takes a worker to complete one task suite
+        reward: reward per assignment that has been set in the configuration file
+        name: name of the current CrowdSourcing task
+
+    Returns:
+        Raises a warning if the configured reward is too low and prompts the user to verify if they
+        wish to proceed with the current configuration. If not, the pipeline is cancelled.
+    """
+    
+    suites_per_hour = 60*60 / time_per_suite
+    suggested_reward = 12 / suites_per_hour
+
+    if reward < suggested_reward:
+        msg.warn(f"The reward you have set per assignment for {name} does not result in a fair wage for the workers. "
+                 f"In order for the workers to receive a salary of $12 per hour, set reward_per_assignment to at least ${suggested_reward}.\n"
+                 f"Do you wish to proceed with the current configuration anyway (y/n)?")
+        choice = input("")
+
+        if choice == "n":
+            msg.info("Cancelling pipeline")
+            exit()
 
 
 # Map JSON entries to Toloka objects for input/output

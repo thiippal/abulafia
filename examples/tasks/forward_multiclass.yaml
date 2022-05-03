@@ -8,7 +8,7 @@ actions:
                               # Values: pools to which assignments with the output are forwarded
                               # Special cases: value "accept" automatically accepts task, "reject" automatically rejects task
                               #                empty value simply submits task (does not forward, reject or accept)
-    partially_correct: fix
+    human_error: fix
     incorrect: reject
     correct: accept
     
