@@ -276,7 +276,7 @@ class CrowdsourcingTask:
                                                     output_values={k: str(row[v]) for k, v in
                                                                    output_values.items()})],
                                                 message_on_unknown_solution=row['hint'],
-                                                overlap=1)
+                                                infinite_overlap=True)
                                     for _, row in self.train_data.iterrows()]
 
                 # Add training tasks to the training pool
@@ -473,7 +473,7 @@ class CrowdsourcingTask:
                     if len(self.pool_conf['filter']['skill']) == 1:
 
                         # Get the skill ID and values from the dictionary key and cast to integers
-                        skill_id = list(self.pool_conf['filter']['skill'][0].keys())[0]
+                        skill_id = str(list(self.pool_conf['filter']['skill'][0].keys())[0])
                         skill_value = int(list(self.pool_conf['filter']['skill'][0].values())[0])
 
                         # Define filter
@@ -487,7 +487,7 @@ class CrowdsourcingTask:
                     if len(self.pool_conf['filter']['skill']) > 1:
 
                         # Get the skill ID and values from the dictionary key and cast to integers
-                        skills = [(toloka.filter.Skill(list(skill_dict.keys())[0]) >=
+                        skills = [(toloka.filter.Skill(str(list(skill_dict.keys())[0])) >=
                                    int(list(skill_dict.values())[0]))
                                   for skill_dict in self.pool_conf['filter']['skill']]
 
@@ -722,8 +722,8 @@ class CrowdsourcingTask:
 
                     # Unpack rules into variables
                     count = self.qual_conf['skipped_assignments']['count']
-                    duration = self.qual_conf['fast_responses']['ban_duration']
-                    units = self.qual_conf['fast_responses']['ban_units'].upper()
+                    duration = self.qual_conf['skipped_assignments']['ban_duration']
+                    units = self.qual_conf['skipped_assignments']['ban_units'].upper()
 
                     # Add quality control rule to the pool
                     self.pool.quality_control.add_action(

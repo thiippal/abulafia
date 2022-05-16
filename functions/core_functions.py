@@ -41,6 +41,10 @@ def create_tasks(input_obj,
     # key and value pairs, which is updated when creating the toloka.Task objects below.
     input_values = {n: n for n in list(input_obj.conf['data']['input'].keys())}
 
+    assert set(input_values.keys()) == set(input_data.columns), raise_error(f"Input data column names "
+                                                                            f"do not match input configuration "
+                                                                            f"for the pool {input_obj.name}!")
+
     # Create a list of Toloka Task objects by looping over the input DataFrame. Use the
     # dictionary of input variable names 'input_values' to retrieve the correct columns
     # from the DataFrame.

@@ -3,4 +3,8 @@ creds.json
 .DS_Store
 __pycache__
 tests/
-functions/clean_sandbox.py
+utils/clean_sandbox.py
+utils/check_skilled_users.py
+task_specs/spec_sandbox.py
+examples/tasks/relation_annotation.yaml
+examples/relation_annotation_demo.py
