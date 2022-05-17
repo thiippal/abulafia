@@ -3,16 +3,11 @@
 # Import libraries
 from functions.core_functions import *
 from wasabi import Printer
+import contextlib
+import io
 import toloka.client as toloka
 from toloka.streaming.event import AssignmentEvent
 from toloka.client.exceptions import IncorrectActionsApiError
-from crowdkit.aggregation.classification.dawid_skene import DawidSkene
-from crowdkit.aggregation.classification.majority_vote import MajorityVote
-from crowdkit.aggregation.classification.gold_majority_vote import GoldMajorityVote
-from crowdkit.aggregation.classification.m_msr import MMSR
-from crowdkit.aggregation.classification.wawa import Wawa
-from crowdkit.aggregation.classification.zero_based_skill import ZeroBasedSkill
-from crowdkit.aggregation.classification.glad import GLAD
 from typing import List, Union
 import collections
 import pandas as pd
@@ -20,6 +15,20 @@ import pandas as pd
 # Set up Printer
 msg = Printer(pretty=True, timestamp=True, hide_animation=True)
 
+f = io.StringIO()
+with contextlib.redirect_stderr(f):
+    from crowdkit.aggregation.classification.dawid_skene import DawidSkene
+    from crowdkit.aggregation.classification.majority_vote import MajorityVote
+    from crowdkit.aggregation.classification.gold_majority_vote import GoldMajorityVote
+    from crowdkit.aggregation.classification.m_msr import MMSR
+    from crowdkit.aggregation.classification.wawa import Wawa
+    from crowdkit.aggregation.classification.zero_based_skill import ZeroBasedSkill
+    from crowdkit.aggregation.classification.glad import GLAD
+warn = f.getvalue()
+
+if warn.startswith("None of PyTorch"):
+    msg.warn(f"Could not find a working installation of PyTorch or TensorFlow, one of which is "
+             f"needed for the crowd-kit aggregators to function. Cancelling pipeline.", exits=1)
 
 class Verify:
     """
