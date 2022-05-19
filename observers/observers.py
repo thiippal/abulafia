@@ -16,7 +16,7 @@ class AnalyticsObserver(BaseObserver):
 
     def __init__(self, client, pool, **options) -> None:
         super().__init__()
-        self.name = 'Pool Analytics'
+        self.name = pool.id
         self.client = client
         self.operation = None
         self.pool = pool
