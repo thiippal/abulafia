@@ -1,5 +1,5 @@
 --find-links https://download.pytorch.org/whl/torch_stable.html
-torch==1.11+cpu
+torch==1.11.0
 crowd_kit==1.0.0
 pandas==1.4.1
 pytest==7.1.0
