@@ -1,11 +1,13 @@
 # -*- coding: utf-8 -*-
 
 # Import libraries
+import toloka
 from wasabi import Printer
 from toloka.streaming.observer import BaseObserver
 from toloka.client.analytics_request import UniqueWorkersCountPoolAnalytics, ActiveWorkersByFilterCountPoolAnalytics, \
     SubmitedAssignmentsCountPoolAnalytics
 from toloka.client.operations import Operation
+from toloka.client.exceptions import DoesNotExistApiError
 
 
 # Set up Printer
@@ -56,6 +58,23 @@ class AnalyticsObserver(BaseObserver):
                             await self.client.close_pool_async(pool_id=self.pool.id)
 
                             msg.good(f'Successfully closed pool {self.pool.id}')
+
+                            # Manually close training pool(s) when exam pool is closed
+                            try:
+
+                                for training in await self.client.get_trainings(project_id=self.pool.project_id):
+                                    await self.client.close_training_async(training_id=training.id)
+                                    msg.good(f"Successfully closed training pool {training.id}")
+
+                            except StopIteration:
+                                
+                                # If no training is found, continue as normal
+                                pass
+
+                            except DoesNotExistApiError:
+
+                                # If a training is found, but it cannot be closed, raise warning
+                                msg.warn(f"Attempted to close a training for pool {self.pool.id} that does not exist")
 
                     if response['request']['name'] == 'unique_workers_count' and not self.limit_reached:
 
