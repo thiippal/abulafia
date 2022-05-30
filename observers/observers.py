@@ -1,7 +1,6 @@
 # -*- coding: utf-8 -*-
 
 # Import libraries
-import toloka
 from wasabi import Printer
 from toloka.streaming.observer import BaseObserver
 from toloka.client.analytics_request import UniqueWorkersCountPoolAnalytics, ActiveWorkersByFilterCountPoolAnalytics, \

@@ -60,6 +60,12 @@ class CrowdsourcingTask:
         self.skill = False  # Does the Task provide or require a skill?
         self.exam = False  # Is this Task an exam?
 
+        # See if users should be banned from the pool and check that blocklist is configured correctly
+        try:
+            self.blocklist = list(pd.read_csv(self.pool_conf['blocklist'], sep="\t")["user_id"]) if 'blocklist' in self.pool_conf.keys() else []
+        except KeyError:
+            msg.warn(f"Could not find the column 'user_id' from blocklist.", exits=1)
+
         # Print status message
         msg.info(f'The unique ID for this object ({self.name}) is {self.task_id}')
 
@@ -113,7 +119,8 @@ class CrowdsourcingTask:
                     # Create new Task objects
                     new_tasks = [Task(pool_id=self.pool.id,
                                       overlap=self.pool_conf['defaults']['default_overlap_for_new_tasks'],
-                                      input_values={k: v for k, v in task.input_values.items()}
+                                      input_values={k: v for k, v in task.input_values.items()},
+                                      unavailable_for=self.blocklist
                                       )
                                  for task, solution
                                  in zip(event.assignment.tasks,
@@ -128,7 +135,7 @@ class CrowdsourcingTask:
                                           input_values={**task.input_values,
                                                         **solution.output_values,
                                                         'assignment_id': event.assignment.id},
-                                          unavailable_for=[event.assignment.user_id])
+                                          unavailable_for=[*self.blocklist, event.assignment.user_id])
                                      for task, solution in zip(event.assignment.tasks, event.assignment.solutions)]
 
                     # Add Tasks and open the pool
@@ -276,7 +283,8 @@ class CrowdsourcingTask:
                                                     output_values={k: str(row[v]) for k, v in
                                                                    output_values.items()})],
                                                 message_on_unknown_solution=row['hint'],
-                                                infinite_overlap=True)
+                                                infinite_overlap=True,
+                                                unavailable_for=self.blocklist)
                                     for _, row in self.train_data.iterrows()]
 
                 # Add training tasks to the training pool
