@@ -11,7 +11,7 @@
 - Design and build validation mechanisms that estimate hourly earnings to prevent sweatshop pricing :white_check_mark:
 - Generate documentation automatically from docstrings (for potential tools, see [here](https://wiki.python.org/moin/DocumentationTools)) :no_entry:
 - Create a suite of tests e.g. using [nose](https://nose.readthedocs.io/en/latest/) for the entire tool :no_entry:
-- Implement a blocklist for users, which takes a TSV file with Toloka user IDs as input and makes the pool tasks unavailable to them. :no_entry:
+- Implement a blocklist for users, which takes a TSV file with Toloka user IDs as input and makes the pool tasks unavailable to them. :white_check_mark:
 
 ## Smaller things
 
