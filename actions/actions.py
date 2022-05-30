@@ -294,7 +294,8 @@ class Forward:
                             try:
                                 task = toloka.Task(
                                     pool_id = self.forward_pools[solution].pool.id,
-                                    input_values=event.assignment.tasks[i].input_values
+                                    input_values=event.assignment.tasks[i].input_values,
+                                    unavailable_for=self.forward_pools[solution].blocklist
                                 )
                                 self.tasks_to_forward[solution].append(task)
 
@@ -359,7 +360,8 @@ class Forward:
                     try:
                         task = toloka.Task(
                             pool_id = self.forward_pools[solution].pool.id,
-                            input_values=event['input_data']
+                            input_values=event['input_data'],
+                            unavailable_for=self.forward_pools[solution].blocklist
                         )
                         self.tasks_to_forward[solution].append(task)
 
