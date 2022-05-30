@@ -27,10 +27,11 @@ project:
       contain text, letters or numbers.
   instructions: data/instructions.html
 pool:
+  blocklist: data/blocklist.tsv   # Path to a tsv-file containing a list of user IDs for blocked workers
   exam:
     history_size: 13
     min_answers: 13
-    max_performers: 3
+    max_performers: 2
   setup:
     private_name: Exam for detecting text
     reward_per_assignment: 0.1
