@@ -1,8 +1,8 @@
-name: detect_text                 # Name of the pool: this is how pools and actions refer to each other
+name: detect_connection           # Name of the pool: this is how pools and actions refer to each other
 data:
-  file: data/ai2d-rst_test_5.tsv  # Path to file containing input data
   input:                          # Input data types
     image: url                    
+    outlines: json
   output:                         # Output data types
     result: bool
 actions:                          # Actions: what to do to tasks next
@@ -10,21 +10,20 @@ actions:                          # Actions: what to do to tasks next
                                   # If next action is a Forward-object, specify it with the key on_result
                                   # If next action is a pool, specify it either under on_submitted, on_accepted or on_rejected,
                                   # depending on what you need.
-#  on_accepted: outline_text
-  on_closed: aggregate_detect
-#  on_result: forward_bool
+  data_source: separate_bboxes
+  on_submitted: outline_targets
 interface:
-  prompt: Does the diagram contain text, letters or numbers?
+  prompt: Does the text describe some element in the diagram?
 project:
   setup:
-    public_name: 1 Check if an image contains text, letters or numbers
-    public_description: Look at diagrams from science textbooks and state if they
-      contain text, letters or numbers.
+    public_name: Check if the text describe some element in the diagram?
+    public_description: Look at diagrams from science textbooks and state if the text describes some element in the diagram.
   instructions: data/instructions.html    # Task instructions in an HTML file
 pool:
+  estimated_time_per_suite: 60
   setup:
-    private_name: Detect text
-    reward_per_assignment: 0.1
+    private_name: Detect connection
+    reward_per_assignment: 0.2
     assignment_max_duration_seconds: 600
     auto_accept_solutions: true             # Automatically accept all submitted tasks
   defaults:
@@ -34,3 +33,5 @@ pool:
     real_tasks_count: 5                     # How many real tasks in a task suite
     golden_tasks_count: 0                   # How many control tasks in a suite
     training_tasks_count: 0                 # How many training tasks in a suite
+  speed_quality_balance:
+    top_percentage_by_quality: 20

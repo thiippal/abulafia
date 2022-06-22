@@ -11,6 +11,7 @@ from toloka.client.exceptions import IncorrectActionsApiError
 from typing import List, Union
 import collections
 import pandas as pd
+import json
 
 # Set up Printer
 msg = Printer(pretty=True, timestamp=True, hide_animation=True)
@@ -139,10 +140,7 @@ class Aggregate:
 
     def __call__(self, pool: toloka.Pool) -> None:
 
-        # Doesn't work:
-        # df = self.task.client.get_assignments_df(pool_id=self.task.pool.id)
-
-        assignments = list(self.task.client.get_assignments(pool_id=pool.id))
+        assignments = list(self.task.client.get_assignments(pool_id=pool.id, status=[toloka.Assignment.SUBMITTED, toloka.Assignment.ACCEPTED]))
 
         if assignments:
             a_dict = {"task": [], "inputs": [], "label": [], "worker": [], "id": []}
@@ -220,7 +218,7 @@ class Forward:
         None
     """
 
-    def __init__(self, configuration, client, targets):
+    def __init__(self, configuration, client, targets=None):
 
         self.conf = read_configuration(configuration)
         self.name = self.conf['name']
@@ -242,8 +240,8 @@ class Forward:
         [self.outputs.pop(k) for k in self.dont_forward]
 
         # Create mapping for output and the configured CrowdsourcingTask object of the forward pool
-        self.name_mapping = {pool.name: pool for pool in targets}
-        self.forward_pools = {output: self.name_mapping[name] for (output, name) in self.outputs.items()}
+        self.name_mapping = {pool.name: pool for pool in targets} if targets else None
+        self.forward_pools = {output: self.name_mapping[name] for (output, name) in self.outputs.items()} if self.name_mapping else None
 
         # Initialize dictionary of key-list pairs. Keys are possible outputs for the task
         # and the lists are tasks to be forwarded.
@@ -283,7 +281,7 @@ class Forward:
                             msg.good(f'Received a submitted assignment with output "{solution}"')
 
                         # Else, forward task according to configuration
-                        else:
+                        elif self.forward_pools:
 
                             if solution == "human_error":
 
@@ -385,4 +383,86 @@ class Forward:
             self.tasks_to_forward = collections.defaultdict(list)
             tasks_list = []
 
+
+class SeparateBBoxes:
+    """
+    This class defines an action for separating images with several bouding boxes to task inputs with only one bounding box per image.
+
+    For example, an input image with 5 bounding boxes yields five task inputs with one bounding box each.
+
+    Parameters:
+        configuration: A string object that defines a path to a YAML file with configuration.
+        target = Pools where tasks will be created.
+        add_labels = If True, each bounding box will be annotated with the label "source"
+
+    Returns:
+        None
+    """
+
+    def __init__(self, target, configuration, add_labels=False):
+        self.target = target
+        self.client = self.target.client
+        self.conf = read_configuration(configuration)
+        self.name = self.conf["name"]
+        self.add_labels = add_labels
+
+        if "input_file" in self.conf["data"]:
+            self.input_file = self.conf["data"]["input_file"]
+
+
+    def __call__(self, events: List[AssignmentEvent]=None) -> None:
+
+        # If the object is registered with an observer, use data from AssignmentEvents to create new tasks
+        if events:
+
+            raise NotImplementedError
+
+            msg.info(f"Creating new tasks in pool {self.target.name} with action {self.name}")
+
+            for event in events:
+
+                for i in range(len(event.assignment.tasks)):
+
+                    new_tasks = [toloka.Task(pool_id=self.target.pool.id,
+                                             input_values={"image": event.assignment.tasks[i].input_values["image"], "outlines": [bbox]},
+                                             unavailable_for=self.target.blocklist) 
+                                 for bbox in event.assignment.solutions[i].output_values["outlines"]]
+
+                    msg.info(f"Creating new tasks in pool {self.target.name} with action {self.name}")
+                    self.client.create_tasks(new_tasks, allow_defaults=True, open_pool=True)
+
+        # If the object is called without AssignmentEvents, the action starts the pipeline and
+        # input data should be read from a file 
+        else:
+
+            input_df = pd.read_csv(self.input_file, sep="\t", index_col=False)
+
+            msg.info(f"Creating new tasks in pool {self.target.name} with action {self.name}")
+
+            if self.add_labels:
+
+                input_df["outlines"] = input_df["outlines"].apply(lambda x: json.loads(x))
+                input_df["outlines"] = input_df["outlines"].apply(lambda x: [dict(y, **{'label': 'source'}) for y in x])
+
+                for i, task in input_df.iterrows():
+
+                    new_tasks = [toloka.Task(pool_id=self.target.pool.id,
+                                            input_values={"image": task["image"], "outlines": [bbox]},
+                                            unavailable_for=self.target.blocklist)
+                                for bbox in task["outlines"]
+                    ]
+                    
+                    self.client.create_tasks(new_tasks, allow_defaults=True, open_pool=True)
+
+            else:
+
+                for i, task in input_df.iterrows():
+
+                    new_tasks = [toloka.Task(pool_id=self.target.pool.id,
+                                            input_values={"image": task["image"], "outlines": [bbox]},
+                                            unavailable_for=self.target.blocklist)
+                                for bbox in json.loads(task["outlines"])
+                    ]
+                    
+                    self.client.create_tasks(new_tasks, allow_defaults=True, open_pool=True)
 

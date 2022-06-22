@@ -7,6 +7,7 @@ from toloka.streaming.event import AssignmentEvent
 import datetime
 import uuid
 import toloka.client as toloka
+from toloka.client.pool.speed_quality_balance_config import BestConcurrentUsersByQuality, TopPercentageByQuality
 
 # Set up Printer
 msg = Printer(pretty=True, timestamp=True, hide_animation=True)
@@ -371,6 +372,30 @@ class CrowdsourcingTask:
                 check_reward(self.pool_conf['estimated_time_per_suite'], 
                              self.pool_conf['setup']['reward_per_assignment'],
                              self.name)
+
+            # Check if speed/quality balance settings have been configured
+            if 'speed_quality_balance' in self.pool_conf.keys() and self.pool_conf['speed_quality_balance'] is not None:
+
+                if "top_percentage_by_quality" in self.pool_conf['speed_quality_balance']:
+ 
+                    # Get percentage for top workers from configuration
+                    user_percentage = self.pool_conf["speed_quality_balance"]["top_percentage_by_quality"]
+
+                    speed_quality = TopPercentageByQuality(percent=user_percentage)
+                    
+                    msg.info(f"Speed/quality setting: only top {user_percentage}% of users will have access to pool {self.name}")
+
+                elif "best_concurrent_users_by_quality" in self.pool_conf['speed_quality_balance']:
+                    
+                    # Get number of top workers from configuration
+                    user_count = self.pool_conf['speed_quality_balance']["best_concurrent_users_by_quality"]
+                    
+                    speed_quality = BestConcurrentUsersByQuality(count=user_count)
+
+                    msg.info(f"Speed/quality setting: only top {user_count} users will have access to pool {self.name}")
+                
+                # Set speed/quality setting
+                self.pool.set_speed_quality_balance(speed_quality)
 
             # Check if filters have been defined
             if 'filter' in self.pool_conf.keys() and self.pool_conf['filter'] is not None:
