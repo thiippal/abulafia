@@ -1,0 +1,4 @@
+name: separate_bboxes
+data:
+  input_file: data/ai2d_bboxes_test.tsv 
+  output: result

@@ -208,9 +208,15 @@ class TaskSequence:
 
             current_task = tasks[name]
 
-            # Register possible Aggregate-actions to activate when pool is closed
             if current_task.action_conf is not None:
 
+                # If pool's input data comes from a source action (such as SeparateBBoxes), intialize tasks
+                if 'data_source' in current_task.action_conf:
+
+                    source = tasks[current_task.action_conf['data_source']]
+                    source()
+
+                # Register possible Aggregate-actions to activate when pool is closed
                 if 'on_closed' in current_task.action_conf:
 
                     p_observer.on_closed(tasks[current_task.action_conf['on_closed']])

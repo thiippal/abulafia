@@ -1,3 +1,3 @@
 __all__ = []
 
-from .actions import Verify, Forward, Aggregate
+from .actions import Verify, Forward, Aggregate, SeparateBBoxes
