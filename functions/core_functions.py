@@ -571,11 +571,23 @@ def verify_connections(task_sequence: list) -> None:
 
                         for n_task in next_task.values():
 
-                            if n_task not in [task.name for task in task_sequence]:
+                            if type(n_task) == list:
 
-                                raise_error(f'Cannot find a task named {n_task} in the task sequence. '
-                                            f'Please check the name of the task under the key '
-                                            f'"actions" in the configuration file.')
+                                for t in n_task:
+
+                                    if t not in [task.name for task in task_sequence] and t not in ['accept', 'reject']:
+
+                                        raise_error(f'Cannot find a task named {t} in the task sequence. '
+                                                    f'Please check the name of the task under the key '
+                                                    f'"actions" in the configuration file.')
+
+                            else:
+
+                                if n_task not in [task.name for task in task_sequence]:
+
+                                    raise_error(f'Cannot find a task named {n_task} in the task sequence. '
+                                                f'Please check the name of the task under the key '
+                                                f'"actions" in the configuration file.')
 
                     elif next_task not in [task.name for task in task_sequence]:
 
@@ -603,7 +615,7 @@ def check_reward(time_per_suite: int, reward: Union[int, float], name: str) -> N
     Parameters:
         time_per_suite: estimated time it takes a worker to complete one task suite
         reward: reward per assignment that has been set in the configuration file
-        name: name of the current CrowdSourcing task
+        name: name of the current CrowdsourcingTask
 
     Returns:
         Raises a warning if the configured reward is too low and prompts the user to verify if they
@@ -620,8 +632,7 @@ def check_reward(time_per_suite: int, reward: Union[int, float], name: str) -> N
         choice = input("")
 
         if choice == "n":
-            msg.info("Cancelling pipeline")
-            exit()
+            msg.info("Cancelling pipeline", exits=1)
 
 
 # Map JSON entries to Toloka objects for input/output

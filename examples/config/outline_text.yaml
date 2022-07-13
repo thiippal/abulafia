@@ -1,10 +1,12 @@
 name: outline_text
 data:
-  file: data/ai2d-rst_test_2.tsv
   input:
     image: url
   output:
-    result: json
+    outlines: json
+actions:
+  on_submitted: verify_outlines
+  on_rejected: outline_text
 interface:
   prompt: Read the instructions first. Then outline all diagram elements that contain
     text, letters or numbers.
@@ -13,20 +15,20 @@ project:
     public_name: Outline text, letters or numbers in diagrams
     public_description: Look at diagrams from science textbooks and state if they
       contain text, letters or numbers.
-  instructions: data/instructions.html
+  instructions: instructions/outline_text_instructions.html
 training:
 pool:
   estimated_time_per_suite: 120
   setup:
     private_name: Outline text
-    reward_per_assignment: 0.1
+    reward_per_assignment: 0.4
     assignment_max_duration_seconds: 600
-    auto_accept_solutions: true
+    auto_accept_solutions: false
   defaults:
     default_overlap_for_new_tasks: 1
     default_overlap_for_new_task_suites: 1
   mixer:
-    real_tasks_count: 2
+    real_tasks_count: 1
     golden_tasks_count: 0
     training_tasks_count: 0
   filter:
@@ -35,3 +37,22 @@ pool:
     client_type:
     - TOLOKA_APP
     - BROWSER
+quality_control:
+  speed_quality_balance:
+    top_percentage_by_quality: 40
+  fast_responses:
+    history_size: 5
+    count: 3
+    threshold: 2
+    ban_duration: 7
+    ban_units: DAYS
+  skipped_assignments:
+    count: 3
+    ban_duration: 7
+    ban_units: DAYS
+  redo_banned: true
+  captcha:
+    frequency: HIGH
+    success_rate: 100
+    ban_duration: 7
+    ban_units: DAYS

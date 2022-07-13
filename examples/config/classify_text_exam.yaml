@@ -1,0 +1,59 @@
+name: classify_text
+data:
+  file: data/classify_text_exam.tsv
+  input:
+    text: str
+  output:
+    result: str
+options:
+  positive: Positive
+  negative: Negative
+  neutral: Neutral
+interface:
+  prompt: Read the text and assign it to the most appropriate category.
+training:
+  setup:
+    private_name: Training for exam
+    shuffle_tasks_in_task_suite: false
+    assignment_max_duration_seconds: 300
+    training_tasks_in_task_suite_count: 5
+    inherited_instructions: true
+  data:
+    file: data/classify_text_training.tsv
+    input:
+      text: str
+    output:
+      result: str
+project:
+  setup:
+    public_name: "[EXAM] Classify text into categories"
+    public_description: Read the text and assign it to the most appropriate category.
+  instructions: instructions/classify_text_instructions.html
+pool:
+  exam:
+    history_size: 13
+    min_answers: 13
+    max_performers: 2
+  estimated_time_per_suite: 60
+  setup:
+    private_name: Classify text
+    reward_per_assignment: 0.2
+    assignment_max_duration_seconds: 600
+    auto_accept_solutions: true
+  defaults:
+    default_overlap_for_new_tasks: 1
+    default_overlap_for_new_task_suites: 1
+  mixer:
+    real_tasks_count: 0
+    golden_tasks_count: 3
+    training_tasks_count: 0
+  training:
+    training_passing_skill_value: 70
+  skill:
+    name: Classify text
+    language: EN
+    description: Has been trained and and taken an exam in text classification
+    hidden: true
+  filter:
+    languages:
+      - EN

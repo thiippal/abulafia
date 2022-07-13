@@ -20,7 +20,7 @@ class ImageClassification(CrowdsourcingTask):
     def __init__(self, configuration, client):
         """
         This function initialises the ImageClassification class, which inherits attributes
-        and methods from the superclass Task.
+        and methods from the superclass CrowdsourcingTask.
 
         Parameters:
             configuration: A string object that defines a path to a YAML file with configuration.
@@ -123,7 +123,7 @@ class ImageSegmentation(CrowdsourcingTask):
     def __init__(self, configuration, client):
         """
         This function initialises the ImageSegmentation class, which inherits attributes
-        and methods from the superclass Task.
+        and methods from the superclass CrowdsourcingTask.
 
         Parameters:
             configuration: A string object that defines a path to a YAML file with configuration.
@@ -216,9 +216,20 @@ class ImageSegmentation(CrowdsourcingTask):
 
 class AddOutlines(CrowdsourcingTask):
     """
-    This is a class for tasks that outline target objects for pre-existing source objects.
+    This is a class for tasks that add more bounding boxes to images with pre-existing labelled bounding boxes.
     """
     def __init__(self, configuration, client):
+        """
+        This function initialises the AddOutlines class, which inherits attributes
+        and methods from the superclass CrowdsourcingTask.
+
+        Parameters:
+            configuration: A string object that defines a path to a YAML file with configuration.
+            client: A TolokaClient object with valid credentials.
+
+        Returns:
+            An AddOutlines object.
+        """
 
         # Read the configuration from the YAML file
         configuration = read_configuration(configuration=configuration)
@@ -259,7 +270,14 @@ class AddOutlines(CrowdsourcingTask):
         
         # Add assignment ID to the input data
         data_in['assignment_id'] = toloka.project.StringSpec(required=False)
-        
+
+        try:
+            labels = [tb.ImageAnnotationFieldV1.Label(value=value, label=label) for 
+                      value, label in configuration["interface"]["labels"].items()]
+        except KeyError:
+            msg.warn(f"Key 'labels' needs to be configured in the configuration of pool {configuration['name']} under key 'interface'",
+                     exits=1)
+
         # Create the task interface; start by setting up the image segmentation interface
         img_ui = tb.ImageAnnotationFieldV1(
 
@@ -276,9 +294,8 @@ class AddOutlines(CrowdsourcingTask):
             # Set minimum width in pixels
             min_width=500,
 
-            # Set up labels for the bounding boxes
-            labels=[tb.ImageAnnotationFieldV1.Label(label="Target", value="target"),
-                    tb.ImageAnnotationFieldV1.Label(label="Source", value="source")],
+            # Set up labels for the outlines
+            labels=labels,
 
             disabled=False
         )
@@ -369,6 +386,9 @@ class SegmentationClassification(CrowdsourcingTask):
         # Add assignment ID to the input data
         data_in['assignment_id'] = toloka.project.StringSpec(required=False)
 
+        labels = [tb.ImageAnnotationFieldV1.Label(value=value, label=label) for 
+                    value, label in configuration["interface"]["labels"].items()] if "labels" in configuration["interface"] else None
+
         # Create the task interface; start by setting up the image segmentation interface
         img_ui = tb.ImageAnnotationFieldV1(
 
@@ -379,7 +399,7 @@ class SegmentationClassification(CrowdsourcingTask):
             # Set up the input data field
             image=tb.InputData(path=input_data['url']),
 
-            labels=[tb.ImageAnnotationFieldV1.Label(label="Source", value="source")],
+            labels=labels,
 
             # Set minimum width in pixels
             min_width=500,
@@ -434,11 +454,11 @@ class SegmentationClassification(CrowdsourcingTask):
 
 class LabelledSegmentationVerification(CrowdsourcingTask):
     """
-    This is a class for binary target segmentation verification tasks.
+    This is a class for binary segmentation verification tasks with labelled bounding boxes.
     """
     def __init__(self, configuration, client):
         """
-        This function initialises the TargetSegmentationVerification class, which inherits attributes
+        This function initialises the LabelledSegmentationVerification class, which inherits attributes
         and methods from the superclass Task.
         
         Parameters:
@@ -478,7 +498,7 @@ class LabelledSegmentationVerification(CrowdsourcingTask):
              A Toloka TaskSpec object.
         """
         # Define expected input and output types for the task
-        expected_i, expected_o = {'url', 'json'}, {'bool'}
+        expected_i, expected_o = {'url', 'json', 'bool'}, {'bool'}
 
         # Configure Toloka data specifications and check the expected input against configuration
         data_in, data_out, input_data, output_data = check_io(configuration=configuration,
@@ -487,6 +507,14 @@ class LabelledSegmentationVerification(CrowdsourcingTask):
 
         # Add assignment ID to the input data
         data_in['assignment_id'] = toloka.project.StringSpec(required=False)
+        data_out['no_target'] = toloka.project.BooleanSpec()
+
+        try:
+            labels = [tb.ImageAnnotationFieldV1.Label(value=value, label=label) for 
+                      value, label in configuration["interface"]["labels"].items()]
+        except KeyError:
+            msg.warn(f"Key 'labels' needs to be configured in the configuration of pool {configuration['name']} under key 'interface'",
+                     exits=1)
 
         # Create the task interface; start by setting up the image segmentation interface
         img_ui = tb.ImageAnnotationFieldV1(
@@ -501,15 +529,20 @@ class LabelledSegmentationVerification(CrowdsourcingTask):
             # Set minimum width in pixels
             min_width=500,
 
-            # Set up labels
-            labels=[tb.ImageAnnotationFieldV1.Label(label="Target", value="target"),
-                    tb.ImageAnnotationFieldV1.Label(label="Source", value="object")],
+            labels=labels,
 
             # Disable annotation interface
             disabled=True)
 
         # Define the text prompt below the segmentation UI
         prompt = tb.TextViewV1(content=configuration['interface']['prompt'])
+
+        # Create a button for cases where a target does not exist
+        checkbox = tb.CheckboxFieldV1(
+            data=tb.OutputData('no_target', default=tb.InputData(input_data['bool'])),
+            label="Target does not exist",
+            disabled=True
+        )
 
         # Set up a radio group for labels
         radio_group = tb.ButtonRadioGroupFieldV1(
@@ -538,7 +571,7 @@ class LabelledSegmentationVerification(CrowdsourcingTask):
 
         # Combine the task interface elements into a view
         interface = toloka.project.TemplateBuilderViewSpec(
-            view=tb.ListViewV1([img_ui, prompt, radio_group]),
+            view=tb.ListViewV1([img_ui, prompt, checkbox, radio_group]),
             plugins=[hotkey_plugin, task_width_plugin]
         )
 
@@ -653,7 +686,7 @@ class FixImageSegmentation(CrowdsourcingTask):
 
 class SegmentationVerification(CrowdsourcingTask):
     """
-    This is a class for binary verification tasks.
+    This is a class for binary image segmentation verification tasks.
     """
     def __init__(self, configuration, client):
         """
@@ -770,7 +803,7 @@ class SegmentationVerification(CrowdsourcingTask):
 
 class MulticlassVerification(CrowdsourcingTask):
     """
-    This is a class for multiclass verification tasks.
+    This is a class for multiclass image segmentation verification tasks.
     """
     def __init__(self, configuration, client):
         """
@@ -799,7 +832,7 @@ class MulticlassVerification(CrowdsourcingTask):
         # If the class is called, use the __call__() method from the superclass
         super().__call__(input_obj, verify=True)
 
-        # When called, return the SegmentationVerification object
+        # When called, return the MulticlassVerification object
         return self
 
     @staticmethod
@@ -862,6 +895,7 @@ class MulticlassVerification(CrowdsourcingTask):
         # Set task width limit
         task_width_plugin = tb.TolokaPluginV1(kind='scroll', task_width=500)
 
+        # Create hotkeys for each possible response
         hotkey_dict = {f'key_{i+1}': tb.SetActionV1(data=tb.OutputData(output_data['str']),
                                                     payload=list(configuration['options'].keys())[i]) 
                                                     for i in range(len(configuration['options']))}
@@ -967,6 +1001,7 @@ class TextClassification(CrowdsourcingTask):
         # Set task width limit
         task_width_plugin = tb.TolokaPluginV1(kind='scroll', task_width=500)
 
+        # Create hotkeys for all possible responses
         hotkey_dict = {f'key_{i+1}': tb.SetActionV1(data=tb.OutputData(output_data['str']),
                                                     payload=list(configuration['options'].keys())[i]) 
                                                     for i in range(len(configuration['options']))}
@@ -1071,6 +1106,7 @@ class TextAnnotation(CrowdsourcingTask):
         # Set task width limit
         task_width_plugin = tb.TolokaPluginV1(kind='scroll', task_width=500)
 
+        # Create hotkeys for all possible responses
         hotkey_dict = {f'key_{i+1}': tb.SetActionV1(data=tb.OutputData(output_data['json']),
                                                     payload=list(configuration['options'].keys())[i]) 
                                                     for i in range(len(configuration['options']))}

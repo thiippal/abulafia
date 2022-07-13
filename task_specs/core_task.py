@@ -373,30 +373,6 @@ class CrowdsourcingTask:
                              self.pool_conf['setup']['reward_per_assignment'],
                              self.name)
 
-            # Check if speed/quality balance settings have been configured
-            if 'speed_quality_balance' in self.pool_conf.keys() and self.pool_conf['speed_quality_balance'] is not None:
-
-                if "top_percentage_by_quality" in self.pool_conf['speed_quality_balance']:
- 
-                    # Get percentage for top workers from configuration
-                    user_percentage = self.pool_conf["speed_quality_balance"]["top_percentage_by_quality"]
-
-                    speed_quality = TopPercentageByQuality(percent=user_percentage)
-                    
-                    msg.info(f"Speed/quality setting: only top {user_percentage}% of users will have access to pool {self.name}")
-
-                elif "best_concurrent_users_by_quality" in self.pool_conf['speed_quality_balance']:
-                    
-                    # Get number of top workers from configuration
-                    user_count = self.pool_conf['speed_quality_balance']["best_concurrent_users_by_quality"]
-                    
-                    speed_quality = BestConcurrentUsersByQuality(count=user_count)
-
-                    msg.info(f"Speed/quality setting: only top {user_count} users will have access to pool {self.name}")
-                
-                # Set speed/quality setting
-                self.pool.set_speed_quality_balance(speed_quality)
-
             # Check if filters have been defined
             if 'filter' in self.pool_conf.keys() and self.pool_conf['filter'] is not None:
 
@@ -459,17 +435,6 @@ class CrowdsourcingTask:
                         self.pool.filter = set_filter(filters=self.pool.filter,
                                                       new_filters=clients)
 
-                # TODO remove deprecated filters (rating)
-
-                # Check if workers should be filtered based on rating
-                if 'rating' in self.pool_conf['filter'].keys():
-
-                    # Create filter
-                    rating = (toloka.filter.Rating >= self.pool_conf['filter']['rating'])
-
-                    # Check for existing filters and set
-                    self.pool.filter = set_filter(filters=self.pool.filter,
-                                                  new_filters=rating)
 
                 # Check if workers should be filtered based on education
                 if 'education' in self.pool_conf['filter'].keys():
@@ -722,6 +687,30 @@ class CrowdsourcingTask:
                 # Print status message
                 msg.info(f'Setting up quality control rules')
 
+                # Check if speed/quality balance settings have been configured
+                if 'speed_quality_balance' in self.qual_conf and self.qual_conf['speed_quality_balance'] is not None:
+
+                    if "top_percentage_by_quality" in self.qual_conf['speed_quality_balance']:
+    
+                        # Get percentage for top workers from configuration
+                        user_percentage = self.qual_conf["speed_quality_balance"]["top_percentage_by_quality"]
+
+                        speed_quality = TopPercentageByQuality(percent=user_percentage)
+                        
+                        msg.info(f"Speed/quality setting: only top {user_percentage}% of users will have access to pool {self.name}")
+
+                    elif "best_concurrent_users_by_quality" in self.qual_conf['speed_quality_balance']:
+                        
+                        # Get number of top workers from configuration
+                        user_count = self.qual_conf['speed_quality_balance']["best_concurrent_users_by_quality"]
+                        
+                        speed_quality = BestConcurrentUsersByQuality(count=user_count)
+
+                        msg.info(f"Speed/quality setting: only top {user_count} users will have access to pool {self.name}")
+                    
+                    # Set speed/quality setting
+                    self.pool.set_speed_quality_balance(speed_quality)
+
                 # Set up quality control rule for fast responses
                 if 'fast_responses' in self.qual_conf:
 
@@ -897,8 +886,6 @@ class CrowdsourcingTask:
                         # Print status message
                         msg.good(f"Added quality control rule: Grant user a skill value {skill_value} for skill "
                                  f"{skill_id} if user successfully completes over {correct_threshold}% of control tasks.")
-
-                # TODO rest of quality control rules
 
 
             # Check if the pool is an exam pool

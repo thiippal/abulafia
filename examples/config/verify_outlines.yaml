@@ -1,12 +1,16 @@
 name: verify_outlines
 data:
   input:
-    image: url
+    image: url                          
     outlines: json
   output:
-    result: bool
+    result: str
+options:
+  correct: "Yes"
+  incorrect: "No"
+  human_error: "Human error"
 actions:
-  on_accepted: process_result
+  on_closed: aggregate_verify
 interface:
   prompt: Read the instructions first. Is the diagram annotated according to the instructions?
 project:
@@ -14,12 +18,13 @@ project:
     public_name: Verify outlines for text, letters or numbers in diagrams
     public_description: Look at diagrams from science textbooks and verify if they have
       been annotated correctly.
-  instructions: data/instructions.html
+  instructions: instructions/verify_outlines_instructions.html
 training:
 pool:
+  estimated_time_per_suite: 15
   setup:
     private_name: Verify outlines
-    reward_per_assignment: 0.1
+    reward_per_assignment: 0.075
     assignment_max_duration_seconds: 600
     auto_accept_solutions: true
   defaults:
@@ -30,7 +35,27 @@ pool:
     golden_tasks_count: 0
     training_tasks_count: 0
   filter:
-    languages:
+    languages:          
     - EN
     client_type:
     - BROWSER
+    - TOLOKA_APP
+quality_control:
+  speed_quality_balance:
+    top_percentage_by_quality: 40
+  fast_responses:
+    history_size: 5
+    count: 3
+    threshold: 2
+    ban_duration: 7
+    ban_units: DAYS
+  skipped_assignments:
+    count: 3
+    ban_duration: 7
+    ban_units: DAYS
+  redo_banned: true
+  captcha:
+    frequency: HIGH
+    success_rate: 100
+    ban_duration: 7
+    ban_units: DAYS
