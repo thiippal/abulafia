@@ -1,8 +1,0 @@
-name: process_result
-data:
-  output: result
-actions:
-  on_rejected: outline_text
-messages:
-  accepted: Thank you for your work!
-  rejected: You did not follow the instructions!

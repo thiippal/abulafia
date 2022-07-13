@@ -3,7 +3,7 @@
 import sys
 sys.path.append('..')
 
-from task_specs import ImageClassification, TaskSequence
+from task_specs import TaskSequence, TextClassification
 import json
 import toloka.client as toloka
 
@@ -13,11 +13,14 @@ with open('../creds.json') as cred_f:
     creds = json.loads(cred_f.read())
     tclient = toloka.TolokaClient(creds['token'], creds['mode'])
 
-# Create an ImageClassification task with training and exam
-exam = ImageClassification(configuration='tasks/text_exam.yaml', client=tclient)
+# Create a TextClassification exam using the configuration file
+classify_text_exam = TextClassification(configuration='config/classify_text_exam.yaml', client=tclient)
+
+# Create a TextClassification task using the configuration file
+classify_text = TextClassification(configuration='config/classify_text.yaml', client=tclient)
 
 # Add the task into a TaskSequence
-sequence = TaskSequence(sequence=[exam], client=tclient)
+sequence = TaskSequence(sequence=[classify_text_exam, classify_text], client=tclient)
 
 # Start the sequence; create tasks on Toloka
 sequence.start()

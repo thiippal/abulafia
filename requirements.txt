@@ -4,5 +4,5 @@ crowd_kit==1.0.0
 pandas==1.4.1
 pytest==7.1.0
 PyYAML==6.0
-toloka_kit==0.1.23
+toloka_kit==0.1.26
 wasabi==0.9.0

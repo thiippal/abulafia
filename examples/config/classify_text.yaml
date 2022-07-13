@@ -1,6 +1,6 @@
 name: classify_text
 data:
-  file: data/text_data.tsv
+  file: data/classify_text_data.tsv
   input:
     text: str
   output:
@@ -15,8 +15,7 @@ project:
   setup:
     public_name: Classify text into categories
     public_description: Read the text and assign it to the most appropriate category.
-  instructions: data/instructions.html
-training:
+  instructions: instructions/classify_text_instructions.html
 pool:
   estimated_time_per_suite: 60
   setup:
@@ -33,7 +32,7 @@ pool:
     training_tasks_count: 0
   filter:
     languages:
-    - EN
-    client_type:
-    - TOLOKA_APP
-    - BROWSER
+      - EN
+    #skill:
+      # CONFIGURE THE SKILL ID PRODUCED BY YOUR EXAM AND THE EXPECTED SKILL VALUE HERE. For example:
+      # 12345: 80

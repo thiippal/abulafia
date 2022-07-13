@@ -1,0 +1,54 @@
+name: detect_target
+data:
+  input:
+    image: url
+    outlines: json
+  output:
+    result: bool
+interface:
+  prompt: Read the instructions first. Does the text refer to another part of the diagram?
+  labels:
+    source: Source
+project:
+  setup:
+    public_name: "Examine diagrams from school textbooks"
+    public_description: "In this task you will be shown diagrams from school textbooks. Your task is to examine the diagrams and reason about their content."
+  instructions: instructions/detect_target_instructions.html
+pool:
+  estimated_time_per_suite: 50 
+  setup:
+    private_name: Detect target
+    reward_per_assignment: 0.17
+    assignment_max_duration_seconds: 600
+    auto_accept_solutions: true
+  defaults:
+    default_overlap_for_new_tasks: 1
+    default_overlap_for_new_task_suites: 1
+  mixer:
+    real_tasks_count: 5
+    golden_tasks_count: 0
+    training_tasks_count: 0
+  filter:
+    languages:
+    - EN
+    client_type:
+    - BROWSER
+quality_control:
+  speed_quality_balance:
+    top_percentage_by_quality: 40
+  fast_responses:
+    history_size: 5
+    count: 3
+    threshold: 2
+    ban_duration: 7
+    ban_units: DAYS
+  skipped_assignments:
+    count: 3
+    ban_duration: 7
+    ban_units: DAYS
+  redo_banned: true
+  captcha:
+    frequency: HIGH
+    success_rate: 100
+    ban_duration: 7
+    ban_units: DAYS

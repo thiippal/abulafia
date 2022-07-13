@@ -1,8 +1,7 @@
-name: forward_bool        # Name of the action: this is how pools and actions refer to each other
+name: forward_detect      # Name of the action: this is how pools and actions refer to each other
 data:                     
   output: result          # What the action outputs
 source: aggregate_detect  # Pool/action from which tasks are forwarded to this action
-#source: detect_text
 actions:
   on_result:              # Keys: possible outputs to the task
                           # Values: pools to which assignments with the output are forwarded

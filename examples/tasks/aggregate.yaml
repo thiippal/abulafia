@@ -1,7 +1,0 @@
-name: aggregate
-source: detect_text
-actions:
-  on_result: forward_agg
-method: dawid_skene
-accept: False
-reject: False

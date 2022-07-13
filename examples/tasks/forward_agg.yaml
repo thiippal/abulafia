@@ -1,8 +1,0 @@
-name: forward_agg
-data:
-  output: result
-source: aggregate
-actions:
-  on_result:
-    true: pool_1
-    false: pool_2
