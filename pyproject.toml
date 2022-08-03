@@ -1,0 +1,21 @@
+[build-system]
+requires = ["setuptools>=61.0.0", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "abulafia"
+version = "0.0.1"
+description = "A tool for fairer and reproducible crowdsourcing using Toloka"
+readme = "README.md"
+requires-python = ">=3.8"
+authors = [
+    {name = "Tuomo Hiippala"},
+    {name = "Helmiina Hotti"}
+]
+dependencies = [
+    "crowd_kit>=1.0.0",
+    "pytest",
+    "PyYAML>=6.0",
+    "toloka_kit>=0.1.26",
+    "wasabi>=0.9.0"
+]
