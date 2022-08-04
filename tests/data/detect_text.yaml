@@ -1,6 +1,6 @@
 name: detect_text
 data:
-  file: data/action_demo_data.tsv
+  file: data/demo_data.tsv
   input:
     image: url                    
   output:
@@ -14,9 +14,8 @@ project:
     public_name: Check if an image contains text, letters or numbers
     public_description: Look at diagrams from science textbooks and state if they
       contain text, letters or numbers.
-  instructions: instructions/detect_text_instructions.html
+  instructions: data/detect_text_instructions.html
 pool:
-  blocklist: data/blocklist.tsv   # Path to a tsv-file containing a list of user IDs for blocked workers (optional)
   estimated_time_per_suite: 10
   setup:
     private_name: Detect text

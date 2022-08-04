@@ -308,7 +308,9 @@ def load_data(data: str, inputs: dict):
 
         # Convert JSON inputs from string to JSON
         json_inputs = [k for k, v in inputs.items() if v == "json"]
+
         for i in json_inputs:
+
             df[i] = df[i].apply(lambda x: json.loads(x))
             
         # Print message
@@ -627,12 +629,14 @@ def check_reward(time_per_suite: int, reward: Union[int, float], name: str) -> N
     suggested_reward = 12 / suites_per_hour
 
     if reward < suggested_reward:
+
         msg.warn(f"The reward you have set per assignment for {name} does not result in a fair wage for the workers. "
                  f"In order for the workers to receive a salary of $12 per hour, set reward_per_assignment to at least ${suggested_reward}.\n"
                  f"Do you wish to proceed with the current configuration anyway (y/n)?")
         choice = input("")
 
         if choice == "n":
+
             msg.info("Cancelling pipeline", exits=1)
 
 

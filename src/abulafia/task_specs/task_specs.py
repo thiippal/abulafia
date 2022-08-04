@@ -17,7 +17,7 @@ class ImageClassification(CrowdsourcingTask):
     """
     This is a class for image classification tasks.
     """
-    def __init__(self, configuration, client):
+    def __init__(self, configuration, client, **kwargs):
         """
         This function initialises the ImageClassification class, which inherits attributes
         and methods from the superclass CrowdsourcingTask.
@@ -37,7 +37,7 @@ class ImageClassification(CrowdsourcingTask):
 
         # Use the super() function to access the superclass Task and its methods and attributes.
         # This will set up the project, pool and training as specified in the configuration JSON.
-        super().__init__(configuration, client, task_spec)
+        super().__init__(configuration, client, task_spec, **kwargs)
 
     def __call__(self, input_obj, **kwargs):
 

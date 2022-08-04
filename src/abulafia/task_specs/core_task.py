@@ -21,7 +21,7 @@ class CrowdsourcingTask:
     pools on Toloka.
     """
 
-    def __init__(self, configuration, client, task_spec):
+    def __init__(self, configuration, client, task_spec, **kwargs):
         """
         This function initialises the CrowdsourcingTask class.
 
@@ -60,22 +60,29 @@ class CrowdsourcingTask:
         self.is_complete = False  # Is the Task complete or not?
         self.skill = False  # Does the Task provide or require a skill?
         self.exam = False  # Is this Task an exam?
+        self.test = True if kwargs and kwargs['test'] else False  # Are we running a test?
 
         # See if users should be banned from the pool and check that blocklist is configured correctly
         try:
-            self.blocklist = list(pd.read_csv(self.pool_conf['blocklist'], sep="\t")["user_id"]) if 'blocklist' in self.pool_conf.keys() else []
+
+            self.blocklist = list(pd.read_csv(self.pool_conf['blocklist'], sep="\t")["user_id"]) \
+                if 'blocklist' in self.pool_conf.keys() else []
+
         except KeyError:
+
             msg.warn(f"Could not find the column 'user_id' from blocklist.", exits=1)
 
         # Print status message
         msg.info(f'The unique ID for this object ({self.name}) is {self.task_id}')
 
-        # Get requester information
-        requester = client.get_requester()
+        # Get requester information unless we're running a test
+        if not self.test:
 
-        # Print status messages on requester ID and balance
-        msg.info(f'Using Toloka with requester with ID {requester.id}')
-        msg.info(f'Current balance on this account is ${requester.balance}')
+            requester = client.get_requester()
+
+            # Print status messages on requester ID and balance
+            msg.info(f'Using Toloka with requester with ID {requester.id}')
+            msg.info(f'Current balance on this account is ${requester.balance}')
 
         # Load project configuration
         self.load_project(client=client, task_spec=task_spec)
@@ -92,7 +99,9 @@ class CrowdsourcingTask:
             # Create exam tasks and add them to the pool
             self.tasks = create_exam_tasks(self)
 
-            add_tasks(self, tasks=self.tasks)
+            if not self.test:
+
+                add_tasks(self, tasks=self.tasks)
 
         # Create main tasks if they have been defined
         if not self.exam and 'file' in self.data_conf:
@@ -103,7 +112,9 @@ class CrowdsourcingTask:
             # Create tasks and add them to the pool
             self.tasks = create_tasks(self, data)
 
-            add_tasks(self, self.tasks)
+            if not self.test:
+
+                add_tasks(self, self.tasks)
 
     def __call__(self, in_obj, **options):
 
@@ -186,7 +197,7 @@ class CrowdsourcingTask:
             # Print status message
             msg.info(f'Creating a new Toloka project ...')
 
-            # Create a new toloka-kit Project object
+            # Create a new Toloka Project object
             self.project = toloka.Project(**self.project_conf['setup'])
 
             try:
@@ -209,11 +220,13 @@ class CrowdsourcingTask:
             # Create the task interface
             self.project.task_spec = task_spec
 
-            # Create new project on the platform
-            self.project = client.create_project(self.project)
+            # Create new project on the platform if we're not testing
+            if not self.test:
 
-            # Print status message
-            msg.good(f'Successfully created a new project with ID {self.project.id} on Toloka')
+                self.project = client.create_project(self.project)
+
+                # Print status message
+                msg.good(f'Successfully created a new project with ID {self.project.id} on Toloka')
 
     def load_training(self, client):
         """
@@ -263,14 +276,17 @@ class CrowdsourcingTask:
                 # Print status message
                 msg.good(f'Successfully configured a new training pool')
 
-                # Create the training pool
-                self.training = client.create_training(self.training)
+                # Create the training pool if not testing
+                if not self.test:
 
-                # Print status messages
-                msg.good(f'Successfully created a new training pool')
+                    self.training = client.create_training(self.training)
+
+                    # Print status messages
+                    msg.good(f'Successfully created a new training pool')
 
                 # Load training data
-                self.train_data = load_data(self.conf['training']['data']['file'], self.conf['training']['data']['input'])
+                self.train_data = load_data(self.conf['training']['data']['file'],
+                                            self.conf['training']['data']['input'])
 
                 # Get the input and output variable names
                 input_values = {n: n for n in list(self.conf['training']['data']['input'].keys())}
@@ -289,8 +305,10 @@ class CrowdsourcingTask:
                                     for _, row in self.train_data.iterrows()]
 
                 # Add training tasks to the training pool
-                add_tasks_to_pool(client=self.client, tasks=self.train_tasks, pool=self.training,
-                                  kind='train')
+                if not self.test:
+
+                    add_tasks_to_pool(client=self.client, tasks=self.train_tasks, pool=self.training,
+                                      kind='train')
 
     def load_pool(self, client):
         """
@@ -357,18 +375,21 @@ class CrowdsourcingTask:
             # Print status message
             msg.good(f'Successfully configured a new main pool')
 
-
             if 'estimated_time_per_suite' not in self.pool_conf.keys():
                 msg.warn(f"Parameter estimated_time_per_suite is not configured in pool settings for {self.name}. "
                          f"Consider adding it to verify that the reward_per_assignment you have set results in a fair "
-                         f"hourly wage of at least $12. Do you wish to proceed with the current configuration anyway (y/n)?")
+                         f"hourly wage of at least $12. Do you wish to proceed with the current configuration anyway "
+                         f"(y/n)?")
+
                 choice = input("")
 
                 if choice == "n":
+
                     msg.info("Cancelling pipeline")
                     exit()
 
             else:
+
                 check_reward(self.pool_conf['estimated_time_per_suite'], 
                              self.pool_conf['setup']['reward_per_assignment'],
                              self.name)
@@ -435,7 +456,6 @@ class CrowdsourcingTask:
                         self.pool.filter = set_filter(filters=self.pool.filter,
                                                       new_filters=clients)
 
-
                 # Check if workers should be filtered based on education
                 if 'education' in self.pool_conf['filter'].keys():
 
@@ -494,8 +514,7 @@ class CrowdsourcingTask:
                             # Check for existing filters and set
                             self.pool.filter = set_filter(filters=self.pool.filter,
                                                           new_filters=skill)
-                                                        
-                                                        
+
                 # Check if workers should be filtered based on gender
                 if 'gender' in self.pool_conf['filter'].keys():
 
@@ -505,7 +524,6 @@ class CrowdsourcingTask:
                     self.pool.filter = set_filter(filters=self.pool.filter,
                                                   new_filters=gender)
 
-                
                 # Check if workers should be filtered based on whether they allow
                 # adult content or not
                 if 'adult_allowed' in self.pool_conf['filter'].keys():
@@ -517,7 +535,6 @@ class CrowdsourcingTask:
                     self.pool.filter = set_filter(filters=self.pool.filter,
                                                   new_filters=adult_allowed)
 
-                
                 # Check if workers should be filtered based on country
                 if 'country' in self.pool_conf['filter'].keys():
 
@@ -545,8 +562,7 @@ class CrowdsourcingTask:
                         # Check for existing filters and set
                         self.pool.filter = set_filter(filters=self.pool.filter,
                                                       new_filters=levels)
-                    
-                
+
                 # Check if workers should be filtered based on city
                 if 'city' in self.pool_conf['filter'].keys():
 
@@ -574,7 +590,6 @@ class CrowdsourcingTask:
                         # Check for existing filters and set
                         self.pool.filter = set_filter(filters=self.pool.filter,
                                                       new_filters=levels)
-
 
                 # Filter performers by date of birth (before or after a certain date or both)
                 # Note that date of birth needs to be expressed as a UNIX timestamp
@@ -610,7 +625,6 @@ class CrowdsourcingTask:
                         self.pool.filter = set_filter(filters=self.pool.filter,
                                                       new_filters=levels)
 
-                    
                 # Check if workers should be filtered based on UserAgentType
                 if 'user_agent_type' in self.pool_conf['filter'].keys():
 
@@ -776,7 +790,6 @@ class CrowdsourcingTask:
                             action=toloka.actions.ChangeOverlap(delta=1, open_pool=True)
                         )
 
-                
                 # Set up captcha quality control
                 if 'captcha' in self.qual_conf:
 
@@ -851,7 +864,6 @@ class CrowdsourcingTask:
                         # Print status message
                         msg.good(f"Added quality control rule: Reject all user's assignments if "
                                  f"user fails over {incorrect_threshold}% of control tasks.")
-                    
 
                     # Automatically approve assignments from user if they are successful in control tasks
                     if 'approve_rules' in self.qual_conf['golden_set']:
@@ -867,7 +879,6 @@ class CrowdsourcingTask:
                         # Print status message
                         msg.good(f"Added quality control rule: Approve all user's assignments if "
                                  f"user successfully completes over {correct_threshold}% of control tasks.")
-
 
                     # Set a skill for user if they are successful in control tasks
                     if 'skill_rules' in self.qual_conf['golden_set']:
@@ -886,7 +897,6 @@ class CrowdsourcingTask:
                         # Print status message
                         msg.good(f"Added quality control rule: Grant user a skill value {skill_value} for skill "
                                  f"{skill_id} if user successfully completes over {correct_threshold}% of control tasks.")
-
 
             # Check if the pool is an exam pool
             if 'exam' in self.pool_conf.keys():
@@ -941,7 +951,9 @@ class CrowdsourcingTask:
                 msg.good(f'Successfully configured exam pool using skill {self.skill.id}')
 
             # Create pool on Toloka
-            self.pool = self.client.create_pool(self.pool)
+            if not self.test:
 
-            # Print status message
-            msg.good(f'Successfully created a new pool with ID {self.pool.id} on Toloka')
+                self.pool = self.client.create_pool(self.pool)
+
+                # Print status message
+                msg.good(f'Successfully created a new pool with ID {self.pool.id} on Toloka')
