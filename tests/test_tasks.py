@@ -28,13 +28,57 @@ class TestTask:
 
     def test_project_type(self, test_task):
 
-        assert type(test_task.project) == toloka.Project
+        assert isinstance(test_task.project, toloka.Project)
 
-    def test_project_properties(self, test_task):
+    def test_project_desc_type(self, test_task):
 
-        assert test_task.project.public_description == 'Look at diagrams from science textbooks and state if they ' \
-                                                       'contain text, letters or numbers.'
+        assert isinstance(test_task.project.public_description, str)
 
-    # TODO Continue to write tests for CrowdsourcingTask attributes
+    def test_project_conf_type(self, test_task):
 
+        assert isinstance(test_task.conf, dict)
+
+    def test_project_client_type(self, test_task):
+
+        assert isinstance(test_task.client, TolokaClient)
+
+    def test_project_data_conf(self, test_task):
+
+        assert isinstance(test_task.data_conf, dict)
+
+    def test_project_proj_conf(self, test_task):
+
+        assert isinstance(test_task.project_conf, dict)
+
+    def test_project_action_conf(self, test_task):
+
+        assert isinstance(test_task.action_conf, dict) or isinstance(test_task.action_conf, type(None))
+
+    def test_project_pool_conf(self, test_task):
+
+        assert isinstance(test_task.pool_conf, dict)
+
+    def test_project_train_conf(self, test_task):
+
+        assert isinstance(test_task.train_conf, dict) or isinstance(test_task.train_conf, type(None))
+
+    def test_project_qual_conf(self, test_task):
+
+        assert isinstance(test_task.qual_conf, dict) or isinstance(test_task.qual_conf, type(None))
+
+    def test_training_type(self, test_task):
+
+        assert isinstance(test_task.training, toloka.Training) or isinstance(test_task.training, type(None))
+
+    def test_pool_type(self, test_task):
+
+        assert isinstance(test_task.pool, toloka.Pool)
+
+    def test_tasks_type(self, test_task):
+
+        assert isinstance(test_task.tasks, list)
+
+    def test_tasks_object_types(self, test_task):
+
+        assert all(isinstance(x, toloka.Task) for x in test_task.tasks)
 

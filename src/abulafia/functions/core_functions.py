@@ -48,7 +48,6 @@ def create_tasks(input_obj,
     # Create a list of Toloka Task objects by looping over the input DataFrame. Use the
     # dictionary of input variable names 'input_values' to retrieve the correct columns
     # from the DataFrame.
-
     tasks = [toloka.Task(pool_id=input_obj.pool.id,
                          input_values={k: row[v] for k, v in input_values.items()},
                          unavailable_for=input_obj.blocklist)

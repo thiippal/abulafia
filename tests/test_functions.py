@@ -58,7 +58,7 @@ def test_check_io_type(task_conf):
     # Apply the function to be tested
     result = check_io(task_conf, expected_in, expected_out)
 
-    assert type(result) == tuple
+    assert isinstance(result, tuple)
 
 
 def test_check_io_len(task_conf):
