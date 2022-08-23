@@ -104,7 +104,6 @@ Interface for image segmentation tasks.
 |-----|------|
 |`url` (image) | `json` (bounding boxes) |
 
-
 ### AddOutlines
 
 Interface for image segmentation tasks with pre-existing labelled outlines.
