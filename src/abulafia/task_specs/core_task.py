@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 
 # Import libraries
-from functions.core_functions import *
+from ..functions.core_functions import *
 from wasabi import Printer
 from toloka.streaming.event import AssignmentEvent
 import datetime
