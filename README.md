@@ -21,7 +21,9 @@ When you've tested your pipeline in the Toloka sandbox, change `"SANDBOX"` to `"
 
 See the directory [`examples/`](https://github.com/thiippal/abulafia/tree/main/examples) for example pipelines.
 
-<img src="examples/screenshot.png" width=700>
+The screenshot below shows an example of running the tool.
+
+<img src="https://s3.datacloud.helsinki.fi/crowdsrc:instructions/abulafia-screenshot.png" width=700>
 
 ## Ensuring fair worker rewards
 
