@@ -8,7 +8,7 @@ The pipelines can consist of crowdsourcing tasks as well as actions that perform
 
 If you wish to move tasks from one pool to another based on the acceptance status of the task, not the task output, you can configure the receiving pool under `actions` with keys `on_submitted`, `on_accepted` or `on_rejected`. For example, if you wish rejected work to go back to the pool to be re-completed by another worker, you can configure the current pool as value to the key `on_rejected`.
 
-To deploy your crowdsourcing tasks to Toloka, the tool needs to read your credentials from a JSON file `creds.json`. Remember to never add this file to public version control. The contents of the file should be the following:
+To deploy your crowdsourcing tasks to Toloka, the tool needs to read your credentials from a JSON file e.g. `creds.json`. Remember to never add this file to public version control. The contents of the file should be the following:
 
 ```
 {
@@ -60,7 +60,7 @@ If you want to prevent some users from having access to a specific pool, add the
 
 ### Actions
 
-Similarly as crowdsourcing tasks, each action in your pipeline requires its own configuration file. [`examples/action_demo.py`](https://github.com/thiippal/abulafia/blob/main/examples/action_demo.py) is an example pipeline that uses actions `Aggregate`, `Forward` and `SeparateBBoxes`.
+Just like crowdsourcing tasks, each action in your pipeline requires its own configuration file. [`examples/action_demo.py`](https://github.com/thiippal/abulafia/blob/main/examples/action_demo.py) is an example pipeline that uses actions `Aggregate`, `Forward` and `SeparateBBoxes`.
 
 **Forward** action requires the following keys:
 
