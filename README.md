@@ -4,11 +4,11 @@
 
 𝚊𝚋𝚞𝚕𝚊𝚏𝚒𝚊 is a tool for creating and deploying crowdsourcing tasks on the the [Toloka](https://toloka.ai) crowdsourcing platform. The tool allows you to create crowdsourcing tasks using pre-defined task interfaces and YAML configuration files.
 
-The pipelines can consist of crowdsourcing tasks as well as `action`s that perform operations before, between or after tasks. `Forward` action is used to transfer tasks from one pool to another based on task output. `Aggregate` action is used to aggregate the output of a task; the action uses your aggregation algorithm of choice to determine the most probable correct output to a task based on majority vote. `SeparateBBoxes` is an action that takes an image with several bounding boxes, separates the bounding boxes to one per image, and creates new tasks from those.
+The pipelines can consist of crowdsourcing tasks as well as actions that perform operations before, between or after tasks. The `Forward` action is used to transfer tasks from one pool to another based on task output. The `Aggregate` action is used to aggregate the output of a task; the action uses your aggregation algorithm of choice to determine the most probable correct output to a task based on majority vote. `SeparateBBoxes` is an action that takes an image with several bounding boxes, separates the bounding boxes to one per image, and creates new tasks from those.
 
 If you wish to move tasks from one pool to another based on the acceptance status of the task, not the task output, you can configure the receiving pool under `actions` with keys `on_submitted`, `on_accepted` or `on_rejected`. For example, if you wish rejected work to go back to the pool to be re-completed by another worker, you can configure the current pool as value to the key `on_rejected`.
 
-In order to deploy your crowdsourcing tasks to Toloka, the tool needs to read your credentials from a JSON file `creds.json` in the root of the repository. Remember to never add this file to public version control. The contents of the file should be the following:
+To deploy your crowdsourcing tasks to Toloka, the tool needs to read your credentials from a JSON file `creds.json`. Remember to never add this file to public version control. The contents of the file should be the following:
 
 ```
 {
@@ -19,13 +19,13 @@ In order to deploy your crowdsourcing tasks to Toloka, the tool needs to read yo
 
 When you've tested your pipeline in the Toloka sandbox, change `"SANDBOX"` to `"PRODUCTION"`.
 
-See `examples/` for tutorial pipelines.
+See the directory [`examples/`](https://github.com/thiippal/abulafia/tree/main/examples) for example pipelines.
 
 <img src="examples/screenshot.png" width=700>
 
 ## Ensuring fair worker rewards
 
-**abulafia** has a built-in mechanism that guides the user to determine rewards that result in a fair hourly wage ($12) for the crowdsourcing workers. In the pool configuration, the user should add a key `estimated_time_per_suite`. The value for the key should be the estimated time in seconds it takes for the worker to complete one task suite. Based on this value and the value `reward_per_assignment`, the tool checks if the reward is high enough to result in a fair hourly wage. The user is presented with a warning and prompted to cancel the pipeline if the configured reward is too low. A warning is also raised if `estimated_time_per_suite` is not found in the pool configuration.
+The tool has a built-in mechanism that guides the user to determine rewards that result in a fair hourly wage ($12) for the crowdsourced workers. In the pool configuration, the user should add a key `estimated_time_per_suite`. The value for the key should be the estimated time in seconds it takes for the worker to complete one task suite. Based on this value and the value `reward_per_assignment`, the tool checks if the reward is high enough to result in a fair hourly wage. The user is presented with a warning and prompted to cancel the pipeline if the configured reward is too low. A warning is also raised if `estimated_time_per_suite` is not found in the pool configuration.
 
 To calculate a fair reward per task suite, you can use the interactive script `utils/calculate_fair_rewards.py`.
 
@@ -50,32 +50,34 @@ Optionally, you can add `quality_control` settings. Options for quality control 
 - [Captcha](https://toloka.ai/docs/guide/concepts/captcha.html)
 - [Golden set](https://toloka.ai/en/docs/toloka-kit/reference/toloka.client.collectors.GoldenSet) (performance on control tasks)
 
-See `examples/config/` for example YAML configuration files.
+See the directory [`examples/config`](https://github.com/thiippal/abulafia/tree/main/examples/config) for examples of YAML configuration files.
 
 ### Blocklist
 
-If you want to prevent some users from having access to a specific pool, add the key `blocklist` under `pool` configuration and give a path to a tsv-file containing the column `user_id` with user id:s of the workers you would like to block (example in `examples/config/detect_text.yaml`). 
+If you want to prevent some users from having access to a specific pool, add the key `blocklist` under `pool` configuration and give a path to a tsv-file containing the column `user_id` with user identifiers of the workers you would like to block (see the example in [`examples/config/detect_text.yaml`](https://github.com/thiippal/abulafia/blob/main/examples/config/detect_text.yaml)). 
 
 ### Actions
 
-Similarly as crowdsourcing tasks, each action in your pipeline requires its own configuration file. `examples/action_demo.py` is an example pipeline that uses actions `Aggregate`, `Forward` and `SeparateBBoxes`.
+Similarly as crowdsourcing tasks, each action in your pipeline requires its own configuration file. [`examples/action_demo.py`](https://github.com/thiippal/abulafia/blob/main/examples/action_demo.py) is an example pipeline that uses actions `Aggregate`, `Forward` and `SeparateBBoxes`.
 
-**Forward** action requires the keys 
+**Forward** action requires the following keys:
+
 - `name` of the action
 - `data` 
 - `source`, the pool from which tasks go to the forward action
-- variable names for the possible outputs for the source task and pools to which they should be forwarded are configured under `on_result` under `actions`. 
-  - You can either configure a pool to which to forward, or use the keywords `accept` or `reject` to automatically accept or reject tasks based on the output. These keywords are meant to be used in verification pools. For example, you can ask workers to determine if an image has been annotated correctly. Then, you can use aggregation and forwarding to automatically accept or reject the _original_ task by using key-value pairs such as `correct: accept` and `incorrect: reject` in your Forward configuration. You can also configure both accepting/rejecting and a next pool. In that case, use a list as the value for the variable name of the output. See `examples/action_demo.py` and its configuration files for example of use. 
+
+Variable names for the possible outputs for the source task and pools to which they should be forwarded are configured under `on_result` under `actions`. 
+
+You can either configure a pool to which to forward, or use the keywords `accept` or `reject` to automatically accept or reject tasks based on the output. These keywords are meant to be used in verification pools. For example, you can ask workers to determine if an image has been annotated correctly. Then, you can use aggregation and forwarding to automatically accept or reject the _original_ task by using key-value pairs such as `correct: accept` and `incorrect: reject` in your Forward configuration. You can also configure both accepting/rejecting and a next pool. In that case, use a list as the value for the variable name of the output. See the file [`examples/action_demo.py`](https://github.com/thiippal/abulafia/blob/main/examples/action_demo.py) and the associated YAML configuration files for an example. 
 
 Configure `Forward` actions to the source pool/action under `actions` with the key `on_result`.
 
-
 **Aggregate** action requires the keys:
+
 - `name` of the action
 - `source`, the pool from which tasks go to the aggregate action
 - The forward action to which the aggregated results will be sent should be configured under key `on_result` under `actions`
 - `method`, which is the desired [aggregation algorithm](https://toloka.ai/en/docs/crowd-kit/). For now, categorical methods are supported.
-
 
 Configure `Aggregate` actions to the source pool under `actions` with the key `on_closed`; aggregation can only be done after all tasks are complete and the pool is closed.
 
@@ -90,7 +92,7 @@ If you wish to start your pipeline with `SeparateBBoxes`, configure it under `ac
 
 Define crowdsourcing tasks in your executable Python file by creating one or many of the task objects listed below. They all take arguments `configuration`, which is the path to the correct YAML configuration file, and `client`, which should be your Toloka client.
 
-You can define additional task interfaces using the `CrowdsourcingTask` class. The current task interfaces can be found in `src/abulafia/task_specs/task_specs.py`.
+You can define additional task interfaces using the [`CrowdsourcingTask`](https://github.com/thiippal/abulafia/blob/main/src/abulafia/task_specs/core_task.py) class. The current task interfaces can be found in [`src/abulafia/task_specs/task_specs.py`](https://github.com/thiippal/abulafia/tree/main/src/abulafia/task_specs).
 
 ### ImageClassification
 
