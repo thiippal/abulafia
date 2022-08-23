@@ -21,6 +21,8 @@ When you've tested your pipeline in the Toloka sandbox, change `"SANDBOX"` to `"
 
 See `examples/` for tutorial pipelines.
 
+<img src="examples/screenshot.png" width=700>
+
 ## Ensuring fair worker rewards
 
 **abulafia** has a built-in mechanism that guides the user to determine rewards that result in a fair hourly wage ($12) for the crowdsourcing workers. In the pool configuration, the user should add a key `estimated_time_per_suite`. The value for the key should be the estimated time in seconds it takes for the worker to complete one task suite. Based on this value and the value `reward_per_assignment`, the tool checks if the reward is high enough to result in a fair hourly wage. The user is presented with a warning and prompted to cancel the pipeline if the configured reward is too low. A warning is also raised if `estimated_time_per_suite` is not found in the pool configuration.
@@ -87,6 +89,8 @@ If you wish to start your pipeline with `SeparateBBoxes`, configure it under `ac
 ## Pre-defined interfaces
 
 Define crowdsourcing tasks in your executable Python file by creating one or many of the task objects listed below. They all take arguments `configuration`, which is the path to the correct YAML configuration file, and `client`, which should be your Toloka client.
+
+You can define additional task interfaces using the `CrowdsourcingTask` class. The current task interfaces can be found in `src/abulafia/task_specs/task_specs.py`.
 
 ### ImageClassification
 
@@ -176,5 +180,3 @@ Interface for annotation words or other segments within a text.
 |input|output|
 |-----|------|
 |`string`|`json`|
-
-<img src="examples/screenshot.png" width=700>
