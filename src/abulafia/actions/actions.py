@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 
 # Import libraries
-from functions.core_functions import *
+from ..functions.core_functions import *
 from wasabi import Printer
 import contextlib
 import io
@@ -31,6 +31,7 @@ if warn.startswith("None of PyTorch"):
     msg.warn(f"Could not find a working installation of PyTorch or TensorFlow, one of which is "
              f"needed for the crowd-kit aggregators to function. Cancelling pipeline.", exits=1)
 
+
 class Verify:
     """
     This class defines an action for manually verifying crowdsourcing descriptions using other crowdsourced workers.
@@ -56,10 +57,6 @@ class Verify:
         self.aggregator = None
 
     def __call__(self, events: List[AssignmentEvent]) -> None:
-
-        # TODO Make the processing of results fairer by rejecting task suites only when a given percentage of tasks
-        # TODO are rejected. One possible solution would be to fetch rejected Task objects and send them back to the
-        # TODO origin pool for re-completion.
 
         # Loop over the list of incoming AssignmentEvent objects
         for event in events:
@@ -125,8 +122,6 @@ class Aggregate:
         None
     
     """
-
-    
     def __init__(self, configuration, task, forward=None):
 
         self.task = task
@@ -147,7 +142,6 @@ class Aggregate:
         self.prev_assignments = set()
 
         self.complete = False
-        
 
     def __call__(self, pool: toloka.Pool) -> None:
 
@@ -228,7 +222,6 @@ class Forward:
     Returns:
         None
     """
-
     def __init__(self, configuration, client, targets=None):
 
         self.conf = read_configuration(configuration)
@@ -268,7 +261,6 @@ class Forward:
         # Initialize dictionary of key-list pairs. Keys are possible outputs for the task
         # and the lists are tasks to be forwarded.
         self.tasks_to_forward = collections.defaultdict(list)
-        
 
     def __call__(self, events: Union[List[AssignmentEvent], List[dict]]) -> None:
 
@@ -278,53 +270,53 @@ class Forward:
             # Loop over the list of incoming AssignmentEvent objects
             for event in events:
 
-                    for i in range(len(event.assignment.tasks)):
+                for i in range(len(event.assignment.tasks)):
 
-                        solution = event.assignment.solutions[i].output_values[self.conf['data']['output']]
+                    solution = event.assignment.solutions[i].output_values[self.conf['data']['output']]
 
-                        # If performer verified the task as incorrect, reject the original assignment
-                        # and, if configured in source pool under "on_reject", re-add the task to the pool
-                        if solution in self.reject:
+                    # If performer verified the task as incorrect, reject the original assignment
+                    # and, if configured in source pool under "on_reject", re-add the task to the pool
+                    if solution in self.reject:
 
-                            self.client.reject_assignment(assignment_id=event.assignment.tasks[i].input_values['assignment_id'],
-                                                        public_comment="Assignment was verified incorrect by another user.")
-                            msg.warn(f'Rejected assignment {event.assignment.tasks[i].input_values["assignment_id"]}')
+                        self.client.reject_assignment(assignment_id=event.assignment.tasks[i].input_values['assignment_id'],
+                                                      public_comment="Assignment was verified as incorrect by another user.")
+                        msg.warn(f'Rejected assignment {event.assignment.tasks[i].input_values["assignment_id"]}')
 
-                        # If performer verified the task as correct, accept original assignment and don't forward task
-                        if solution in self.accept:
+                    # If performer verified the task as correct, accept original assignment and don't forward task
+                    if solution in self.accept:
 
-                            self.client.accept_assignment(assignment_id=event.assignment.tasks[i].input_values['assignment_id'],
-                                                        public_comment="Assignment was verified correct by another user.")
-                            msg.good(f'Accepted assignment {event.assignment.tasks[i].input_values["assignment_id"]}')
+                        self.client.accept_assignment(assignment_id=event.assignment.tasks[i].input_values['assignment_id'],
+                                                    public_comment="Assignment was verified correct by another user.")
+                        msg.good(f'Accepted assignment {event.assignment.tasks[i].input_values["assignment_id"]}')
 
-                        # If no forward pool was configured, submit task without forwarding/accepting/rejecting
-                        if solution in self.dont_forward:
+                    # If no forward pool was configured, submit task without forwarding/accepting/rejecting
+                    if solution in self.dont_forward:
 
-                            msg.good(f'Received a submitted assignment with output "{solution}"')
+                        msg.good(f'Received a submitted assignment with output "{solution}"')
 
-                        # Else, forward task according to configuration
-                        if solution in self.forward_pools:
+                    # Else, forward task according to configuration
+                    if solution in self.forward_pools:
 
-                            try:
-                                task = toloka.Task(
-                                    pool_id = self.forward_pools[solution].pool.id,
-                                    input_values=event.assignment.tasks[i].input_values,
-                                    unavailable_for=self.forward_pools[solution].blocklist
-                                )
-                                self.tasks_to_forward[solution].append(task)
+                        try:
+                            task = toloka.Task(
+                                pool_id = self.forward_pools[solution].pool.id,
+                                input_values=event.assignment.tasks[i].input_values,
+                                unavailable_for=self.forward_pools[solution].blocklist
+                            )
+                            self.tasks_to_forward[solution].append(task)
 
-                            # Catch errors
-                            except toloka.exceptions.ValidationApiError:
+                        # Catch errors
+                        except toloka.exceptions.ValidationApiError:
 
-                                # Raise error
-                                raise_error(f'Failed to forward assignment {event.assignment.tasks[i].input_values["assignment_id"]}')
+                            # Raise error
+                            raise_error(f'Failed to forward assignment {event.assignment.tasks[i].input_values["assignment_id"]}')
 
-                            # If object has no attribute 'pool', it is an action, and should be called to activate
-                            except AttributeError:
+                        # If object has no attribute 'pool', it is an action, and should be called to activate
+                        except AttributeError:
 
-                                action = self.forward_pools[solution]
-                                action(event)
-                
+                            action = self.forward_pools[solution]
+                            action(event)
+
             tasks_list = [task for l in self.tasks_to_forward.values() for task in l]
 
             if tasks_list:
@@ -429,7 +421,6 @@ class SeparateBBoxes:
         if "input_file" in self.conf["data"]:
             self.input_file = self.conf["data"]["input_file"]
 
-
     def __call__(self, event: Union[AssignmentEvent, dict, List[AssignmentEvent]]=None) -> None:
 
         # If the object is registered with an observer, use data from AssignmentEvents or the incoming dict to create new tasks
@@ -513,7 +504,6 @@ class SeparateBBoxes:
                                         for bbox in event['input_data']['outlines'] ]
 
                     self.client.create_tasks(new_tasks, allow_defaults=True, open_pool=True)
-
 
         # If the object is called without AssignmentEvents, the action starts the pipeline and
         # input data should be read from a file 

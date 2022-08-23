@@ -48,7 +48,6 @@ def create_tasks(input_obj,
     # Create a list of Toloka Task objects by looping over the input DataFrame. Use the
     # dictionary of input variable names 'input_values' to retrieve the correct columns
     # from the DataFrame.
-
     tasks = [toloka.Task(pool_id=input_obj.pool.id,
                          input_values={k: row[v] for k, v in input_values.items()},
                          unavailable_for=input_obj.blocklist)
@@ -308,7 +307,9 @@ def load_data(data: str, inputs: dict):
 
         # Convert JSON inputs from string to JSON
         json_inputs = [k for k, v in inputs.items() if v == "json"]
+
         for i in json_inputs:
+
             df[i] = df[i].apply(lambda x: json.loads(x))
             
         # Print message
@@ -608,6 +609,7 @@ def verify_connections(task_sequence: list) -> None:
                             f'Please check the name of the task under the key '
                             f'"source" in the configuration file.')
 
+
 def check_reward(time_per_suite: int, reward: Union[int, float], name: str) -> None:
     """
     Calculates a fair reward per task suite and checks if the configured reward reaches that.
@@ -626,12 +628,14 @@ def check_reward(time_per_suite: int, reward: Union[int, float], name: str) -> N
     suggested_reward = 12 / suites_per_hour
 
     if reward < suggested_reward:
+
         msg.warn(f"The reward you have set per assignment for {name} does not result in a fair wage for the workers. "
                  f"In order for the workers to receive a salary of $12 per hour, set reward_per_assignment to at least ${suggested_reward}.\n"
                  f"Do you wish to proceed with the current configuration anyway (y/n)?")
         choice = input("")
 
         if choice == "n":
+
             msg.info("Cancelling pipeline", exits=1)
 
 
