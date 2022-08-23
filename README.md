@@ -2,7 +2,7 @@
 
 ## Introduction
 
-With **abulafia** you can create crowdsourcing tasks using pre-defined task interfaces and YAML configuration files. Combine different tasks into pipelines and deploy them on the Yandex [Toloka](https://toloka.ai) crowdsourcing platform. 
+𝚊𝚋𝚞𝚕𝚊𝚏𝚒𝚊 is a tool for creating and deploying crowdsourcing tasks on the the [Toloka](https://toloka.ai) crowdsourcing platform. The tool allows you to create crowdsourcing tasks using pre-defined task interfaces and YAML configuration files.
 
 The pipelines can consist of crowdsourcing tasks as well as `action`s that perform operations before, between or after tasks. `Forward` action is used to transfer tasks from one pool to another based on task output. `Aggregate` action is used to aggregate the output of a task; the action uses your aggregation algorithm of choice to determine the most probable correct output to a task based on majority vote. `SeparateBBoxes` is an action that takes an image with several bounding boxes, separates the bounding boxes to one per image, and creates new tasks from those.
 
@@ -12,12 +12,12 @@ In order to deploy your crowdsourcing tasks to Toloka, the tool needs to read yo
 
 ```
 {
-    "token":"YOUR_OAUTH_TOKEN",
-    "mode":"SANDBOX"
+    "token": "YOUR_OAUTH_TOKEN",
+    "mode": "SANDBOX"
 }
 ```
 
-When you've tested your pipeline on the Toloka sandbox, change `"SANDBOX"` to `"PRODUCTION"`.
+When you've tested your pipeline in the Toloka sandbox, change `"SANDBOX"` to `"PRODUCTION"`.
 
 See `examples/` for tutorial pipelines.
 
@@ -92,26 +92,36 @@ Define crowdsourcing tasks in your executable Python file by creating one or man
 
 Interface for binary image classification tasks. 
 
-input: url to an image\
-output: boolean
+|input|output|
+|-----|------|
+| `url` (image) | `boolean` (true/false) |
 
 ### ImageSegmentation
 
 Interface for image segmentation tasks. 
 
-input: url to an image\
-output: JSON coordinates of bounding boxes
+|input|output|
+|-----|------|
+|`url` (image) | `json` (bounding boxes) |
+
 
 ### AddOutlines
 
 Interface for image segmentation tasks with pre-existing labelled outlines.
 
-input: url to an image, JSON coordinates of bounding boxes\
-output: JSON coordinates of bounding boxes
+|input|output|
+|-----|------|
+|`url` (image) | `json` (bounding boxes) |
+| `json` (bounding boxes) | |
 
 ### SegmentationClassification
 
-Interface for binary segmentation classification tasks. 
+Interface for binary segmentation classification tasks.
+
+|input|output|
+|-----|------|
+|`url` (image) | `boolean` (true/false) |
+| `json` (bounding boxes) | |
 
 input: url to an image, JSON coordinates of bounding boxes\
 output: boolean
@@ -120,42 +130,52 @@ output: boolean
 
 Interface for binary segmentation verification tasks.
 
-input: url to an image, JSON coordinates of bounding boxes\
-output: boolean
+|input|output|
+|-----|------|
+|`url` (image) | `boolean` (true/false) |
+| `json` (bounding boxes) | |
 
 ### LabelledSegmentationVerification
 
 Interface for verifying image segmentation tasks where the bounding boxes have labels.
 
-input: url to an image, JSON coordinates of bounding boxes\
-output: boolean
+|input|output|
+|-----|------|
+|`url` (image) | `boolean` (true/false) |
+| `json` (bounding boxes) | |
 
 ### FixImageSegmentation
 
 Interface for fixing and adding more outlines to images with pre-existing non-labelled outlines.
 
-input: url to an image, JSON coordinates of bounding boxes\
-output: JSON coordinates of bounding boxes
+|input|output|
+|-----|------|
+|`url` (image) | `json` (bounding boxes) |
+| `json` (bounding boxes) | |
 
 ### MulticlassVerification
 
 Interface for verification tasks with more than two possible outputs (for example: *yes*, *no* and *maybe*).
 
-input: url to an image, JSON coordinates of bounding boxes\
-output: string
+|input|output|
+|-----|------|
+|`url` (image) | `string` (values) |
+| `json` (bounding boxes) | |
 
 ### TextClassification
 
 Interface for the classification of text.
 
-input: string\
-output: string
+|input|output|
+|-----|------|
+|`string`|`string`|
 
 ### TextAnnotation
 
 Interface for annotation words or other segments within a text.
 
-input: string \
-output: JSON
+|input|output|
+|-----|------|
+|`string`|`json`|
 
 <img src="examples/screenshot.png" width=700>
