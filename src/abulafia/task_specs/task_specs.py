@@ -239,7 +239,6 @@ class AddOutlines(CrowdsourcingTask):
 
         super().__init__(configuration, client, task_spec)
 
-
     def __call__(self, input_obj, **kwargs):
 
         # If the class is called, use the __call__() method from the superclass
@@ -248,7 +247,6 @@ class AddOutlines(CrowdsourcingTask):
         # When called, return the AddOutlines object
         return self
 
-    
     @staticmethod
     def specify_task(configuration):
         """
@@ -274,9 +272,10 @@ class AddOutlines(CrowdsourcingTask):
         try:
             labels = [tb.ImageAnnotationFieldV1.Label(value=value, label=label) for 
                       value, label in configuration["interface"]["labels"].items()]
+
         except KeyError:
-            msg.warn(f"Key 'labels' needs to be configured in the configuration of pool {configuration['name']} under key 'interface'",
-                     exits=1)
+            msg.warn(f"Key 'labels' needs to be configured in the configuration of pool {configuration['name']} "
+                     f"under key 'interface'", exits=1)
 
         # Create the task interface; start by setting up the image segmentation interface
         img_ui = tb.ImageAnnotationFieldV1(
@@ -386,8 +385,9 @@ class SegmentationClassification(CrowdsourcingTask):
         # Add assignment ID to the input data
         data_in['assignment_id'] = toloka.project.StringSpec(required=False)
 
-        labels = [tb.ImageAnnotationFieldV1.Label(value=value, label=label) for 
-                    value, label in configuration["interface"]["labels"].items()] if "labels" in configuration["interface"] else None
+        labels = [tb.ImageAnnotationFieldV1.Label(value=value, label=label) for
+                  value, label in configuration["interface"]["labels"].items()] \
+            if "labels" in configuration["interface"] else None
 
         # Create the task interface; start by setting up the image segmentation interface
         img_ui = tb.ImageAnnotationFieldV1(
@@ -512,9 +512,10 @@ class LabelledSegmentationVerification(CrowdsourcingTask):
         try:
             labels = [tb.ImageAnnotationFieldV1.Label(value=value, label=label) for 
                       value, label in configuration["interface"]["labels"].items()]
+
         except KeyError:
-            msg.warn(f"Key 'labels' needs to be configured in the configuration of pool {configuration['name']} under key 'interface'",
-                     exits=1)
+            msg.warn(f"Key 'labels' needs to be configured in the configuration of pool "
+                     f"{configuration['name']} under key 'interface'", exits=1)
 
         # Create the task interface; start by setting up the image segmentation interface
         img_ui = tb.ImageAnnotationFieldV1(
@@ -529,6 +530,7 @@ class LabelledSegmentationVerification(CrowdsourcingTask):
             # Set minimum width in pixels
             min_width=500,
 
+            # Set labels
             labels=labels,
 
             # Disable annotation interface

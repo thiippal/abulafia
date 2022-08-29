@@ -173,8 +173,10 @@ def add_tasks_to_pool(client: toloka.TolokaClient,
     except toloka.exceptions.ValidationApiError:
 
         # Print status message
-        raise_error(f'Failed to create tasks on Toloka due to validation error. Check '
-                    f'the configuration file!')
+        raise_error(f'Failed to create tasks on Toloka due to a validation error. Check '
+                    f'the input data, configuration file and see the error message above! '
+                    f'Note that this error was raised by {kind} tasks, so see the relevant '
+                    f'section of the configuration file.')
 
 
 def check_io(configuration: dict, expected_input: set, expected_output: set):
@@ -199,9 +201,9 @@ def check_io(configuration: dict, expected_input: set, expected_output: set):
     # Raise error if the expected input data types have been provided
     if not set(output_data.keys()) == expected_output:
 
-        raise_error(f'Could not find the expected input types ({", ".join(expected_output)}) for '
+        raise_error(f'Could not find the expected output types ({", ".join(expected_output)}) for '
                     f'{configuration["name"]}. Please check the configuration under the '
-                    f'key data/input.')
+                    f'key data/output.')
 
     return data_in, data_out, input_data, output_data
 
@@ -540,7 +542,7 @@ def create_pool_table(task_sequence: list) -> None:
             data.append((task.name, '--', '--', '--', '--', obj_type))
 
     # Print a table with inputs and outputs
-    msg.table(data=data, header=header, divider=True)
+    msg.table(data=data, header=header, divider=True, max_col=50)
 
 
 def verify_connections(task_sequence: list) -> None:
