@@ -4,7 +4,7 @@
 from wasabi import Printer
 from toloka.streaming.observer import BaseObserver
 from toloka.client.analytics_request import UniqueWorkersCountPoolAnalytics, ActiveWorkersByFilterCountPoolAnalytics, \
-    SubmitedAssignmentsCountPoolAnalytics
+    SubmittedAssignmentsCountPoolAnalytics
 from toloka.client.operations import Operation
 from toloka.client.exceptions import DoesNotExistApiError
 
@@ -108,7 +108,7 @@ class AnalyticsObserver(BaseObserver):
         stat_requests = [
             UniqueWorkersCountPoolAnalytics(subject_id=self.pool.id),
             ActiveWorkersByFilterCountPoolAnalytics(subject_id=self.pool.id, interval_hours=1),
-            SubmitedAssignmentsCountPoolAnalytics(subject_id=self.pool.id)
+            SubmittedAssignmentsCountPoolAnalytics(subject_id=self.pool.id)
         ]
 
         # Get the analytics and return
