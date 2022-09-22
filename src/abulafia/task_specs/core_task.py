@@ -70,7 +70,7 @@ class CrowdsourcingTask:
 
         except KeyError:
 
-            msg.warn(f"Could not find the column 'user_id' from blocklist.", exits=1)
+            msg.warn(f"Could not find the column 'user_id' in the blocklist.", exits=1)
 
         # Print status message
         msg.info(f'The unique ID for this object ({self.name}) is {self.task_id}')
@@ -368,18 +368,30 @@ class CrowdsourcingTask:
             # If training has been defined, set up training and required quality
             if self.train_conf is not None:
 
-                # Link training pool and retrieve minimum performance value
-                self.pool.set_training_requirement(training_pool_id=self.training.id,
-                                                   **self.pool_conf['training'])
+                try:
+
+                    # Link training pool and retrieve minimum performance value
+                    self.pool.set_training_requirement(training_pool_id=self.training.id,
+                                                       **self.pool_conf['training'])
+
+                except KeyError:
+
+                    msg.warn(f"Could not find the key 'training' under the main pool configuration. "
+                             f"Define the key 'training' and place a key/value pair with the key "
+                             f"'training_passing_skill_value' under 'training' to link the training "
+                             f"and main pools. This key is used to set the criteria for passing "
+                             f"the training, e.g. training_passing_skill_value: 70", exits=1)
 
             # Print status message
             msg.good(f'Successfully configured a new main pool')
 
             if 'estimated_time_per_suite' not in self.pool_conf.keys():
-                msg.warn(f"Parameter estimated_time_per_suite is not configured in pool settings for {self.name}. "
-                         f"Consider adding it to verify that the reward_per_assignment you have set results in a fair "
-                         f"hourly wage of at least $12. Do you wish to proceed with the current configuration anyway "
-                         f"(y/n)?")
+
+                msg.warn(f"Parameter 'estimated_time_per_suite' is not configured in pool settings "
+                         f"for {self.name}. Consider adding this key under 'pool' to ensure that the "
+                         f"'reward_per_assignment' you have set results in a fair hourly wage of "
+                         f"at least $12. Do you wish to proceed with the current configuration "
+                         f"anyway (y/n)?")
 
                 choice = input("")
 
