@@ -4,6 +4,29 @@
 
 The tool allows you to create crowdsourcing tasks using pre-defined task interfaces and configuring their settings using [YAML](https://en.wikipedia.org/wiki/YAML) files.
 
+For a description of the tool and the motivation for its development, see this [publication](https://aclanthology.org/2022.latechclfl-1.2/).
+
+Please cite the following publication if you use the tool in your research.
+
+> Tuomo Hiippala, Helmiina Hotti, and Rosa Suviranta. 2022. Developing a tool for fair and reproducible use of paid crowdsourcing in the digital humanities. In *Proceedings of the 6th Joint SIGHUM Workshop on Computational Linguistics for Cultural Heritage, Social Sciences, Humanities and Literature*, pages 7–12, Gyeongju, Republic of Korea. International Conference on Computational Linguistics.
+
+For convenience, you can find the BibTeX entry below.
+
+```text
+@inproceedings{hiippala-etal-2022-developing,
+    title = "Developing a tool for fair and reproducible use of paid crowdsourcing in the digital humanities",
+    author = "Hiippala, Tuomo and Hotti, Helmiina and Suviranta, Rosa",
+    booktitle = "Proceedings of the 6th Joint SIGHUM Workshop on Computational Linguistics for Cultural Heritage, Social Sciences, Humanities and Literature",
+    month = oct,
+    year = "2022",
+    address = "Gyeongju, Republic of Korea",
+    publisher = "International Conference on Computational Linguistics",
+    url = "https://aclanthology.org/2022.latechclfl-1.2",
+    pages = "7--12",
+    abstract = "This system demonstration paper describes ongoing work on a tool for fair and reproducible use of paid crowdsourcing in the digital humanities. Paid crowdsourcing is widely used in natural language processing and computer vision, but has been rarely applied in the digital humanities due to ethical concerns. We discuss concerns associated with paid crowdsourcing and describe how we seek to mitigate them in designing the tool and crowdsourcing pipelines. We demonstrate how the tool may be used to create annotations for diagrams, a complex mode of expression whose description requires human input.",
+}
+```
+
 ## Installation
 
 You can install the tool from [PyPI](https://pypi.org/project/abulafia/) using the following command: `pip install abulafia`
