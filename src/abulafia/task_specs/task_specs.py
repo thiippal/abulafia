@@ -181,8 +181,9 @@ class ImageSegmentation(CrowdsourcingTask):
             # Set up the allowed shapes: note that their order will define the order in the UI
             shapes={'rectangle': True, 'polygon': True},
 
-            # Set minimum width in pixels
-            min_width=500,
+            # Set this element to use all available vertical space on the page. This should ensure
+            # that all UI elements are visible.
+            full_height=True,
 
             # Set up validation
             validation=tb.RequiredConditionV1(hint="Please select at least one area!"))
@@ -274,8 +275,12 @@ class AddOutlines(CrowdsourcingTask):
                       value, label in configuration["interface"]["labels"].items()]
 
         except KeyError:
-            msg.warn(f"Key 'labels' needs to be configured in the configuration of pool {configuration['name']} "
-                     f"under key 'interface'", exits=1)
+
+            msg.warn(f"Please add the key 'labels' under the top-level key 'interface' to define "
+                     f"the labels for bounding boxes. The labels should be provided as key/value "
+                     f"pairs, e.g. cat: Cat. The key must correspond to the label defined for "
+                     f"the bounding box in the input JSON, whereas the value is the text displayed "
+                     f"in the user interface.", exits=1)
 
         # Create the task interface; start by setting up the image segmentation interface
         img_ui = tb.ImageAnnotationFieldV1(
@@ -290,8 +295,9 @@ class AddOutlines(CrowdsourcingTask):
             # Set up the allowed shapes: note that their order will define the order in the UI
             shapes={'polygon': True, 'rectangle': True},
 
-            # Set minimum width in pixels
-            min_width=500,
+            # Set this element to use all available vertical space on the page. This should ensure
+            # that all UI elements are visible.
+            full_height=True,
 
             # Set up labels for the outlines
             labels=labels,
@@ -299,11 +305,16 @@ class AddOutlines(CrowdsourcingTask):
             disabled=False
         )
 
-        # Create a button for cases where a target does not exist
-        checkbox = tb.CheckboxFieldV1(
-            data=tb.OutputData(output_data['bool'], default=False),
-            label="Target does not exist"
-        )
+        # Create a checkbox for special cases
+        try:
+            checkbox = tb.CheckboxFieldV1(
+                data=tb.OutputData(output_data['bool'], default=False),
+                label=configuration['interface']['checkbox'])
+
+        except KeyError:
+            msg.warn(f"Please add the key 'checkbox' under the top-level key 'interface' to "
+                     f"define a text that is displayed above the checkbox. Define the text as a "
+                     f"string e.g. checkbox: There is nothing to outline.", exits=1)
 
         # Define the text prompt below the segmentation UI
         prompt = tb.TextViewV1(content=configuration['interface']['prompt'])
@@ -314,7 +325,7 @@ class AddOutlines(CrowdsourcingTask):
             validation=tb.AnyConditionV1(conditions=[tb.SchemaConditionV1(data=tb.OutputData(output_data['json']),
                                                                           schema={'type': 'array', 'minItems': 2}),
                                                      tb.EqualsConditionV1(data=tb.OutputData(output_data['bool']), to=True)],
-                                                     hint="Outline at least one target of specify if target does not exist."),
+                                                     hint="Outline at least one target or check the box if target does not exist."),
             )
         )
 
@@ -399,10 +410,12 @@ class SegmentationClassification(CrowdsourcingTask):
             # Set up the input data field
             image=tb.InputData(path=input_data['url']),
 
+            # Set labels
             labels=labels,
 
-            # Set minimum width in pixels
-            min_width=500,
+            # Set this element to use all available vertical space on the page. This should ensure
+            # that all UI elements are visible.
+            full_height=True,
 
             # Disable annotation interface
             disabled=True)
@@ -514,8 +527,12 @@ class LabelledSegmentationVerification(CrowdsourcingTask):
                       value, label in configuration["interface"]["labels"].items()]
 
         except KeyError:
-            msg.warn(f"Key 'labels' needs to be configured in the configuration of pool "
-                     f"{configuration['name']} under key 'interface'", exits=1)
+
+            msg.warn(f"Please add the key 'labels' under the top-level key 'interface' to define "
+                     f"the labels for bounding boxes. The labels should be provided as key/value "
+                     f"pairs, e.g. cat: Cat. The key must correspond to the label defined for "
+                     f"the bounding box in the input JSON, whereas the value is the text displayed "
+                     f"in the user interface.", exits=1)
 
         # Create the task interface; start by setting up the image segmentation interface
         img_ui = tb.ImageAnnotationFieldV1(
@@ -527,8 +544,9 @@ class LabelledSegmentationVerification(CrowdsourcingTask):
             # Set up the input data field
             image=tb.InputData(path=input_data['url']),
 
-            # Set minimum width in pixels
-            min_width=500,
+            # Set this element to use all available vertical space on the page. This should ensure
+            # that all UI elements are visible.
+            full_height=True,
 
             # Set labels
             labels=labels,
@@ -586,7 +604,7 @@ class LabelledSegmentationVerification(CrowdsourcingTask):
 
         # Return the task specification
         return task_spec
-        
+
 
 class FixImageSegmentation(CrowdsourcingTask):
     """
@@ -658,8 +676,9 @@ class FixImageSegmentation(CrowdsourcingTask):
             # Set up the allowed shapes: note that their order will define the order in the UI
             shapes={'rectangle': True, 'polygon': True},
 
-            # Set minimum width in pixels
-            min_width=500,
+            # Set this element to use all available vertical space on the page. This should ensure
+            # that all UI elements are visible.
+            full_height=True,
 
             # Set up validation
             validation=tb.RequiredConditionV1(hint="Please select at least one area!"),
@@ -752,8 +771,9 @@ class SegmentationVerification(CrowdsourcingTask):
             # Set up the input data field
             image=tb.InputData(path=input_data['url']),
 
-            # Set minimum width in pixels
-            min_width=500,
+            # Set this element to use all available vertical space on the page. This should ensure
+            # that all UI elements are visible.
+            full_height=True,
 
             # Disable annotation interface
             disabled=True)
@@ -869,8 +889,9 @@ class MulticlassVerification(CrowdsourcingTask):
             # Set up the input data field
             image=tb.InputData(path=input_data['url']),
 
-            # Set minimum width in pixels
-            min_width=500,
+            # Set this element to use all available vertical space on the page. This should ensure
+            # that all UI elements are visible.
+            full_height=True,
 
             # Disable annotation interface
             disabled=True)
