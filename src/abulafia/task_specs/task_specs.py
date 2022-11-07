@@ -325,7 +325,7 @@ class AddOutlines(CrowdsourcingTask):
             validation=tb.AnyConditionV1(conditions=[tb.SchemaConditionV1(data=tb.OutputData(output_data['json']),
                                                                           schema={'type': 'array', 'minItems': 2}),
                                                      tb.EqualsConditionV1(data=tb.OutputData(output_data['bool']), to=True)],
-                                                     hint="Outline at least one target or check the box if target does not exist."),
+                                                     hint="Outline at least one target or check the box if necessary."),
             )
         )
 
@@ -557,12 +557,17 @@ class LabelledSegmentationVerification(CrowdsourcingTask):
         # Define the text prompt below the segmentation UI
         prompt = tb.TextViewV1(content=configuration['interface']['prompt'])
 
-        # Create a button for cases where a target does not exist
-        checkbox = tb.CheckboxFieldV1(
-            data=tb.OutputData('no_target', default=tb.InputData(input_data['bool'])),
-            label="Target does not exist",
-            disabled=True
-        )
+        # Create a checkbox for special cases
+        try:
+            checkbox = tb.CheckboxFieldV1(
+                data=tb.OutputData('no_target', default=tb.InputData(input_data['bool'])),
+                label=configuration['interface']['checkbox'],
+                disabled=True)
+
+        except KeyError:
+            msg.warn(f"Please add the key 'checkbox' under the top-level key 'interface' to "
+                     f"define a text that is displayed above the checkbox. Define the text as a "
+                     f"string e.g. checkbox: There is nothing to outline.", exits=1)
 
         # Set up a radio group for labels
         radio_group = tb.ButtonRadioGroupFieldV1(

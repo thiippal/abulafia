@@ -4,13 +4,14 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "abulafia"
-version = "0.1.4"
+version = "0.1.6"
 description = "A tool for fair and reproducible crowdsourcing using Toloka"
 readme = "README.md"
 requires-python = ">=3.8"
 authors = [
     {name = "Tuomo Hiippala"},
-    {name = "Helmiina Hotti"}
+    {name = "Helmiina Hotti"},
+    {name = "Rosa Suviranta"}
 ]
 dependencies = [
     "crowd_kit>=1.0.0",
