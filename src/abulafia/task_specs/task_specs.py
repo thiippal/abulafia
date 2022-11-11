@@ -501,7 +501,14 @@ class LabelledSegmentationVerification(CrowdsourcingTask):
 
     @staticmethod
     def specify_task(configuration):
-        a
+        """
+        This function specifies the task interface on Toloka.
+        Parameters:
+            configuration: A dictionary containing the configuration defined in the YAML file.
+        Returns:
+             A Toloka TaskSpec object.
+        """
+
         # Define expected input and output types for the task
         expected_i, expected_o = {'url', 'json', 'bool'}, {'bool'}
 
