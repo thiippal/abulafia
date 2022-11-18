@@ -1161,7 +1161,9 @@ class TextAnnotation(CrowdsourcingTask):
 
 class LabelledSegmentationVerificationNoCheckbox(CrowdsourcingTask):
     """
-    This is a class for binary segmentation verification tasks with labelled bounding boxes without a checkbox.
+    This is a class for binary segmentation verification tasks with labelled bounding boxes,
+    but the interface does not contain a checkbox that can be used e.g. to mark images with
+    nothing to outline.
     """
 
     def __init__(self, configuration, client):
