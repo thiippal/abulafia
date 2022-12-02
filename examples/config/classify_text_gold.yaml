@@ -14,13 +14,11 @@ options:
 interface:
   prompt: Read the text and assign it to the most appropriate category.
 project:
-  # id: 129368
   setup:
     public_name: Classify text into categories
     public_description: Read the text and assign it to the most appropriate category.
   instructions: instructions/classify_text_instructions.html
 pool:
-  # id: 1387049
   estimated_time_per_suite: 60
   setup:
     private_name: Classify text
