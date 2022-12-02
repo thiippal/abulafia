@@ -120,7 +120,7 @@ class ImageSegmentation(CrowdsourcingTask):
     """
     This is a class for image segmentation tasks.
     """
-    def __init__(self, configuration, client):
+    def __init__(self, configuration, client, **kwargs):
         """
         This function initialises the ImageSegmentation class, which inherits attributes
         and methods from the superclass CrowdsourcingTask.
@@ -219,7 +219,7 @@ class AddOutlines(CrowdsourcingTask):
     """
     This is a class for tasks that add more bounding boxes to images with pre-existing labelled bounding boxes.
     """
-    def __init__(self, configuration, client):
+    def __init__(self, configuration, client, **kwargs):
         """
         This function initialises the AddOutlines class, which inherits attributes
         and methods from the superclass CrowdsourcingTask.
@@ -344,7 +344,7 @@ class SegmentationClassification(CrowdsourcingTask):
     """
     This is a class for binary segmentation classification tasks.
     """
-    def __init__(self, configuration, client):
+    def __init__(self, configuration, client, **kwargs):
         """
         This function initialises the SegmentationClassification class, which inherits attributes
         and methods from the superclass Task.
@@ -469,7 +469,7 @@ class LabelledSegmentationVerification(CrowdsourcingTask):
     """
     This is a class for binary segmentation verification tasks with labelled bounding boxes.
     """
-    def __init__(self, configuration, client):
+    def __init__(self, configuration, client, **kwargs):
         """
         This function initialises the LabelledSegmentationVerification class, which inherits attributes
         and methods from the superclass Task.
@@ -616,7 +616,7 @@ class FixImageSegmentation(CrowdsourcingTask):
     This is a class for fixing partially correct image segmentation tasks: modifying
     existing outlines and/or creating new ones.
     """
-    def __init__(self, configuration, client):
+    def __init__(self, configuration, client, **kwargs):
         """
         This function initialises the FixImageSegmentation class, which inherits attributes
         and methods from the superclass Task.
@@ -714,7 +714,7 @@ class SegmentationVerification(CrowdsourcingTask):
     """
     This is a class for binary image segmentation verification tasks.
     """
-    def __init__(self, configuration, client):
+    def __init__(self, configuration, client, **kwargs):
         """
         This function initialises the SegmentationVerification class, which inherits attributes
         and methods from the superclass Task.
@@ -832,7 +832,7 @@ class MulticlassVerification(CrowdsourcingTask):
     """
     This is a class for multiclass image segmentation verification tasks.
     """
-    def __init__(self, configuration, client):
+    def __init__(self, configuration, client, **kwargs):
         """
         This function initialises the MulticlassVerification class, which inherits attributes
         and methods from the superclass Task.
@@ -952,7 +952,7 @@ class TextClassification(CrowdsourcingTask):
     This is a class for text classification tasks.
     """
 
-    def __init__(self, configuration, client):
+    def __init__(self, configuration, client, **kwargs):
         """
         This function initialises the TextClassification class, which inherits attributes
         and methods from the superclass CrowdsourcingTask.
@@ -1058,7 +1058,7 @@ class TextAnnotation(CrowdsourcingTask):
     This is a class for text annotation tasks.
     """
 
-    def __init__(self, configuration, client):
+    def __init__(self, configuration, client, **kwargs):
         """
         This function initialises the TextAnnotation class, which inherits attributes
         and methods from the superclass CrowdsourcingTask.

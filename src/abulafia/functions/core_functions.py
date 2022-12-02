@@ -37,21 +37,62 @@ def create_tasks(input_obj,
     # Print status message
     msg.info(f'Creating and adding tasks to pool with ID {input_obj.pool.id}')
 
-    # Fetch input variable names from the configuration. Create a dictionary with matching
-    # key and value pairs, which is updated when creating the toloka.Task objects below.
+    # Fetch input/output variable names from the configuration. Create dictionaries with matching
+    # key and value pairs, which is updated when creating the Task objects below.
     input_values = {n: n for n in list(input_obj.conf['data']['input'].keys())}
+    output_values = {n: n for n in list(input_obj.conf['data']['output'].keys())}
 
-    assert set(input_values.keys()) == set(input_data.columns), raise_error(f"Input data column names "
-                                                                            f"do not match input configuration "
-                                                                            f"for the pool {input_obj.name}!")
+    assert set(input_values.keys()).issubset(set(input_data.columns)), \
+        raise_error(f"Could not find the columns defined in the input configuration in the "
+                    f"file with the input data for pool {input_obj.name}!")
 
-    # Create a list of Toloka Task objects by looping over the input DataFrame. Use the
-    # dictionary of input variable names 'input_values' to retrieve the correct columns
-    # from the DataFrame.
-    tasks = [toloka.Task(pool_id=input_obj.pool.id,
-                         input_values={k: row[v] for k, v in input_values.items()},
-                         unavailable_for=input_obj.blocklist)
-             for _, row in input_data.iterrows()]
+    # Check if golden answers exist
+    if 'gold' in input_obj.conf['data']:
+
+        # Print status message
+        msg.info(f'Found golden tasks in pool with ID {input_obj.pool.id}')
+
+        assert set(input_obj.conf['data']['gold'].keys()).issubset(set(output_values.keys())), \
+            raise_error(f"Could not find the output column defined in the configuration for "
+                        f"golden answers in pool {input_obj.name}. Remember that the configuration "
+                        f"for golden answers must be given as a key/value pair. The key "
+                        f"names the *output* column for which the golden answers are provided. The "
+                        f"value determines the column that holds the golden answers. For example, "
+                        f"if the golden answers for the column 'result' are stored under column "
+                        f"'gold' in the input file, the key value pair must be 'result: gold'.")
+
+        # Get the dictionary for golden answers
+        gold_dict = input_obj.conf['data']['gold']
+
+        # Break the golden answer and normal input data to two DataFrames
+        gold_data = input_data.dropna(subset=list(gold_dict.values()))
+        input_data.drop(gold_data.index, axis=0, inplace=True)
+
+        # Create golden tasks
+        tasks = [toloka.Task(pool_id=input_obj.pool.id,
+                             input_values={k: row[v] for k, v in input_values.items()},
+                             known_solutions=[toloka.task.BaseTask.KnownSolution(
+                                 output_values={k: str(row[v]) for k, v in gold_dict.items()})],
+                             unavailable_for=input_obj.blocklist
+                             )
+                 for _, row in gold_data.iterrows()]
+
+        # Create input tasks
+        tasks.extend([toloka.Task(pool_id=input_obj.pool.id,
+                                  input_values={k: row[v] for k, v in input_values.items()},
+                                  unavailable_for=input_obj.blocklist)
+                      for _, row in input_data.iterrows()])
+
+    # If no golden answers are provided, continue to create the input tasks
+    else:
+
+        # Create a list of Toloka Task objects by looping over the input DataFrame. Use the
+        # dictionary of input variable names 'input_values' to retrieve the correct columns
+        # from the DataFrame.
+        tasks = [toloka.Task(pool_id=input_obj.pool.id,
+                             input_values={k: row[v] for k, v in input_values.items()},
+                             unavailable_for=input_obj.blocklist)
+                 for _, row in input_data.iterrows()]
 
     return tasks
 
