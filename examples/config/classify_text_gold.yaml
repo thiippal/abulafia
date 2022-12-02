@@ -1,0 +1,39 @@
+name: classify_text
+data:
+  file: data/classify_text_data_gold.tsv
+  input:
+    text: str
+  output:
+    result: str
+  gold:
+    result: known_answer
+options:
+  positive: Positive
+  negative: Negative
+  neutral: Neutral
+interface:
+  prompt: Read the text and assign it to the most appropriate category.
+project:
+  # id: 129368
+  setup:
+    public_name: Classify text into categories
+    public_description: Read the text and assign it to the most appropriate category.
+  instructions: instructions/classify_text_instructions.html
+pool:
+  # id: 1387049
+  estimated_time_per_suite: 60
+  setup:
+    private_name: Classify text
+    reward_per_assignment: 0.2
+    assignment_max_duration_seconds: 600
+    auto_accept_solutions: true
+  defaults:
+    default_overlap_for_new_tasks: 1
+    default_overlap_for_new_task_suites: 1
+  mixer:
+    real_tasks_count: 1
+    golden_tasks_count: 1
+    training_tasks_count: 0
+  filter:
+    languages:
+      - EN
