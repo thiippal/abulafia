@@ -9,12 +9,15 @@ def api_client():
 
     # Read the credentials from the JSON file
     with open('creds.json') as cred_f:
+
         creds = json.loads(cred_f.read())
+
         client = toloka.TolokaClient(creds['token'], creds['mode'])
 
         return client
 
 
-def test_client(api_client):
+@pytest.mark.api
+def test_api_connection(api_client):
 
-    pass
+    assert type(api_client.get_requester()) == toloka.requester.Requester
