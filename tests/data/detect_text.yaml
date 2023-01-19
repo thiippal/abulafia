@@ -44,8 +44,3 @@ quality_control:
     count: 3
     ban_duration: 7
     ban_units: DAYS
-  captcha:
-    frequency: LOW
-    success_rate: 80
-    ban_duration: 3
-    ban_units: DAYS
