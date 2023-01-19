@@ -802,35 +802,6 @@ class CrowdsourcingTask:
                             action=toloka.actions.ChangeOverlap(delta=1, open_pool=True)
                         )
 
-                # Set up captcha quality control
-                if 'captcha' in self.qual_conf:
-
-                    # Unpack rules into variables 
-                    freq = self.qual_conf['captcha']['frequency'].upper()
-                    success_rate = self.qual_conf['captcha']['success_rate']
-                    duration = self.qual_conf['captcha']['ban_duration']
-                    units = self.qual_conf['captcha']['ban_units'].upper()
-
-                    # Set captcha frequency according to configuration
-                    self.pool.set_captcha_frequency(freq)
-
-                    # Add quality control rule to the pool
-                    self.pool.quality_control.add_action(
-                        collector=toloka.collectors.Captcha(),
-                        conditions=[toloka.conditions.SuccessRate < success_rate],
-                        action=toloka.actions.RestrictionV2(
-                            scope=toloka.user_restriction.UserRestriction.PROJECT,
-                            duration=duration,
-                            duration_unit=units,
-                            private_comment="Too many Captcha mistakes"
-                        )
-                    )
-
-                    # Print status message
-                    msg.good(f"Added quality control rule: ban for {duration} {units.lower()} if "
-                             f"user's CAPTCHA success rate is less than {success_rate}%. "
-                             f"CAPTCHA frequency is set to {freq}.")
-
                 # Set up GoldenSet quality control (performance on control tasks)
                 if 'golden_set' in self.qual_conf:
 
