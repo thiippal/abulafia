@@ -1,1 +1,1 @@
-from .actions import Verify, Forward, Aggregate, SeparateBBoxes
+from .actions import Verify, Forward, Aggregate, SeparateBBoxes, VerifyPolygon
