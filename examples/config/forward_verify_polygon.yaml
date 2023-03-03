@@ -5,4 +5,4 @@ source: verify_polygon
 actions:
   on_result:
     true: accept
-    false: outline_text
+    false: reject
