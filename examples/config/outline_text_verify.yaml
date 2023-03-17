@@ -12,6 +12,7 @@ interface:
   prompt: Read the instructions first. Then outline all diagram elements that contain
     text, letters or numbers.
 project:
+  id: 137771
   setup:
     public_name: Outline text, letters or numbers in diagrams
     public_description: Look at diagrams from science textbooks and state if they

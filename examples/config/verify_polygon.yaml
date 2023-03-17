@@ -1,3 +1,6 @@
 name: verify_polygon
 data:
   output: outlines
+labels:
+  - source: 1
+  - object

@@ -567,6 +567,7 @@ class VerifyPolygon:
         """
         self.conf = read_configuration(configuration)
         self.name = self.conf['name']
+        self.labels = True if 'labels' in self.conf else False
         self.task = task
         self.client = self.task.client
         self.forward = forward
@@ -580,9 +581,9 @@ class VerifyPolygon:
         # completed by the crowdsourced workers.
         for event in events:
 
-            # A flag for tracking the presence of invalid polygons
-            valid_polygons = True
-            message = "Congratulations! The outlines you submitted were evaluated as correct."
+            # Set up a flag for tracking the presence of invalid polygons
+            valid = True
+            message = "The outlines you submitted were evaluated as correct."
 
             # Zip and iterate over tasks and solutions in each event
             for task, solution in zip(event.assignment.tasks, event.assignment.solutions):
@@ -606,13 +607,53 @@ class VerifyPolygon:
                     # If a polygon is not valid, set the flag tracking invalid polygons to True
                     if not polygon:
 
-                        valid_polygons = False
-                        message = "Your submission had invalid polygons, which contain lines " \
-                                  "that cross each other."
+                        valid = False
+                        message = "Your task was rejected, because it contained polygons " \
+                                  "with lines that cross each other."
 
-                # Create a dictionary containing forward data
+                # Check if the labels of polygons and rectangles should be checked
+                if self.labels:
+
+                    # Retrieve all rectangles, combine them with polygons and count labels
+                    rectangles = [p for p in answer if p['shape'] == 'rectangle']
+                    labels = collections.Counter([o['label'] for o in rectangles + polygons])
+
+                    # Loop over the criteria defined for the labels
+                    for label in self.conf['labels']:
+
+                        # Check if the label is a string, which means the label must be present
+                        if type(label) == str:
+
+                            if label not in labels:
+
+                                valid = False
+                                message = "Your task was rejected, because it did not contain " \
+                                          "the required labels."
+
+                        # Next, check if the label is a dictionary, which defines a number of labels
+                        if type(label) == dict:
+
+                            # Loop over the dictionary to ensure that the labels are present and
+                            # their number is correct.
+                            for k, v in label.items():
+
+                                if k not in labels:
+
+                                    valid = False
+                                    message = "Your task was rejected, because it did not " \
+                                              "contain the required labels."
+
+                                if k in labels:
+
+                                    if v != labels[k]:
+
+                                        valid = False
+                                        message = "Your task was rejected, because it did not " \
+                                                  "contain the required number of labels."
+
+                # Create a dictionary containing the data to be forwarded
                 result = {'input_data': task.input_values,
-                          'label': valid_polygons,
+                          'label': valid,
                           'message': message}
 
                 # Add the assignment ID into the input data dictionary. This information is required
@@ -627,4 +668,3 @@ class VerifyPolygon:
 
         # Forward the tasks to the Forward object
         self.forward(forward_data)
-
