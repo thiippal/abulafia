@@ -1,5 +1,6 @@
 name: outline_text
 data:
+  file: data/verify_image_data.tsv
   input:
     image: url
   output:
@@ -10,7 +11,11 @@ actions:
 interface:
   prompt: Read the instructions first. Then outline all diagram elements that contain
     text, letters or numbers.
+  labels:
+    text: Text
+    image: Image
 project:
+  id: 138067
   setup:
     public_name: Outline text, letters or numbers in diagrams
     public_description: Look at diagrams from science textbooks and state if they
@@ -38,8 +43,6 @@ pool:
     - TOLOKA_APP
     - BROWSER
 quality_control:
-  speed_quality_balance:
-    top_percentage_by_quality: 40
   fast_responses:
     history_size: 5
     count: 3
@@ -51,3 +54,4 @@ quality_control:
     ban_duration: 7
     ban_units: DAYS
   redo_banned: true
+

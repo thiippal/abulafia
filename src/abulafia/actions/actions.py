@@ -3,6 +3,7 @@
 # Import libraries
 from ..functions.core_functions import *
 from wasabi import Printer
+from shapely.geometry import Polygon
 import contextlib
 import io
 import toloka.client as toloka
@@ -34,9 +35,8 @@ if warn.startswith("None of PyTorch"):
 
 class Verify:
     """
-    This class defines an action for manually verifying crowdsourcing descriptions using other crowdsourced workers.
-
-    To add this action to a TaskSequence, register this object with AssignmentObserver using the 'on_accepted' method.
+    This class defines an action for manually verifying crowdsourced answers by showing them to
+    other crowdsourced workers.
     """
     def __init__(self, configuration, task):
         """
@@ -111,16 +111,16 @@ class Verify:
 
 class Aggregate:
     """
-    This class can be used to aggregate crowdsourced answers.
+    This class can be used to aggregate crowdsourced answers using various algorithms.
 
     Parameters:
         configuration: A string object that defines a path to a YAML file with configuration.
         task: Crowdsourcing Task of which results will be aggregated.
-        forward: Forward object with which the aggregated tasks will be forwarded to the next pool or accepted/rejected.
+        forward: Forward object with which the aggregated tasks will be forwarded to the next pool
+                 or accepted/rejected.
 
     Returns:
         None
-    
     """
     def __init__(self, configuration, task, forward=None):
 
@@ -145,7 +145,9 @@ class Aggregate:
 
     def __call__(self, pool: toloka.Pool) -> None:
 
-        assignments = list(self.task.client.get_assignments(pool_id=pool.id, status=[toloka.Assignment.SUBMITTED, toloka.Assignment.ACCEPTED]))
+        assignments = list(self.task.client.get_assignments(pool_id=pool.id,
+                                                            status=[toloka.Assignment.SUBMITTED,
+                                                                    toloka.Assignment.ACCEPTED]))
 
         if assignments:
             a_dict = {"task": [], "inputs": [], "label": [], "worker": [], "id": []}
@@ -204,6 +206,7 @@ class Aggregate:
             self.complete = True
 
             if self.forward:
+
                 self.forward(forward_data)
 
 
@@ -211,8 +214,8 @@ class Forward:
     """
     This class defines an action for forwarding completed tasks to specific pools based on values.
 
-    For example, if a task receives the value True, it can be forwarded to Pool 1, whereas tasks with value False
-    will be forwarded to Pool 2.
+    For example, if a task receives the value True, it can be forwarded to Pool 1, whereas tasks
+    with value False will be forwarded to Pool 2.
 
     Parameters:
         configuration: A string object that defines a path to a YAML file with configuration.
@@ -264,7 +267,7 @@ class Forward:
 
     def __call__(self, events: Union[List[AssignmentEvent], List[dict]]) -> None:
 
-        # Process tasks that come from an observer call
+        # Begin by processing incoming events that originate from observers (AssignmentEvent)
         if all(isinstance(x, AssignmentEvent) for x in events):
 
             # Loop over the list of incoming AssignmentEvent objects
@@ -278,6 +281,7 @@ class Forward:
                     # and, if configured in source pool under "on_reject", re-add the task to the pool
                     if solution in self.reject:
 
+                        # TODO Implement dynamic public comment handling
                         self.client.reject_assignment(assignment_id=event.assignment.tasks[i].input_values['assignment_id'],
                                                       public_comment="Assignment was verified as incorrect by another user.")
                         msg.warn(f'Rejected assignment {event.assignment.tasks[i].input_values["assignment_id"]}')
@@ -286,7 +290,7 @@ class Forward:
                     if solution in self.accept:
 
                         self.client.accept_assignment(assignment_id=event.assignment.tasks[i].input_values['assignment_id'],
-                                                    public_comment="Assignment was verified correct by another user.")
+                                                      public_comment="Assignment was verified as correct by another user.")
                         msg.good(f'Accepted assignment {event.assignment.tasks[i].input_values["assignment_id"]}')
 
                     # If no forward pool was configured, submit task without forwarding/accepting/rejecting
@@ -299,7 +303,7 @@ class Forward:
 
                         try:
                             task = toloka.Task(
-                                pool_id = self.forward_pools[solution].pool.id,
+                                pool_id=self.forward_pools[solution].pool.id,
                                 input_values=event.assignment.tasks[i].input_values,
                                 unavailable_for=self.forward_pools[solution].blocklist
                             )
@@ -325,16 +329,18 @@ class Forward:
                 self.client.create_tasks(tasks_list, allow_defaults=True, open_pool=True)
 
                 # Print status if any tasks were forwarded on this call
-                msg.good(f"Successfully forwarded {len(tasks_list)} {'tasks' if len(tasks_list) > 1 else 'task'}")
+                msg.good(f"Successfully forwarded {len(tasks_list)} "
+                         f"{'tasks' if len(tasks_list) > 1 else 'task'}")
 
             # Tasks currently in lists have been forwarded, so reset lists
             self.tasks_to_forward = collections.defaultdict(list)
             tasks_list = []
 
-        # Process tasks that come from aggregation
+        # Continue by processing results from Aggregate or VerifyPolygon actions, in which case
+        # the list of incoming objects named "events" consists of dictionaries.
         if all(isinstance(x, dict) for x in events):
 
-            # Loop over the list of incoming AssignmentEvent objects
+            # Loop over the list of incoming dictionaries
             for event in events:
 
                 solution = event['label']
@@ -344,14 +350,14 @@ class Forward:
                 if solution in self.reject:
 
                     self.client.reject_assignment(assignment_id=event["input_data"]["assignment_id"],
-                                                  public_comment="Assignment was verified incorrect by another user.")
+                                                  public_comment=event["message"])
                     msg.warn(f'Rejected assignment {event["input_data"]["assignment_id"]}')
 
                 # If performer verified the task as correct, accept original assignment and don't forward task
                 if solution in self.accept:
 
                     self.client.accept_assignment(assignment_id=event["input_data"]["assignment_id"],
-                                                  public_comment="Assignment was verified correct by another user.")
+                                                  public_comment=event["message"])
                     msg.good(f'Accepted assignment {event["input_data"]["assignment_id"]}')
 
                 # If no forward pool was configured, submit task without forwarding/accepting/rejecting
@@ -364,7 +370,7 @@ class Forward:
 
                     try:
                         task = toloka.Task(
-                            pool_id = self.forward_pools[solution].pool.id,
+                            pool_id=self.forward_pools[solution].pool.id,
                             input_values=event['input_data'],
                             unavailable_for=self.forward_pools[solution].blocklist
                         )
@@ -390,7 +396,8 @@ class Forward:
                 self.client.create_tasks(tasks_list, allow_defaults=True, open_pool=True)
 
                 # Print status if any tasks were forwarded on this call
-                msg.good(f"Successfully forwarded {len(tasks_list)} {'tasks' if len(tasks_list) > 1 else 'task'}")
+                msg.good(f"Successfully forwarded {len(tasks_list)} "
+                         f"{'tasks' if len(tasks_list) > 1 else 'task'}")
 
             # Tasks currently in lists have been forwarded, so reset lists
             self.tasks_to_forward = collections.defaultdict(list)
@@ -399,13 +406,14 @@ class Forward:
 
 class SeparateBBoxes:
     """
-    This class defines an action for separating an image with several bounding boxes to several tasks with one
-    bounding box per image.
+    This class defines an action for separating an image with several bounding boxes to several
+    tasks with one bounding box per image.
 
     Parameters:
         target: CrowdsourcingTask to which the new tasks will be created
         configuration: A string object that defines a path to a YAML file with configuration.
-        add_label: A string object of a label that will be given to the created bounding boxes. Optional parameter.
+        add_label: A string object of a label that will be given to the created bounding boxes.
+                   Optional parameter.
 
     Returns:
         None
@@ -421,9 +429,10 @@ class SeparateBBoxes:
         if "input_file" in self.conf["data"]:
             self.input_file = self.conf["data"]["input_file"]
 
-    def __call__(self, event: Union[AssignmentEvent, dict, List[AssignmentEvent]]=None) -> None:
+    def __call__(self, event: Union[AssignmentEvent, dict, List[AssignmentEvent]] = None) -> None:
 
-        # If the object is registered with an observer, use data from AssignmentEvents or the incoming dict to create new tasks
+        # If the object is registered with an observer, use data from AssignmentEvents or the incoming dict to create
+        # new tasks
         if event:
 
             if type(event) == AssignmentEvent:
@@ -435,9 +444,11 @@ class SeparateBBoxes:
                     for i in range(len(event.assignment.tasks)):
 
                         new_tasks = [toloka.Task(pool_id=self.target.pool.id,
-                                                input_values={"image": event.assignment.tasks[i].input_values["image"], "outlines": [bbox]},
-                                                unavailable_for=self.target.blocklist) 
-                                        for bbox in [dict(x, **{'label': self.add_label}) for x in event.assignment.solutions[i].output_values["outlines"]] ]
+                                                 input_values={"image": event.assignment.tasks[i].input_values["image"],
+                                                               "outlines": [bbox]},
+                                                 unavailable_for=self.target.blocklist)
+                                     for bbox in [dict(x, **{'label': self.add_label})
+                                                  for x in event.assignment.solutions[i].output_values["outlines"]]]
 
                         self.client.create_tasks(new_tasks, allow_defaults=True, open_pool=True)
 
@@ -446,9 +457,10 @@ class SeparateBBoxes:
                     for i in range(len(event.assignment.tasks)):
 
                         new_tasks = [toloka.Task(pool_id=self.target.pool.id,
-                                                input_values={"image": event.assignment.tasks[i].input_values["image"], "outlines": [bbox]},
-                                                unavailable_for=self.target.blocklist) 
-                                        for bbox in event.assignment.solutions[i].output_values["outlines"] ]
+                                                 input_values={"image": event.assignment.tasks[i].input_values["image"],
+                                                               "outlines": [bbox]},
+                                                 unavailable_for=self.target.blocklist)
+                                     for bbox in event.assignment.solutions[i].output_values["outlines"] ]
 
                         self.client.create_tasks(new_tasks, allow_defaults=True, open_pool=True)
 
@@ -463,9 +475,11 @@ class SeparateBBoxes:
                         for i in range(len(e.assignment.tasks)):
 
                             new_tasks = [toloka.Task(pool_id=self.target.pool.id,
-                                                    input_values={"image": e.assignment.tasks[i].input_values["image"], "outlines": [bbox]},
-                                                    unavailable_for=self.target.blocklist) 
-                                            for bbox in [dict(x, **{'label': self.add_label}) for x in e.assignment.solutions[i].output_values["outlines"]] ]
+                                                     input_values={"image": e.assignment.tasks[i].input_values["image"],
+                                                                   "outlines": [bbox]},
+                                                     unavailable_for=self.target.blocklist)
+                                         for bbox in [dict(x, **{'label': self.add_label})
+                                                      for x in e.assignment.solutions[i].output_values["outlines"]]]
 
                             self.client.create_tasks(new_tasks, allow_defaults=True, open_pool=True)
 
@@ -476,9 +490,10 @@ class SeparateBBoxes:
                         for i in range(len(e.assignment.tasks)):
 
                             new_tasks = [toloka.Task(pool_id=self.target.pool.id,
-                                                    input_values={"image": e.assignment.tasks[i].input_values["image"], "outlines": [bbox]},
-                                                    unavailable_for=self.target.blocklist) 
-                                            for bbox in e.assignment.solutions[i].output_values["outlines"] ]
+                                                     input_values={"image": e.assignment.tasks[i].input_values["image"],
+                                                                   "outlines": [bbox]},
+                                                     unavailable_for=self.target.blocklist)
+                                         for bbox in e.assignment.solutions[i].output_values["outlines"]]
 
                             self.client.create_tasks(new_tasks, allow_defaults=True, open_pool=True)
 
@@ -490,18 +505,21 @@ class SeparateBBoxes:
                 if self.add_label:
 
                     new_tasks = [toloka.Task(pool_id=self.target.pool.id,
-                                            input_values={"image": event["input_data"]["image"], "outlines": [bbox]},
-                                            unavailable_for=self.target.blocklist) 
-                                        for bbox in [dict(x, **{'label': self.add_label}) for x in event['input_data']['outlines']] ]
+                                             input_values={"image": event["input_data"]["image"],
+                                                           "outlines": [bbox]},
+                                             unavailable_for=self.target.blocklist)
+                                 for bbox in [dict(x, **{'label': self.add_label})
+                                              for x in event['input_data']['outlines']]]
 
                     self.client.create_tasks(new_tasks, allow_defaults=True, open_pool=True)
 
                 else:
 
                     new_tasks = [toloka.Task(pool_id=self.target.pool.id,
-                                            input_values={"image": event["input_data"]["image"], "outlines": [bbox]},
-                                            unavailable_for=self.target.blocklist) 
-                                        for bbox in event['input_data']['outlines'] ]
+                                             input_values={"image": event["input_data"]["image"],
+                                                           "outlines": [bbox]},
+                                             unavailable_for=self.target.blocklist)
+                                 for bbox in event['input_data']['outlines']]
 
                     self.client.create_tasks(new_tasks, allow_defaults=True, open_pool=True)
 
@@ -516,14 +534,148 @@ class SeparateBBoxes:
             if self.add_label:
 
                 input_df["outlines"] = input_df["outlines"].apply(lambda x: json.loads(x))
-                input_df["outlines"] = input_df["outlines"].apply(lambda x: [dict(y, **{'label': self.add_label}) for y in x])
+                input_df["outlines"] = input_df["outlines"].apply(lambda x:
+                                                                  [dict(y, **{'label': self.add_label}) for y in x])
 
             for i, task in input_df.iterrows():
 
                 new_tasks = [toloka.Task(pool_id=self.target.pool.id,
-                                        input_values={"image": task["image"], "outlines": [bbox]},
-                                        unavailable_for=self.target.blocklist)
-                            for bbox in task["outlines"]
-                ]
+                                         input_values={"image": task["image"], "outlines": [bbox]},
+                                         unavailable_for=self.target.blocklist)
+                             for bbox in task["outlines"]]
                 
                 self.client.create_tasks(new_tasks, allow_defaults=True, open_pool=True)
+
+
+class VerifyPolygon:
+    """
+    This class defines an action for verifying that the polygons created by crowdsourced workers
+    are valid, that is, they do not contain self-intersecting edges. This means that the lines of a
+    polygon should not cross each other at any point.
+
+    """
+    def __init__(self, configuration, task, forward=None):
+        """
+        This function initialises the polygon verification mechanism.
+
+        Parameters:
+            configuration:
+            task:
+
+        Returns:
+             None
+        """
+        self.conf = read_configuration(configuration)
+        self.name = self.conf['name']
+        self.labels = True if 'labels' in self.conf else False
+        self.task = task
+        self.client = self.task.client
+        self.forward = forward
+
+    def __call__(self, events: List[AssignmentEvent]) -> None:
+
+        # Create a placeholder list for data to be forwarded
+        forward_data = []
+
+        # Loop over the list of incoming AssignmentEvent objects. These consist of task suites
+        # completed by the crowdsourced workers.
+        for event in events:
+
+            # Set up a flag for tracking the presence of invalid polygons
+            valid = True
+            message = "The outlines you submitted were evaluated as valid. Thank you!"
+
+            # Zip and iterate over tasks and solutions in each event
+            for task, solution in zip(event.assignment.tasks, event.assignment.solutions):
+
+                # Retrieve the answer (the bounding box)
+                answer = solution.output_values[self.conf['data']['output']]
+
+                # Retrieve all polygons
+                polygons = [p for p in answer if p['shape'] == 'polygon']
+
+                # Loop over the polygons
+                for p in polygons:
+
+                    # Retrieve coordinate pairs for each point of the polygon
+                    coords = [(c['left'], c['top']) for c in p['points']]
+
+                    # Create a Polygon using shapely and check if the polygon contains
+                    # self-intersecting edges using the is_valid attribute
+                    polygon = Polygon(coords).is_valid
+
+                    # If a polygon is not valid, set the flag tracking invalid polygons to True
+                    if not polygon:
+
+                        valid = False
+                        message = "Your task was rejected, because it contained polygons " \
+                                  "with lines that cross each other."
+
+                # Check if the labels of polygons and rectangles should be checked
+                if self.labels:
+
+                    # Retrieve all rectangles, combine them with polygons and count labels
+                    rectangles = [p for p in answer if p['shape'] == 'rectangle']
+                    labels = collections.Counter([o['label'] for o in rectangles + polygons])
+
+                    # Loop over the criteria defined for the labels
+                    for label in self.conf['labels']:
+
+                        # Check if the label is a string, which means the label must be present
+                        if type(label) == str:
+
+                            if label not in labels:
+
+                                valid = False
+                                message = f"Your task was rejected, because it did not contain " \
+                                          f"any bounding boxes with the label {label}."
+
+                        # Next, check if the label is a dictionary, which defines a number of labels
+                        if type(label) == dict:
+
+                            # Loop over the dictionary to ensure that the labels are present and
+                            # their number is correct.
+                            for k, v in label.items():
+
+                                # Check the labels against the Counter object 'labels'
+                                if k not in labels:
+
+                                    valid = False
+                                    message = f"Your task was rejected, because it did not " \
+                                              f"contain any bounding boxes with the label {k}."
+
+                                if k in labels:
+
+                                    if labels[k] > v:
+
+                                        valid = False
+                                        message = f"Your task was rejected, because it contained " \
+                                                  f"too many bounding boxes for the label {k} " \
+                                                  f"(max. {v})."
+
+                                    if labels[k] < v:
+
+                                        valid = False
+                                        message = f"Your task was rejected, because it did not " \
+                                                  f"contain enough bounding boxes for the label " \
+                                                  f"{k} ({v} were expected)."
+
+                # Create a dictionary containing the data to be forwarded
+                result = {'input_data': task.input_values,
+                          'label': valid,
+                          'message': message}
+
+                # Add the assignment ID into the input data dictionary. This information is required
+                # by the Forward action for rejection/acceptance.
+                result['input_data'].update({'assignment_id': event.assignment.id})
+
+                # Add the bounding boxes stored under the variable to the input data, in case they
+                # are forwarded further. Store them under the key data/output defined in the YAML
+                # configuration for this Action.
+                result['input_data'].update({self.conf['data']['output']: answer})
+
+                # Append the event dictionary to the list to be forwarded
+                forward_data.append(result)
+
+        # Forward the tasks to the Forward object
+        self.forward(forward_data)

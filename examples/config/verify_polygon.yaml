@@ -1,0 +1,6 @@
+name: verify_polygon
+data:
+  output: outlines    # Provide the variable name used for the bounding boxes
+labels:               # If you want to validate labels for bounding boxes, use a list
+  - text: 1
+  - image

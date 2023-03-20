@@ -1,0 +1,8 @@
+name: forward_verify
+data:
+  output: outlines
+source: verify_polygon
+actions:
+  on_result:
+    true: accept
+    false: reject

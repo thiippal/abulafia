@@ -120,7 +120,7 @@ class ImageSegmentation(CrowdsourcingTask):
     """
     This is a class for image segmentation tasks.
     """
-    def __init__(self, configuration, client, **kwargs):
+    def __init__(self, configuration, client):
         """
         This function initialises the ImageSegmentation class, which inherits attributes
         and methods from the superclass CrowdsourcingTask.
@@ -169,6 +169,18 @@ class ImageSegmentation(CrowdsourcingTask):
                                                               expected_input=expected_i,
                                                               expected_output=expected_o)
 
+        # Check if labels have been defined for bounding boxes
+        if 'labels' in configuration['interface']:
+
+            # Create a list of labels to be added to the UI. The 'label' will be added to the
+            # UI, whereas 'value' contains the value to be associated with the bounding box.
+            labels = [tb.ImageAnnotationFieldV1.Label(value=value, label=label) for
+                      value, label in configuration["interface"]["labels"].items()]
+
+        else:
+
+            labels = None
+
         # Create the task interface; start by setting up the image segmentation interface
         img_ui = tb.ImageAnnotationFieldV1(
 
@@ -184,6 +196,9 @@ class ImageSegmentation(CrowdsourcingTask):
             # Set this element to use all available vertical space on the page. This should ensure
             # that all UI elements are visible.
             full_height=True,
+
+            # Set up labels
+            labels=labels,
 
             # Set up validation
             validation=tb.RequiredConditionV1(hint="Please select at least one area!"))
