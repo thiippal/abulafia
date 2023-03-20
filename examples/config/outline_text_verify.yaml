@@ -15,6 +15,7 @@ interface:
     text: Text
     image: Image
 project:
+  id: 138067
   setup:
     public_name: Outline text, letters or numbers in diagrams
     public_description: Look at diagrams from science textbooks and state if they

@@ -350,14 +350,14 @@ class Forward:
                 if solution in self.reject:
 
                     self.client.reject_assignment(assignment_id=event["input_data"]["assignment_id"],
-                                                  public_comment="Assignment was verified as incorrect by another user.")
+                                                  public_comment=event["message"])
                     msg.warn(f'Rejected assignment {event["input_data"]["assignment_id"]}')
 
                 # If performer verified the task as correct, accept original assignment and don't forward task
                 if solution in self.accept:
 
                     self.client.accept_assignment(assignment_id=event["input_data"]["assignment_id"],
-                                                  public_comment="Assignment was verified as correct by another user.")
+                                                  public_comment=event["message"])
                     msg.good(f'Accepted assignment {event["input_data"]["assignment_id"]}')
 
                 # If no forward pool was configured, submit task without forwarding/accepting/rejecting
@@ -583,7 +583,7 @@ class VerifyPolygon:
 
             # Set up a flag for tracking the presence of invalid polygons
             valid = True
-            message = "The outlines you submitted were evaluated as correct."
+            message = "The outlines you submitted were evaluated as valid. Thank you!"
 
             # Zip and iterate over tasks and solutions in each event
             for task, solution in zip(event.assignment.tasks, event.assignment.solutions):
@@ -627,8 +627,8 @@ class VerifyPolygon:
                             if label not in labels:
 
                                 valid = False
-                                message = "Your task was rejected, because it did not contain " \
-                                          "the required labels."
+                                message = f"Your task was rejected, because it did not contain " \
+                                          f"any bounding boxes with the label {label}."
 
                         # Next, check if the label is a dictionary, which defines a number of labels
                         if type(label) == dict:
@@ -637,19 +637,28 @@ class VerifyPolygon:
                             # their number is correct.
                             for k, v in label.items():
 
+                                # Check the labels against the Counter object 'labels'
                                 if k not in labels:
 
                                     valid = False
-                                    message = "Your task was rejected, because it did not " \
-                                              "contain the required labels."
+                                    message = f"Your task was rejected, because it did not " \
+                                              f"contain any bounding boxes with the label {k}."
 
                                 if k in labels:
 
-                                    if v != labels[k]:
+                                    if labels[k] > v:
 
                                         valid = False
-                                        message = "Your task was rejected, because it did not " \
-                                                  "contain the required number of labels."
+                                        message = f"Your task was rejected, because it contained " \
+                                                  f"too many bounding boxes for the label {k} " \
+                                                  f"(max. {v})."
+
+                                    if labels[k] < v:
+
+                                        valid = False
+                                        message = f"Your task was rejected, because it did not " \
+                                                  f"contain enough bounding boxes for the label " \
+                                                  f"{k} ({v} were expected)."
 
                 # Create a dictionary containing the data to be forwarded
                 result = {'input_data': task.input_values,
@@ -657,11 +666,13 @@ class VerifyPolygon:
                           'message': message}
 
                 # Add the assignment ID into the input data dictionary. This information is required
-                # by the Forward action for rejection/acceptance. Also add the outlines stored under
-                # the variable 'answer'. These will be needed if the Forward action is used to
-                # create additional tasks that will be added to other pools.
+                # by the Forward action for rejection/acceptance.
                 result['input_data'].update({'assignment_id': event.assignment.id})
-                result['input_data'].update(answer)
+
+                # Add the bounding boxes stored under the variable to the input data, in case they
+                # are forwarded further. Store them under the key data/output defined in the YAML
+                # configuration for this Action.
+                result['input_data'].update({self.conf['data']['output']: answer})
 
                 # Append the event dictionary to the list to be forwarded
                 forward_data.append(result)
