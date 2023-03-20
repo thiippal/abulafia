@@ -51,4 +51,3 @@ quality_control:
     ban_duration: 7
     ban_units: DAYS
   redo_banned: true
-

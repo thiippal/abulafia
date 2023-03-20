@@ -176,7 +176,6 @@ class TestPool:
 
         # Reconstruct the quality control rules
         qual_control = toloka.quality_control.QualityControl(training_requirement=None,
-                                                             captcha_frequency='LOW',
                                                              configs=[toloka.quality_control.QualityControl.QualityControlConfig(
                                                                  rules=[toloka.quality_control.QualityControl.QualityControlConfig.RuleConfig(
                                                                      action=toloka.actions.RestrictionV2(scope='PROJECT',
@@ -195,15 +194,7 @@ class TestPool:
                                                                                                              private_comment='Skipped assignments'),
                                                                          conditions=[toloka.conditions.SkippedInRowCount(operator=toloka.primitives.operators.CompareOperator('GT'),
                                                                                                                          value=3)])],
-                                                                 collector_config=toloka.collectors.SkippedInRowAssignments()),
-                                                                 toloka.quality_control.QualityControl.QualityControlConfig(
-                                                                     rules=[toloka.quality_control.QualityControl.QualityControlConfig.RuleConfig(
-                                                                         action=toloka.actions.RestrictionV2(scope='PROJECT',
-                                                                                                             duration=3,
-                                                                                                             duration_unit='DAYS',
-                                                                                                             private_comment='Too many Captcha mistakes'),
-                                                                         conditions=[toloka.conditions.SuccessRate(operator=toloka.primitives.operators.CompareOperator('LT'), value=80)])],
-                                                                 collector_config=toloka.collectors.Captcha())],
+                                                                 collector_config=toloka.collectors.SkippedInRowAssignments())],
                                                              checkpoints_config=None
                                                              )
 
