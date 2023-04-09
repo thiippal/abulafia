@@ -78,7 +78,7 @@ pool:
 
 This finishes the configuration. We can now use this configuration to create an `ImageClassification` object, as illustrated in [here](classify_demo.py).
 
-As shown on [line 35](classify_demo.py#L35), we must provide a path to the configuration file to the parameter `configuration`.
+As shown on [line 35](classify_demo.py#L35), we must provide a path to the configuration file using the parameter `configuration`.
 
 ```python
 classify_image = ImageClassification(configuration="config/classify_image.yaml",
