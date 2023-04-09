@@ -220,7 +220,20 @@ def add_tasks_to_pool(client: toloka.TolokaClient,
                     f'section of the configuration file.')
 
 
-def check_io(configuration: dict, expected_input: set, expected_output: set):
+def check_io(configuration: dict,
+             expected_input: set,
+             expected_output: set):
+    """
+    This function checks the inputs and outputs defined in the YAML configuration against those allowed in the
+    crowdsourcing task specification.
+
+    configuration: A dictionary containing the configuration for a crowdsourcing task.
+    expected_input: A set of input data types defined in the crowdsourcing task specification.
+    expected_output: A set of output data types defined in the crowdsourcing task specification.
+
+    Returns:
+         Four dictionaries mapping the input variables to Toloka data specifications.
+    """
 
     # Read input and output data and create data specifications
     data_in = {k: data_spec[v] for k, v in configuration['data']['input'].items()}
@@ -230,7 +243,7 @@ def check_io(configuration: dict, expected_input: set, expected_output: set):
     input_data = {v: k for k, v in configuration['data']['input'].items()}
 
     # Raise error if the expected input data types have been provided
-    if not set(input_data.keys()) == expected_input:
+    if not set(input_data.keys()).issubset(expected_input):
 
         raise_error(f'Could not find the expected input types ({", ".join(expected_input)}) for '
                     f'{configuration["name"]}. Please check the configuration under the '
@@ -240,7 +253,7 @@ def check_io(configuration: dict, expected_input: set, expected_output: set):
     output_data = {v: k for k, v in configuration['data']['output'].items()}
 
     # Raise error if the expected input data types have been provided
-    if not set(output_data.keys()) == expected_output:
+    if not set(output_data.keys()).issubset(expected_output):
 
         raise_error(f'Could not find the expected output types ({", ".join(expected_output)}) for '
                     f'{configuration["name"]}. Please check the configuration under the '

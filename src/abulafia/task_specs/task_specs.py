@@ -58,15 +58,17 @@ class ImageClassification(CrowdsourcingTask):
         Returns:
              A Toloka TaskSpec object.
         """
-        # Define expected input and output types for the task
-        expected_i, expected_o = {'url'}, {'bool'}
+        # Define expected input and output types for the task. For image classification, the expected
+        # inputs include an image URL, whereas the output consists of Boolean values (true or false)
+        # or strings (e.g. for different labels).
+        expected_i, expected_o = {'url'}, {'bool', 'str'}
 
         # Configure Toloka data specifications and check the expected input against configuration
         data_in, data_out, input_data, output_data = check_io(configuration=configuration,
                                                               expected_input=expected_i,
                                                               expected_output=expected_o)
 
-        # Create the task interface; start by setting up the image viewer
+        # Create the task interface; start by setting up the image viewer with the input URL
         img_viewer = tb.ImageViewV1(url=tb.InputData(input_data['url']),
                                     rotatable=True,
                                     ratio=[1, 1])
@@ -74,17 +76,27 @@ class ImageClassification(CrowdsourcingTask):
         # Define the prompt text above the button group
         prompt = tb.TextViewV1(content=configuration['interface']['prompt'])
 
-        # Set up a radio group for labels
+        # Check the labels defined for the radio button group
+        try:
+            labels = [tb.fields.GroupFieldOption(value=value, label=label) for
+                      value, label in configuration["interface"]["labels"].items()]
+
+        except KeyError:
+
+            msg.warn(f"Please add the key 'labels' under the top-level key 'interface' to define "
+                     f"the labels for the interface. The labels should be provided as key/value "
+                     f"pairs, e.g. cat: Cat. The key must correspond to the label defined for "
+                     f"the label in the input JSON, whereas the value is the text displayed "
+                     f"in the user interface.", exits=1)
+
+        # Set up a radio button group
         radio_group = tb.ButtonRadioGroupFieldV1(
 
-            # Set up the output data field
-            data=tb.OutputData(output_data['bool']),
+            # Set up the output data field; this can be either a string or a Boolean value
+            data=tb.OutputData(output_data['bool'] if 'bool' in output_data else output_data['str']),
 
             # Create radio buttons
-            options=[
-                tb.fields.GroupFieldOption(value=True, label='Yes'),
-                tb.fields.GroupFieldOption(value=False, label='No')
-            ],
+            options=labels,
 
             # Set up validation
             validation=tb.RequiredConditionV1(hint="You must choose one response.")
@@ -93,16 +105,26 @@ class ImageClassification(CrowdsourcingTask):
         # Set task width limit
         task_width_plugin = tb.TolokaPluginV1(kind='scroll', task_width=500)
 
-        # Add hotkey plugin
-        hotkey_plugin = tb.HotkeysPluginV1(key_1=tb.SetActionV1(data=tb.OutputData(output_data['bool']),
-                                                                payload=True),
-                                           key_2=tb.SetActionV1(data=tb.OutputData(output_data['bool']),
-                                                                payload=False))
+        # Check if numbered hotkeys should be configured. Hotkeys are only defined if there are less than
+        # nine labels.
+        if len(configuration["interface"]["labels"]) <= 9:
+
+            # Create hotkeys for all possible responses
+            hotkey_dict = {f'key_{i+1}': tb.SetActionV1(
+                data=tb.OutputData(output_data['bool'] if 'bool' in output_data else output_data['str']),
+                payload=list(configuration["interface"]["labels"].keys())[i])
+                for i in range(len(configuration["interface"]["labels"]))}
+
+            hotkey_plugin = tb.HotkeysPluginV1(**hotkey_dict)
+
+        else:
+
+            hotkey_plugin = None
 
         # Combine the task interface elements into a view
         interface = toloka.project.TemplateBuilderViewSpec(
             view=tb.ListViewV1([img_viewer, prompt, radio_group]),
-            plugins=[task_width_plugin, hotkey_plugin]
+            plugins=[task_width_plugin, hotkey_plugin if hotkey_plugin is not None else hotkey_plugin]
         )
 
         # Create a task specification with interface and input/output data
