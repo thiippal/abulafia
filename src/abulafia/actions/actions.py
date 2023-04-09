@@ -115,9 +115,8 @@ class Aggregate:
 
     Parameters:
         configuration: A string object that defines a path to a YAML file with configuration.
-        task: Crowdsourcing Task of which results will be aggregated.
-        forward: Forward object with which the aggregated tasks will be forwarded to the next pool
-                 or accepted/rejected.
+        task: The CrowdsourcingTask object whose results should be aggregated.
+        forward: The Forward object that will be used to forward, accept or reject the aggregated tasks.
 
     Returns:
         None
@@ -219,8 +218,9 @@ class Forward:
 
     Parameters:
         configuration: A string object that defines a path to a YAML file with configuration.
-        client: Toloka client object.
-        targets: Pools where tasks will be forwarded.
+        client: A Toloka client object.
+        targets: A list of objects that inherit from the CrowdsourcingTask class to which the tasks
+                 will be forwarded to.
 
     Returns:
         None
@@ -559,8 +559,8 @@ class VerifyPolygon:
         This function initialises the polygon verification mechanism.
 
         Parameters:
-            configuration:
-            task:
+            configuration: A string object that defines a path to a YAML file with configuration.
+            task: The CrowdsourcingTask object whose results should be validated.
 
         Returns:
              None
