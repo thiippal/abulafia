@@ -55,6 +55,14 @@ To begin with, we use the `estimated_time_per_suite` to estimate the time spent 
 
 Next, under the key `setup`, we provide a `private_name` for the pool, together with essential information. The key/value pairs `reward_per_assignment`, `assignment_max_duration_seconds` and `auto_accept_solutions` define the amount of money paid for each task suite, the maximum amount of time allowed for completing a task suite in seconds and whether the task suites submitted by workers should be accepted automatically.
 
+Under the key `defaults`, we define how many workers should complete each task (`default_overlap_for_new_tasks`) and (`default_overlap_for_new_task_suites`), that is, how many workers should complete each task suite. Here we set both values to 1.
+
+Next, we use the key `mixer` to define what kinds of task types are included in each task suite. The key `real_tasks_count` determines how many tasks from the real input data are included in each suite. We set this value to 1, which means that each task suite consists of a single task.
+
+The keys `golden_tasks_count` and `training_tasks_count` define how many of these task types are included in each pool. The so-called golden tasks with known answers can be used to estimate annotation quality, whereas the training tasks can be used to provide feedback to the workers. These tasks must be defined in the TSV file that contains the input data. Since we do not have any golden or training tasks, we set both values to 0.
+
+Finally, we use the `filter` key to define what kinds of clients can be used to access our tasks under the key `client_type`. Here we use a YAML list (items prefixed with -) to define two types of allowed clients, *TOLOKA_APP* for mobile devices and *BROWSER*. 
+
 ```yaml
 pool:
   estimated_time_per_suite: 10
