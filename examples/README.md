@@ -24,6 +24,10 @@ data:
     result: bool
 ```
 
+Next, we proceed to set up the user interface under the key `interface`. The key `prompt` defines the text that is positioned above the buttons for various labels. 
+
+These labels are defined under the key `labels`. Each key under `labels` defines the value that will be stored when the user selects the label, whereas the label defines what shown in the user interface. Here we set up two labels in the user interface, *Yes* and *No*, which store the values *true* and *false*, respectively.
+
 ```yaml
 interface:
   prompt: "Does the image contain text, letters or numbers?"
@@ -31,6 +35,10 @@ interface:
     true: "Yes"
     false: "No" 
 ```
+
+After configuring the user interface, we proceed to set up a project on Toloka. In Toloka, user interfaces are associated with projects, which may contain multiple different pools with different tasks.
+
+To create a project, we provide the following information under the key `project`. The key `setup` contains two key/value pairs, `public_name` and `public_description`, which define basic information shown to workers on the platform. The key `instructions`, in turn, points towards an HTML file that contains instructions for completing the task. 
 
 ```yaml
 project:
@@ -40,6 +48,12 @@ project:
       contain text, letters or numbers."
   instructions: instructions/detect_text_instructions.html
 ```
+
+Next, we configure a pool within the project to which the tasks will be uploaded. This configuration is provided under the key `pool`.
+
+To begin with, we use the `estimated_time_per_suite` to estimate the time spent for completing each task suite (a group of one or more tasks) in seconds. This will allow 𝚊𝚋𝚞𝚕𝚊𝚏𝚒𝚊 to estimate whether the payment for the task is fair.
+
+Next, under the key `setup`, we provide a `private_name` for the pool, together with essential information. The key/value pairs `reward_per_assignment`, `assignment_max_duration_seconds` and `auto_accept_solutions` define the amount of money paid for each task suite, the maximum amount of time allowed for completing a task suite in seconds and whether the task suites submitted by workers should be accepted automatically.
 
 ```yaml
 pool:
