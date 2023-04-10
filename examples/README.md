@@ -2,11 +2,11 @@
 
 ## Creating a YAML configuration for classifying images
 
-In this example, we create a configuration file to be used with the `ImageClassification` class defined in 𝚊𝚋𝚞𝚕𝚊𝚏𝚒𝚊.
+In this example, we create a configuration file for the `ImageClassification` class.
 
-The following example breaks down how 𝚊𝚋𝚞𝚕𝚊𝚏𝚒𝚊 uses YAML configuration files to create crowdsourcing tasks on Toloka. The complete configuration file referred to in this example may be found [here](config/classify_image.yaml).
+This example breaks down how 𝚊𝚋𝚞𝚕𝚊𝚏𝚒𝚊 uses YAML files to create and configure crowdsourcing tasks on Toloka. The complete configuration file referred to in this example may be found [here](config/classify_image.yaml).
 
-First we define a unique name for the crowdsourcing task under the key `name`. In this case, we call this task *classify_images*.
+First we define a unique name for the crowdsourcing task under the key `name`. In this case, we call the task *classify_images*.
 
 Next, we must provide information about the data and its structure under the key `data`. For this purpose, we define three additional keys: `file`, `input` and `output`. 
 
