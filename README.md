@@ -127,17 +127,37 @@ To calculate a fair reward per task suite, you can use the interactive script `u
 
 ## Pre-defined interfaces
 
-Define crowdsourcing tasks in a Python file by creating one or many of the task objects listed below. They all take arguments `configuration`, which is the path to the correct YAML configuration file, and `client`, which should be your Toloka client.
+To create a crowdsourcing task, you must create a corresponding Python object. The properties of the task are defined using a YAML configuration file, as instructed under [examples](examples/README.md).
 
-You can define additional task interfaces by inheriting the [`CrowdsourcingTask`](https://github.com/thiippal/abulafia/blob/main/src/abulafia/task_specs/core_task.py) class. The currently implemented task interfaces can be found in [`src/abulafia/task_specs/task_specs.py`](https://github.com/thiippal/abulafia/tree/main/src/abulafia/task_specs). These task interfaces are described in greater detail below.
+The currently implemented task interfaces can be found in [`src/abulafia/task_specs/task_specs.py`](https://github.com/thiippal/abulafia/tree/main/src/abulafia/task_specs). These task interfaces are described in greater detail below.
+
+You can define additional task interfaces by inheriting the [`CrowdsourcingTask`](https://github.com/thiippal/abulafia/blob/main/src/abulafia/task_specs/core_task.py) class. 
 
 ### ImageClassification
 
-Interface for binary image classification tasks. 
+A class for for image classification tasks. The following input and output formats are supported.
 
-|input|output|
+|Input|Output|
 |-----|------|
 | `url` (image) | `boolean` (true/false) |
+|               | `string` (for multiple labels) |
+
+Configure the interface by adding the following keys under the top-level key `interface`.
+
+|Key|Description|
+|-----|------|
+| `prompt` | A string that defines a text that is shown above the buttons on the interface. |
+| `labels` | Key/value pairs that define labels on the interface and the values stored. |
+
+The following example adds a prompt with two labels. The interface will show two options, *Yes* and *No*, which store the values `true` and `false`, respectively.
+
+```yaml
+interface:
+  prompt: "Does the image contain text, letters or numbers?"
+  labels:
+    true: "Yes"
+    false: "No" 
+```
 
 ### ImageSegmentation
 
