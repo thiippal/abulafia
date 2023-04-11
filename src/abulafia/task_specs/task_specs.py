@@ -233,6 +233,16 @@ class ImageSegmentation(CrowdsourcingTask):
             checkbox = tb.CheckboxFieldV1(data=tb.OutputData(output_data['bool'], default=False),
                                           label=configuration['interface']['checkbox'])
 
+            # If the checkbox is selected, disable the requirements for output and validation
+            data_out[output_data['json']].required = False
+            data_out[output_data['bool']].required = False
+            img_ui_validation = None
+
+        else:
+
+            # Configure data validation for the image annotation interface
+            img_ui_validation = tb.RequiredConditionV1(hint="Please draw at least one shape!")
+
         # Create the task interface; start by setting up the image segmentation interface
         img_ui = tb.ImageAnnotationFieldV1(
 
@@ -253,7 +263,7 @@ class ImageSegmentation(CrowdsourcingTask):
             labels=labels,
 
             # Set up validation
-            validation=tb.RequiredConditionV1(hint="Please select at least one area!")
+            validation=img_ui_validation
         )
 
         # Define the text prompt below the segmentation UI
@@ -277,7 +287,9 @@ class ImageSegmentation(CrowdsourcingTask):
             view.append(checkbox)
 
             # Configure validation: if the checkbox is selected, the validation for the outlines
-            # is disabled.
+            # is disabled. This is achieved using the AnyCondition object: at least one of the
+            # conditions must hold, that is, there must be at least one bounding box or the checkbox
+            # must be selected.
             validation = tb.AnyConditionV1(
                 conditions=[tb.SchemaConditionV1(data=tb.OutputData(output_data['json']),
                                                  schema={'type': 'array', 'minItems': 1}),
