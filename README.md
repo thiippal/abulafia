@@ -135,7 +135,7 @@ You can define additional task interfaces by inheriting the [`CrowdsourcingTask`
 
 ### ImageClassification
 
-A class for for image classification tasks. The following input and output formats are supported.
+A class for image classification tasks. The following input and output formats are supported.
 
 |Input|Output|
 |-----|------|
@@ -147,7 +147,7 @@ Configure the interface by adding the following keys under the top-level key `in
 |Key|Description|
 |-----|------|
 | `prompt` | A string that defines a text that is shown above the buttons on the interface. |
-| `labels` | Key/value pairs that define labels on the interface and the values stored. |
+| `labels` | Key/value pairs that define the labels shown on the interface and the values stored in the data. |
 
 The following example adds a prompt with two labels. The interface will show two options, *Yes* and *No*, which store the values `true` and `false`, respectively.
 
@@ -161,11 +161,34 @@ interface:
 
 ### ImageSegmentation
 
-Interface for image segmentation tasks. 
+A class for image segmentation tasks. The following input and output formats are supported. 
 
 |input|output|
 |-----|------|
 |`url` (image) | `json` (bounding boxes) |
+|              | `boolean` (optional checkbox) |
+
+Configure the interface by adding the following keys under the top-level key `interface`.
+
+|Key|Description|
+|-----|------|
+| `prompt` | A string that defines a text that is shown below the image annotation interface. |
+| `tools`| A list of values that defines the annotation tools available for the interface. |
+| `labels` (optional) | Key/value pairs that define the labels shown on the interface and the values stored in the data. |
+
+The following example defines a prompt with three labels and two annotation tools. Valid values for the annotation tools include `rectangle`, `polygon` and `point`. Their order defines their order of appearance in the user interface. If no tools are defined, all tools are made available by default.
+
+```yaml
+interface:
+  prompt: "Outline all elements with text, letters or numbers."
+  tools:
+    - rectangle
+    - polygon
+  labels:
+    text: "Text"
+    letter: "Letter"
+    number: "Number"
+```
 
 ### AddOutlines
 
