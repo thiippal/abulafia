@@ -184,7 +184,7 @@ class ImageSegmentation(CrowdsourcingTask):
              A Toloka TaskSpec object.
         """
         # Define expected input and output types for the task
-        expected_i, expected_o = {'url'}, {'json'}
+        expected_i, expected_o = {'url'}, {'json', 'bool'}
 
         # Configure Toloka data specifications and check the expected input against configuration
         data_in, data_out, input_data, output_data = check_io(configuration=configuration,
@@ -203,6 +203,36 @@ class ImageSegmentation(CrowdsourcingTask):
 
             labels = None
 
+        # Check if particular tools have been defined for the interface
+        if 'tools' in configuration['interface']:
+
+            # Check that the tools have been provided as a list
+            assert type(configuration['interface']['tools']) == list, "Please provide the list of " \
+                                                                      "tools as a YAML list."
+
+            # Check that the tools provided are valid components of the interface
+            assert set(configuration['interface']['tools']).issubset(
+                {'rectangle', 'polygon', 'point'})
+
+            # Create tools (shapes)
+            shapes = {s: True for s in configuration['interface']['tools']}
+
+        else:
+
+            shapes = {'rectangle': True, 'polygon': True, 'point': True}
+
+        # Check if a checkbox should be added to the interface
+        if 'checkbox' in configuration['interface']:
+
+            # Check that a boolean value is included in the output data
+            assert 'bool' in output_data, "Please add an output with a Boolean value " \
+                                          "under the top-level key 'data' to use the " \
+                                          "checkbox."
+
+            # Create the checkbox object
+            checkbox = tb.CheckboxFieldV1(data=tb.OutputData(output_data['bool'], default=False),
+                                          label=configuration['interface']['checkbox'])
+
         # Create the task interface; start by setting up the image segmentation interface
         img_ui = tb.ImageAnnotationFieldV1(
 
@@ -213,7 +243,7 @@ class ImageSegmentation(CrowdsourcingTask):
             image=tb.InputData(input_data['url']),
 
             # Set up the allowed shapes: note that their order will define the order in the UI
-            shapes={'rectangle': True, 'polygon': True},
+            shapes=shapes,
 
             # Set this element to use all available vertical space on the page. This should ensure
             # that all UI elements are visible.
@@ -223,7 +253,8 @@ class ImageSegmentation(CrowdsourcingTask):
             labels=labels,
 
             # Set up validation
-            validation=tb.RequiredConditionV1(hint="Please select at least one area!"))
+            validation=tb.RequiredConditionV1(hint="Please select at least one area!")
+        )
 
         # Define the text prompt below the segmentation UI
         prompt = tb.TextViewV1(content=configuration['interface']['prompt'])
@@ -233,11 +264,33 @@ class ImageSegmentation(CrowdsourcingTask):
                                                           confirm='a',
                                                           polygon='e',
                                                           rectangle='w',
-                                                          select='q')
+                                                          point='r',
+                                                          select='q',)
+
+        # Create a list of interface elements
+        view = [img_ui, prompt]
+
+        # Check for optional checkbox element
+        if 'checkbox' in configuration['interface']:
+
+            # Add the checkbox element to the interface
+            view.append(checkbox)
+
+            # Configure validation: if the checkbox is selected, the validation for the outlines
+            # is disabled.
+            validation = tb.AnyConditionV1(
+                conditions=[tb.SchemaConditionV1(data=tb.OutputData(output_data['json']),
+                                                 schema={'type': 'array', 'minItems': 1}),
+                            tb.EqualsConditionV1(data=tb.OutputData(output_data['bool']), to=True)],
+                hint="Outline at least one element or check the box above.")
+
+        else:
+
+            validation = None
 
         # Combine the task interface elements into a view
         interface = toloka.project.TemplateBuilderViewSpec(
-            view=tb.ListViewV1([img_ui, prompt]),
+            view=tb.ListViewV1(items=view, validation=validation),
             plugins=[hotkey_plugin]
         )
 
@@ -362,7 +415,7 @@ class AddOutlines(CrowdsourcingTask):
             validation=tb.AnyConditionV1(conditions=[tb.SchemaConditionV1(data=tb.OutputData(output_data['json']),
                                                                           schema={'type': 'array', 'minItems': 2}),
                                                      tb.EqualsConditionV1(data=tb.OutputData(output_data['bool']), to=True)],
-                                                     hint="Outline at least one target or check the box if necessary."),
+                                                     hint="Outline at least one target or check the box if necessary.")
             )
         )
 

@@ -1,6 +1,6 @@
 name: classify_images
 data:
-  file: data/verify_image_data.tsv
+  file: data/image_data.tsv
   input:
     image: url                    
   output:
