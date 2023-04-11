@@ -175,8 +175,13 @@ Configure the interface by adding the following keys under the top-level key `in
 | `prompt` | A string that defines a text that is shown below the image annotation interface. |
 | `tools`| A list of values that defines the annotation tools available for the interface. |
 | `labels` (optional) | Key/value pairs that define the labels shown on the interface and the values stored in the data. |
+| `checkbox` (optional) | A string that defines a text that is shown above a checkbox in the interface. |
 
-The following example defines a prompt with three labels and two annotation tools. Valid values for the annotation tools include `rectangle`, `polygon` and `point`. Their order defines their order of appearance in the user interface. If no tools are defined, all tools are made available by default.
+The following example defines a prompt with three labels, two annotation tools and a checkbox. 
+
+For the annotation tools, valid values include `rectangle`, `polygon` and `point`. Their order defines the order in which they appear in the user interface. If no tools are defined, all tools are made available by default.
+
+If a `checkbox` is added to the user inteface, you must add a variable with the type `boolean` to the output. The checkbox can be used to mark images that do not contain any objects to be segmented. If selected, the checkbox stores the value `true`, and `false` if the checkpoint is not selected.
 
 ```yaml
 interface:
@@ -188,6 +193,7 @@ interface:
     text: "Text"
     letter: "Letter"
     number: "Number"
+  checkbox: "Check this box if there is nothing to outline."
 ```
 
 ### AddOutlines
