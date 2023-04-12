@@ -175,7 +175,7 @@ Configure the interface by adding the following keys under the top-level key `in
 | `prompt` | A string that defines a text that is shown below the image annotation interface. |
 | `tools`| A list of values that defines the annotation tools available for the interface. |
 | `labels` (optional) | Key/value pairs that define the labels shown on the interface and the values stored in the data. |
-| `checkbox` (optional) | A string that defines a text that is shown above a checkbox in the interface. |
+| `checkbox` (optional) | A string that defines a text that is shown above the checkbox in the interface. |
 
 The following example defines a prompt with three labels, two annotation tools and a checkbox. 
 
@@ -195,6 +195,26 @@ interface:
     number: "Number"
   checkbox: "Check this box if there is nothing to outline."
 ```
+
+### SegmentationVerification
+
+A class for verifying bounding boxes and other forms of image segmentation. The following input and output formats are supported.
+
+|Input|Output|
+|-----|------|
+| `url` (image) | `boolean` (true/false) |
+| `json` (bounding boxes) | `string` (for multiple labels) |
+| `boolean` (checkbox) | |
+| `string` (checkbox) | |
+
+Configure the interface by adding the following keys under the top-level key `interface`.
+
+|Key|Description|
+|-----|------|
+| `prompt` | A string that defines a text that is shown above the radio buttons on the interface. |
+| `labels` | Key/value pairs that define the labels for the radio buttons and the values stored in the data. |
+| `segmentation/labels` (optional) | Key/value pairs that define the labels for bounding boxes and the values stored in the data. |
+| `checkbox` (optional) | A string that defines a text that is shown above the checkbox in the interface. |
 
 ### AddOutlines
 
