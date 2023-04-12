@@ -71,9 +71,9 @@ class ImageClassification(CrowdsourcingTask):
         # Create the task interface; start by setting up the image viewer with the input URL
         img_viewer = tb.ImageViewV1(url=tb.InputData(input_data['url']),
                                     rotatable=True,
-                                    ratio=[1, 1])
+                                    full_height=True)
 
-        # Define the prompt text above the button group
+        # Define the prompt text above the radio button group
         prompt = tb.TextViewV1(content=configuration['interface']['prompt'])
 
         # Check the labels defined for the radio button group
@@ -85,9 +85,9 @@ class ImageClassification(CrowdsourcingTask):
 
             msg.warn(f"Please add the key 'labels' under the top-level key 'interface' to define "
                      f"the labels for the interface. The labels should be provided as key/value "
-                     f"pairs, e.g. cat: Cat. The key must correspond to the label defined for "
-                     f"the label in the input JSON, whereas the value is the text displayed "
-                     f"in the user interface.", exits=1)
+                     f"pairs, e.g. cat: Cat. The key is stored into the output data ('cat'), "
+                     f"whereas the value defines that label shown on the interface ('Cat').",
+                     exits=1)
 
         # Set up a radio button group
         radio_group = tb.ButtonRadioGroupFieldV1(
@@ -197,7 +197,7 @@ class ImageSegmentation(CrowdsourcingTask):
             # Create a list of labels to be added to the UI. The 'label' will be added to the
             # UI, whereas 'value' contains the value to be associated with the bounding box.
             labels = [tb.ImageAnnotationFieldV1.Label(value=value, label=label) for
-                      value, label in configuration["interface"]["labels"].items()]
+                      value, label in configuration['interface']['labels'].items()]
 
         else:
 
@@ -317,10 +317,185 @@ class ImageSegmentation(CrowdsourcingTask):
         return task_spec
 
 
+class SegmentationClassification(CrowdsourcingTask):
+    """
+    This is a class for classifying bounding boxes and other forms of image segmentation.
+    """
+    def __init__(self, configuration, client, **kwargs):
+        """
+        This function initialises the SegmentationClassification class, which inherits attributes
+        and methods from the superclass Task.
+
+        Parameters:
+            configuration: A string object that defines a path to a YAML file with configuration.
+            client: A TolokaClient object with valid credentials.
+
+        Returns:
+            A SegmentationClassification object.
+        """
+        # Read the configuration from the YAML file
+        configuration = read_configuration(configuration=configuration)
+
+        # Specify task and task interface
+        task_spec = self.specify_task(configuration=configuration)
+
+        # Use the super() function to access the superclass Task and its methods and attributes.
+        # This will set up the project, pool and training as specified in the configuration file.
+        super().__init__(configuration, client, task_spec)
+
+    def __call__(self, input_obj):
+
+        # If the class is called, use the __call__() method from the superclass
+        super().__call__(input_obj)
+
+        # When called, return the SegmentationClassification object
+        return self
+
+    @staticmethod
+    def specify_task(configuration):
+        """
+        This function specifies the task interface on Toloka.
+
+        Parameters:
+            configuration: A dictionary containing the configuration defined in the YAML file.
+
+        Returns:
+             A Toloka TaskSpec object.
+        """
+        # Define expected input and output types for the task
+        expected_i, expected_o = {'url', 'json', 'bool', 'str'}, {'bool', 'str'}
+
+        # Configure Toloka data specifications and check the expected input against configuration
+        data_in, data_out, input_data, output_data = check_io(configuration=configuration,
+                                                              expected_input=expected_i,
+                                                              expected_output=expected_o)
+
+        # If the task is used for human verification, add the assignment ID to the input data. The
+        # assignment ID can be used to accept and reject tasks in subsequent tasks or actions.
+        if 'verification' in configuration['interface']:
+
+            if configuration['interface']['verification']:
+
+                data_in['assignment_id'] = toloka.project.StringSpec(required=False)
+
+        # Check if labels associated with the image annotation element have been defined
+        if 'labels' in configuration['interface']['segmentation']:
+
+            seg_labels = [tb.ImageAnnotationFieldV1.Label(value=v, label=l) for
+                          v, l in configuration['interface']['segmentation']['labels'].items()] \
+                if 'labels' in configuration['interface']['segmentation'] else None
+
+        if 'checkbox' in configuration['interface']:
+
+            # Create a checkbox
+            try:
+                checkbox = tb.CheckboxFieldV1(
+                    data=tb.InternalData(path=input_data['bool'] if 'bool' in input_data else input_data['str'],
+                                         default=tb.InputData(input_data['bool'] if 'bool' in input_data else input_data['str'])),
+                    label=configuration['interface']['checkbox'],
+                    disabled=True)
+
+            except KeyError:
+
+                msg.warn(f"Please add the key 'checkbox' under the top-level key 'interface' to "
+                         f"define a text that is displayed above the checkbox. Define the text as a "
+                         f"string e.g. checkbox: There is nothing to outline.", exits=1)
+
+        # Create the task interface; start by setting up the image segmentation interface
+        img_ui = tb.ImageAnnotationFieldV1(
+
+            # Set up the data to be displayed
+            data=tb.InternalData(path=input_data['json'],
+                                 default=tb.InputData(input_data['json'])),
+
+            # Set up the input data field
+            image=tb.InputData(path=input_data['url']),
+
+            # Set labels
+            labels=seg_labels,
+
+            # Set this element to use all available vertical space on the page. This should ensure
+            # that all UI elements are visible.
+            full_height=True,
+
+            # Disable the annotation interface
+            disabled=True)
+
+        # Define the text prompt above the radio button group
+        radio_prompt = tb.TextViewV1(content=configuration['interface']['prompt'])
+
+        # Check the labels defined for the radio button group
+        try:
+            radio_labels = [tb.fields.GroupFieldOption(value=value, label=label) for
+                            value, label in configuration["interface"]["labels"].items()]
+
+        except KeyError:
+
+            msg.warn(f"Please add the key 'labels' under the top-level key 'interface' to define "
+                     f"the labels for the interface. The labels should be provided as key/value "
+                     f"pairs, e.g. cat: Cat. The key is stored into the output data ('cat'), "
+                     f"whereas the value defines that label shown on the interface ('Cat').",
+                     exits=1)
+
+        # Set up a radio group for labels
+        radio_group = tb.ButtonRadioGroupFieldV1(
+
+            # Set up the output data field; this can be either a string or a Boolean value
+            data=tb.OutputData(output_data['bool'] if 'bool' in output_data else output_data['str']),
+
+            # Create radio buttons
+            options=radio_labels,
+
+            # Set up validation
+            validation=tb.RequiredConditionV1(hint="You must choose one response.")
+        )
+
+        # Check if numbered hotkeys should be configured. Hotkeys are only defined if there are less
+        # than nine labels.
+        if len(configuration["interface"]["labels"]) <= 9:
+
+            # Create hotkeys for all possible responses
+            hotkey_dict = {f'key_{i+1}': tb.SetActionV1(
+                data=tb.OutputData(output_data['bool'] if 'bool' in output_data else output_data['str']),
+                payload=list(configuration["interface"]["labels"].keys())[i])
+                for i in range(len(configuration["interface"]["labels"]))}
+
+            hotkey_plugin = tb.HotkeysPluginV1(**hotkey_dict)
+
+        else:
+
+            hotkey_plugin = None
+
+        # Create a list of interface elements
+        view = [img_ui, radio_prompt, radio_group]
+
+        # Check for possible checkbox element
+        if 'checkbox' in configuration['interface']:
+
+            view = [img_ui, checkbox, radio_prompt, radio_group]
+
+        # Combine the task interface elements into a view
+        interface = toloka.project.TemplateBuilderViewSpec(
+            view=tb.ListViewV1(view),
+            plugins=[hotkey_plugin if hotkey_plugin is not None else hotkey_plugin]
+        )
+
+        # Create a task specification with interface and input/output data
+        task_spec = toloka.project.task_spec.TaskSpec(
+            input_spec=data_in,
+            output_spec=data_out,
+            view_spec=interface
+        )
+
+        # Return the task specification
+        return task_spec
+
+
 class AddOutlines(CrowdsourcingTask):
     """
     This is a class for tasks that add more bounding boxes to images with pre-existing labelled bounding boxes.
     """
+
     def __init__(self, configuration, client, **kwargs):
         """
         This function initialises the AddOutlines class, which inherits attributes
@@ -368,12 +543,12 @@ class AddOutlines(CrowdsourcingTask):
         data_in, data_out, input_data, output_data = check_io(configuration=configuration,
                                                               expected_input=expected_i,
                                                               expected_output=expected_o)
-        
+
         # Add assignment ID to the input data
         data_in['assignment_id'] = toloka.project.StringSpec(required=False)
 
         try:
-            labels = [tb.ImageAnnotationFieldV1.Label(value=value, label=label) for 
+            labels = [tb.ImageAnnotationFieldV1.Label(value=value, label=label) for
                       value, label in configuration["interface"]["labels"].items()]
 
         except KeyError:
@@ -423,137 +598,14 @@ class AddOutlines(CrowdsourcingTask):
 
         # Combine the task interface elements into a view
         interface = toloka.project.TemplateBuilderViewSpec(
-            view=tb.ListViewV1([img_ui, prompt, checkbox], 
-            validation=tb.AnyConditionV1(conditions=[tb.SchemaConditionV1(data=tb.OutputData(output_data['json']),
-                                                                          schema={'type': 'array', 'minItems': 2}),
-                                                     tb.EqualsConditionV1(data=tb.OutputData(output_data['bool']), to=True)],
-                                                     hint="Outline at least one target or check the box if necessary.")
-            )
-        )
-
-        # Create a task specification with interface and input/output data
-        task_spec = toloka.project.task_spec.TaskSpec(
-            input_spec=data_in,
-            output_spec=data_out,
-            view_spec=interface
-        )
-
-        # Return the task specification
-        return task_spec
-
-
-class SegmentationClassification(CrowdsourcingTask):
-    """
-    This is a class for binary segmentation classification tasks.
-    """
-    def __init__(self, configuration, client, **kwargs):
-        """
-        This function initialises the SegmentationClassification class, which inherits attributes
-        and methods from the superclass Task.
-
-        Parameters:
-            configuration: A string object that defines a path to a YAML file with configuration.
-            client: A TolokaClient object with valid credentials.
-
-        Returns:
-            A SegmentationClassification object.
-        """
-        # Read the configuration from the YAML file
-        configuration = read_configuration(configuration=configuration)
-
-        # Specify task and task interface
-        task_spec = self.specify_task(configuration=configuration)
-
-        # Use the super() function to access the superclass Task and its methods and attributes.
-        # This will set up the project, pool and training as specified in the configuration file.
-        super().__init__(configuration, client, task_spec)
-
-    def __call__(self, input_obj):
-
-        # If the class is called, use the __call__() method from the superclass
-        super().__call__(input_obj)
-
-        # When called, return the SegmentationClassification object
-        return self
-
-    @staticmethod
-    def specify_task(configuration):
-        """
-        This function specifies the task interface on Toloka.
-
-        Parameters:
-            configuration: A dictionary containing the configuration defined in the YAML file.
-
-        Returns:
-             A Toloka TaskSpec object.
-        """
-        # Define expected input and output types for the task
-        expected_i, expected_o = {'url', 'json'}, {'bool'}
-
-        # Configure Toloka data specifications and check the expected input against configuration
-        data_in, data_out, input_data, output_data = check_io(configuration=configuration,
-                                                              expected_input=expected_i,
-                                                              expected_output=expected_o)
-
-        # Add assignment ID to the input data
-        data_in['assignment_id'] = toloka.project.StringSpec(required=False)
-
-        labels = [tb.ImageAnnotationFieldV1.Label(value=value, label=label) for
-                  value, label in configuration["interface"]["labels"].items()] \
-            if "labels" in configuration["interface"] else None
-
-        # Create the task interface; start by setting up the image segmentation interface
-        img_ui = tb.ImageAnnotationFieldV1(
-
-            # Set up the output data field
-            data=tb.InternalData(path=input_data['json'],
-                                 default=tb.InputData(input_data['json'])),
-
-            # Set up the input data field
-            image=tb.InputData(path=input_data['url']),
-
-            # Set labels
-            labels=labels,
-
-            # Set this element to use all available vertical space on the page. This should ensure
-            # that all UI elements are visible.
-            full_height=True,
-
-            # Disable annotation interface
-            disabled=True)
-
-        # Define the text prompt below the segmentation UI
-        prompt = tb.TextViewV1(content=configuration['interface']['prompt'])
-
-        # Set up a radio group for labels
-        radio_group = tb.ButtonRadioGroupFieldV1(
-
-            # Set up the output data field
-            data=tb.OutputData(output_data['bool']),
-
-            # Create radio buttons
-            options=[
-                tb.fields.GroupFieldOption(value=True, label='Yes'),
-                tb.fields.GroupFieldOption(value=False, label='No')
-            ],
-
-            # Set up validation
-            validation=tb.RequiredConditionV1(hint="You must choose one response.")
-        )
-
-        # Add hotkey plugin
-        hotkey_plugin = tb.HotkeysPluginV1(key_1=tb.SetActionV1(data=tb.OutputData(output_data['bool']),
-                                                                payload=True),
-                                           key_2=tb.SetActionV1(data=tb.OutputData(output_data['bool']),
-                                                                payload=False))
-
-        # Set task width limit
-        task_width_plugin = tb.TolokaPluginV1(kind='scroll', task_width=500)
-
-        # Combine the task interface elements into a view
-        interface = toloka.project.TemplateBuilderViewSpec(
-            view=tb.ListViewV1([img_ui, prompt, radio_group]),
-            plugins=[hotkey_plugin, task_width_plugin]
+            view=tb.ListViewV1([img_ui, prompt, checkbox],
+                               validation=tb.AnyConditionV1(conditions=[
+                                   tb.SchemaConditionV1(data=tb.OutputData(output_data['json']),
+                                                        schema={'type': 'array', 'minItems': 2}),
+                                   tb.EqualsConditionV1(data=tb.OutputData(output_data['bool']),
+                                                        to=True)],
+                                                            hint="Outline at least one target or check the box if necessary.")
+                               )
         )
 
         # Create a task specification with interface and input/output data
@@ -1261,138 +1313,3 @@ class TextAnnotation(CrowdsourcingTask):
         return task_spec
 
 
-class LabelledSegmentationVerificationNoCheckbox(CrowdsourcingTask):
-    """
-    This is a class for binary segmentation verification tasks with labelled bounding boxes,
-    but the interface does not contain a checkbox that can be used e.g. to mark images with
-    nothing to outline.
-    """
-
-    def __init__(self, configuration, client):
-        """
-        This function initialises the LabelledSegmentationVerification class, which inherits attributes
-        and methods from the superclass Task.
-
-        Parameters:
-            configuration: A string object that defines a path to a YAML file with configuration.
-            client: A TolokaClient object with valid credentials.
-
-        Returns:
-            A LabelledSegmentationVerification object.
-        """
-        # Read the configuration from the YAML file
-        configuration = read_configuration(configuration=configuration)
-
-        # Specify task and task interface
-        task_spec = self.specify_task(configuration=configuration)
-
-        # Use the super() function to access the superclass Task and its methods and attributes.
-        # This will set up the project, pool and training as specified in the configuration file.
-        super().__init__(configuration, client, task_spec)
-
-    def __call__(self, input_obj):
-
-        # If the class is called, use the __call__() method from the superclass
-        super().__call__(input_obj, verify=True)
-
-        # When called, return the LabelledSegmentationVerification object
-        return self
-
-    @staticmethod
-    def specify_task(configuration):
-        """
-        This function specifies the task interface on Toloka.
-
-        Parameters:
-            configuration: A dictionary containing the configuration defined in the YAML file.
-
-        Returns:
-                A Toloka TaskSpec object.
-        """
-
-        # Define expected input and output types for the task
-        expected_i, expected_o = {'url', 'json'}, {'bool'}
-
-        # Configure Toloka data specifications and check the expected input against configuration
-        data_in, data_out, input_data, output_data = check_io(configuration=configuration,
-                                                              expected_input=expected_i,
-                                                              expected_output=expected_o)
-
-        # Add assignment ID to the input data
-        data_in['assignment_id'] = toloka.project.StringSpec(required=False)
-
-        try:
-            labels = [tb.ImageAnnotationFieldV1.Label(value=value, label=label) for
-                      value, label in configuration["interface"]["labels"].items()]
-
-        except KeyError:
-
-            msg.warn(f"Please add the key 'labels' under the top-level key 'interface' to define "
-                     f"the labels for bounding boxes. The labels should be provided as key/value "
-                     f"pairs, e.g. cat: Cat. The key must correspond to the label defined for "
-                     f"the bounding box in the input JSON, whereas the value is the text displayed "
-                     f"in the user interface.", exits=1)
-
-        # Create the task interface; start by setting up the image segmentation interface
-        img_ui = tb.ImageAnnotationFieldV1(
-
-            # Set up the output data field
-            data=tb.InternalData(path=input_data['json'],
-                                 default=tb.InputData(input_data['json'])),
-
-            # Set up the input data field
-            image=tb.InputData(path=input_data['url']),
-
-            # Set this element to use all available vertical space on the page. This should ensure
-            # that all UI elements are visible.
-            full_height=True,
-
-            # Set labels
-            labels=labels,
-
-            # Disable annotation interface
-            disabled=True)
-
-        # Define the text prompt below the segmentation UI
-        prompt = tb.TextViewV1(content=configuration['interface']['prompt'])
-
-        # Set up a radio group for labels
-        radio_group = tb.ButtonRadioGroupFieldV1(
-
-            # Set up the output data field
-            data=tb.OutputData(output_data['bool']),
-
-            # Create radio buttons
-            options=[
-                tb.fields.GroupFieldOption(value=True, label='Yes'),
-                tb.fields.GroupFieldOption(value=False, label='No')
-            ],
-
-            # Set up validation
-            validation=tb.RequiredConditionV1(hint="You must choose one response.")
-        )
-
-        # Add hotkey plugin
-        hotkey_plugin = tb.HotkeysPluginV1(key_1=tb.SetActionV1(data=tb.OutputData(output_data['bool']),
-                                                                payload=True),
-                                           key_2=tb.SetActionV1(data=tb.OutputData(output_data['bool']),
-                                                                payload=False))
-
-        # Set task width limit
-        task_width_plugin = tb.TolokaPluginV1(kind='scroll', task_width=500)
-
-        # Combine the task interface elements into a view
-        interface = toloka.project.TemplateBuilderViewSpec(
-            view=tb.ListViewV1([img_ui, prompt, radio_group]),
-            plugins=[hotkey_plugin, task_width_plugin]
-        )
-
-        # Create a task specification with interface and input/output data
-        task_spec = toloka.project.task_spec.TaskSpec(
-            input_spec=data_in,
-            output_spec=data_out,
-            view_spec=interface
-        )
-
-        # Return the task specification
-        return task_spec
