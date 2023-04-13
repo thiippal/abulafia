@@ -219,6 +219,8 @@ Configure the interface by adding the following keys under the top-level key `in
 | `checkbox` (optional) | A string that defines a text that is shown above the checkbox in the interface. |
 | `verification` (optional) | Include unique assignment identifier into the output for accepting and rejecting tasks. |
 
+The following example defines a prompt, an image segmentation interface with three labels for bounding boxes, two labels for the radio buttons and sets the verification mode to `true`.
+
 ```yaml
 interface:
   prompt: "Is the image annotated correctly?"
