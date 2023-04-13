@@ -125,7 +125,7 @@ The tool has a built-in mechanism that guides the user to determine rewards that
 
 To calculate a fair reward per task suite, you can use the interactive script `utils/calculate_fair_rewards.py`.
 
-## Pre-defined interfaces
+## Pre-defined task interfaces
 
 To create a crowdsourcing task, you must create a corresponding Python object. The properties of the task are defined using a YAML configuration file, as instructed under [examples](examples/README.md).
 
