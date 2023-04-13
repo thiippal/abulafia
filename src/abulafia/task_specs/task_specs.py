@@ -184,7 +184,7 @@ class ImageSegmentation(CrowdsourcingTask):
              A Toloka TaskSpec object.
         """
         # Define expected input and output types for the task
-        expected_i, expected_o = {'url'}, {'json', 'bool'}
+        expected_i, expected_o = {'json', 'url', 'bool'}, {'json', 'bool'}
 
         # Configure Toloka data specifications and check the expected input against configuration
         data_in, data_out, input_data, output_data = check_io(configuration=configuration,
@@ -219,6 +219,19 @@ class ImageSegmentation(CrowdsourcingTask):
 
             shapes = {'rectangle': True, 'polygon': True, 'point': True}
 
+        # Check if the input data contains existing bounding boxes in JSON
+        if 'json' in input_data:
+
+            # Set up the output data for image segmentation, but add the
+            # incoming segmentation data as default values.
+            data = tb.OutputData(path=output_data['json'],
+                                 default=tb.InputData(input_data['json']))
+
+        else:
+
+            # Set up the output path without incoming bounding boxes
+            data = tb.OutputData(path=output_data['json'])
+
         # Initialise a list of conditions for validating the output data
         conditions = [tb.RequiredConditionV1(data=tb.OutputData(path=output_data['json']))]
 
@@ -242,7 +255,7 @@ class ImageSegmentation(CrowdsourcingTask):
         img_ui = tb.ImageAnnotationFieldV1(
 
             # Set up the output data field
-            data=tb.OutputData(output_data['json']),
+            data=data,
 
             # Set up the input data field
             image=tb.InputData(input_data['url']),
