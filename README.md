@@ -166,7 +166,7 @@ A class for image segmentation tasks. The following input and output formats are
 |input|output|
 |-----|------|
 |`url` (image) | `json` (bounding boxes) |
-|              | `boolean` (optional checkbox) |
+|`json` (bounding boxes) | `boolean` (optional checkbox) |
 
 Configure the interface by adding the following keys under the top-level key `interface`.
 
@@ -177,11 +177,7 @@ Configure the interface by adding the following keys under the top-level key `in
 | `labels` (optional) | Key/value pairs that define the labels shown on the interface and the values stored in the data. |
 | `checkbox` (optional) | A string that defines a text that is shown above the checkbox in the interface. |
 
-The following example defines a prompt with three labels, two annotation tools and a checkbox. 
-
-For the annotation tools, valid values include `rectangle`, `polygon` and `point`. Their order defines the order in which they appear in the user interface. If no tools are defined, all tools are made available by default.
-
-If a `checkbox` is added to the user inteface, you must add a variable with the type `boolean` to the output. The checkbox can be used to mark images that do not contain any objects to be segmented. If selected, the checkbox stores the value `true`, and `false` if the checkpoint is not selected.
+The following example defines a prompt, an image segmentation interface with three labels, two annotation tools and a checkbox.
 
 ```yaml
 interface:
@@ -195,6 +191,12 @@ interface:
     number: "Number"
   checkbox: "Check this box if there is nothing to outline."
 ```
+
+For the annotation tools, valid values include `rectangle`, `polygon` and `point`. Their order defines the order in which they appear in the user interface. If no tools are defined, all tools are made available by default.
+
+If a `checkbox` is added to the user inteface, you must add an input data variable with the type `boolean` to the output. The checkbox can be used to mark images that do not contain any objects to be segmented. If selected, the checkbox stores the value `true`, and `false` if the checkpoint is not selected.
+
+If you want to show pre-existing annotations, you must add an input data variable with the type `json`.
 
 ### SegmentationVerification
 
