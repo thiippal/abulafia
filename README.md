@@ -235,63 +235,6 @@ interface:
   verification: true
 ```
 
-### AddOutlines
-
-Interface for image segmentation tasks with pre-existing labelled outlines.
-
-|input|output|
-|-----|------|
-|`url` (image) | `json` (bounding boxes) |
-| `json` (bounding boxes) | |
-
-### SegmentationClassification
-
-Interface for binary segmentation classification tasks.
-
-|input|output|
-|-----|------|
-|`url` (image) | `boolean` (true/false) |
-| `json` (bounding boxes) | |
-
-input: url to an image, JSON coordinates of bounding boxes\
-output: boolean
-
-### SegmentationVerification
-
-Interface for binary segmentation verification tasks.
-
-|input|output|
-|-----|------|
-|`url` (image) | `boolean` (true/false) |
-| `json` (bounding boxes) | |
-
-### LabelledSegmentationVerification
-
-Interface for verifying image segmentation tasks where the bounding boxes have labels.
-
-|input|output|
-|-----|------|
-|`url` (image) | `boolean` (true/false) |
-| `json` (bounding boxes) | |
-
-### FixImageSegmentation
-
-Interface for fixing and adding more outlines to images with pre-existing non-labelled outlines.
-
-|input|output|
-|-----|------|
-|`url` (image) | `json` (bounding boxes) |
-| `json` (bounding boxes) | |
-
-### MulticlassVerification
-
-Interface for verification tasks with more than two possible outputs (for example: *yes*, *no* and *maybe*).
-
-|input|output|
-|-----|------|
-|`url` (image) | `string` (values) |
-| `json` (bounding boxes) | |
-
 ### TextClassification
 
 Interface for the classification of text.
