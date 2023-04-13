@@ -2,7 +2,7 @@
 
 𝚊𝚋𝚞𝚕𝚊𝚏𝚒𝚊 is a tool for creating and deploying tasks on the the [Toloka](https://toloka.ai) crowdsourcing platform. 
 
-The tool allows you to create crowdsourcing tasks using pre-defined task interfaces and configuring their settings using [YAML](https://en.wikipedia.org/wiki/YAML) files.
+The tool allows you to create crowdsourcing tasks using pre-defined task interfaces and to configure their settings using [YAML](https://en.wikipedia.org/wiki/YAML) files.
 
 For a description of the tool and the motivation for its development, see this [publication](https://aclanthology.org/2022.latechclfl-1.2/).
 
