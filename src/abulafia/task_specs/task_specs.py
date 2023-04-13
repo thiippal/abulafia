@@ -311,7 +311,7 @@ class SegmentationClassification(CrowdsourcingTask):
     def __init__(self, configuration, client, **kwargs):
         """
         This function initialises the SegmentationClassification class, which inherits attributes
-        and methods from the superclass Task.
+        and methods from the superclass CrowdsourcingTask.
 
         Parameters:
             configuration: A string object that defines a path to a YAML file with configuration.
@@ -363,6 +363,7 @@ class SegmentationClassification(CrowdsourcingTask):
 
             if configuration['interface']['verification']:
 
+                # Add a data structure for incoming assignment IDs
                 data_in['assignment_id'] = toloka.project.StringSpec(required=False)
 
         # Check if labels associated with the image annotation element have been defined
