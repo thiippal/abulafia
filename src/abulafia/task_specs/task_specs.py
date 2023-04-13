@@ -381,10 +381,12 @@ class SegmentationClassification(CrowdsourcingTask):
         # Check if labels associated with the image annotation element have been defined
         if 'labels' in configuration['interface']['segmentation']:
 
+            # Create labels for the image annotation interface
             seg_labels = [tb.ImageAnnotationFieldV1.Label(value=v, label=l) for
                           v, l in configuration['interface']['segmentation']['labels'].items()] \
                 if 'labels' in configuration['interface']['segmentation'] else None
 
+        # Check if a checkbox should be added to the interface
         if 'checkbox' in configuration['interface']:
 
             # Create a checkbox
