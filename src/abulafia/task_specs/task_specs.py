@@ -546,7 +546,7 @@ class TextClassification(CrowdsourcingTask):
              A Toloka TaskSpec object.
         """
         # Define expected input and output types for the task
-        expected_i, expected_o = {'str'}, {'str'}
+        expected_i, expected_o = {'str'}, {'str', 'bool'}
 
         # Configure Toloka data specifications and check the expected input against configuration
         data_in, data_out, input_data, output_data = check_io(configuration=configuration,
@@ -562,17 +562,28 @@ class TextClassification(CrowdsourcingTask):
         # Define the text prompt below the classification UI
         prompt = tb.TextViewV1(content=configuration['interface']['prompt'])
 
-        options = [tb.fields.GroupFieldOption(value=value, label=label) for (value, label) 
-                   in configuration['options'].items()]
+        # Check the labels defined for the radio button group
+        try:
+            labels = [tb.fields.GroupFieldOption(value=value, label=label) for
+                       (value, label) in configuration['interface']['labels'].items()]
+
+        except KeyError:
+
+            # TODO Move these warnings into a separate file, since they're frequently reused
+            msg.warn(f"Please add the key 'labels' under the top-level key 'interface' to define "
+                     f"the labels for the interface. The labels should be provided as key/value "
+                     f"pairs, e.g. cat: Cat. The key is stored into the output data ('cat'), "
+                     f"whereas the value defines that label shown on the interface ('Cat').",
+                     exits=1)
 
         # Set up a radio group for labels
         radio_group = tb.ButtonRadioGroupFieldV1(
 
             # Set up the output data field
-            data=tb.OutputData(output_data['str']),
+            data=tb.OutputData(output_data['bool'] if 'bool' in output_data else output_data['str']),
 
             # Create radio buttons
-            options=options,
+            options=labels,
 
             # Set up validation
             validation=tb.RequiredConditionV1(hint="You must choose one response.")
@@ -581,17 +592,26 @@ class TextClassification(CrowdsourcingTask):
         # Set task width limit
         task_width_plugin = tb.TolokaPluginV1(kind='scroll', task_width=500)
 
-        # Create hotkeys for all possible responses
-        hotkey_dict = {f'key_{i+1}': tb.SetActionV1(data=tb.OutputData(output_data['str']),
-                                                    payload=list(configuration['options'].keys())[i]) 
-                                                    for i in range(len(configuration['options']))}
+        # Check if numbered hotkeys should be configured. Hotkeys are only defined if there are less than
+        # nine labels.
+        if len(configuration["interface"]["labels"]) <= 9:
 
-        hotkey_plugin = tb.HotkeysPluginV1(**hotkey_dict)
+            # Create hotkeys for all possible responses
+            hotkey_dict = {f'key_{i+1}': tb.SetActionV1(
+                data=tb.OutputData(output_data['bool'] if 'bool' in output_data else output_data['str']),
+                payload=list(configuration["interface"]["labels"].keys())[i])
+                for i in range(len(configuration["interface"]["labels"]))}
+
+            hotkey_plugin = tb.HotkeysPluginV1(**hotkey_dict)
+
+        else:
+
+            hotkey_plugin = None
 
         # Combine the task interface elements into a view
         interface = toloka.project.TemplateBuilderViewSpec(
             view=tb.ListViewV1([prompt, text_ui, radio_group]),
-            plugins=[task_width_plugin, hotkey_plugin]
+            plugins=[task_width_plugin, hotkey_plugin if hotkey_plugin is not None else hotkey_plugin]
         )
 
         # Create a task specification with interface and input/output data

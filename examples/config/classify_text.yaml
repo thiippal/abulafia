@@ -5,16 +5,16 @@ data:
     text: str
   output:
     result: str
-options:
-  positive: Positive
-  negative: Negative
-  neutral: Neutral
 interface:
-  prompt: Read the text and assign it to the most appropriate category.
+  prompt: Read the text and classify its sentiment.
+  labels:
+    positive: Positive
+    negative: Negative
+    neutral: Neutral
 project:
   setup:
-    public_name: Classify text into categories
-    public_description: Read the text and assign it to the most appropriate category.
+    public_name: Classify the sentiment of texts
+    public_description: Read the text and classify its sentiment.
   instructions: instructions/classify_text_instructions.html
 pool:
   estimated_time_per_suite: 60
