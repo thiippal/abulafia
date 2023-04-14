@@ -13,7 +13,9 @@ def dummy_client():
 @pytest.fixture
 def test_task(dummy_client):
 
-    return ImageClassification(configuration='data/detect_text.yaml', client=dummy_client, test=True)
+    return ImageClassification(configuration='data/detect_text.yaml',
+                               client=dummy_client,
+                               test=True)
 
 
 class TestTask:
@@ -107,7 +109,7 @@ class TestProject:
                                                       view_spec=toloka.project.TemplateBuilderViewSpec(settings=None,
                                                                                                        config=toloka.project.template_builder.TemplateBuilder(
                                                                                                            view=toloka.project.template_builder.ListViewV1(items=[
-                                                                                                               toloka.project.template_builder.ImageViewV1(url=toloka.project.template_builder.InputData(path='image', default=None), full_height=None, max_width=None, min_width=None, no_border=None, no_lazy_load=None, popup=None, ratio=[1, 1], rotatable=True, scrollable=None, hint=None, label=None, validation=None, version='1.0.0'),
+                                                                                                               toloka.project.template_builder.ImageViewV1(url=toloka.project.template_builder.InputData(path='image', default=None), full_height=True, max_width=None, min_width=None, no_border=None, no_lazy_load=None, popup=None, ratio=None, rotatable=True, scrollable=None, hint=None, label=None, validation=None, version='1.0.0'),
                                                                                                                toloka.project.template_builder.TextViewV1(content='Does the diagram contain text, letters or numbers?', hint=None, label=None, validation=None, version='1.0.0'),
                                                                                                                toloka.project.template_builder.ButtonRadioGroupFieldV1(data=toloka.project.template_builder.OutputData(path='result', default=None),
                                                                                                                                                                        options=[toloka.project.template_builder.GroupFieldOption(value=True, label='Yes', hint=None),
