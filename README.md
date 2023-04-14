@@ -237,11 +237,30 @@ interface:
 
 ### TextClassification
 
-Interface for the classification of text.
+A class for text classification tasks. The following input and output formats are supported. 
 
-|input|output|
+|Input|Output|
 |-----|------|
-|`string`|`string`|
+| `string` | `boolean` (true/false) |
+|          | `string` (for multiple labels) |
+
+Configure the interface by adding the following keys under the top-level key `interface`.
+
+|Key|Description|
+|-----|------|
+| `prompt` | A string that defines a text that is shown above the buttons on the interface. |
+| `labels` | Key/value pairs that define the labels shown on the interface and the values stored in the data. |
+
+The following example adds a prompt with three labels. The interface will show three options, *Positive*, *Neutral* and *Negative*, which store the values `positive`, `neutral` and `negative`, respectively.
+
+```yaml
+interface:
+  prompt: Read the text and classify its sentiment.
+  labels:
+    positive: Positive
+    negative: Negative
+    neutral: Neutral
+```
 
 ### TextAnnotation
 
