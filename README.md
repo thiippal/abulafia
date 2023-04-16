@@ -127,11 +127,15 @@ To calculate a fair reward per task suite, you can use the interactive script `u
 
 ## Pre-defined task interfaces
 
-To create a crowdsourcing task, you must create a corresponding Python object. The properties of the task are defined using a YAML configuration file, as instructed under [examples](examples/README.md).
+Crowdsourcing tasks are created using Python objects that define the input and output data, and the task interface. These properties are defined in a YAML configuration file, as shown in the [examples](examples/README.md).
+
+```python
+task = TextClassification(configuration='classify_text.yaml', client=client)
+```
+
+You can define additional task interfaces by inheriting the [`CrowdsourcingTask`](https://github.com/thiippal/abulafia/blob/main/src/abulafia/task_specs/core_task.py) class, which defines the basic functionalities for each task.
 
 The currently implemented task interfaces can be found in [`src/abulafia/task_specs/task_specs.py`](https://github.com/thiippal/abulafia/tree/main/src/abulafia/task_specs). These task interfaces are described in greater detail below.
-
-You can define additional task interfaces by inheriting the [`CrowdsourcingTask`](https://github.com/thiippal/abulafia/blob/main/src/abulafia/task_specs/core_task.py) class. 
 
 ### ImageClassification
 
@@ -251,7 +255,7 @@ Configure the interface by adding the following keys under the top-level key `in
 | `prompt` | A string that defines a text that is shown above the buttons on the interface. |
 | `labels` | Key/value pairs that define the labels shown on the interface and the values stored in the data. |
 
-The following example adds a prompt with three labels. The interface will show three options, *Positive*, *Neutral* and *Negative*, which store the values `positive`, `neutral` and `negative`, respectively.
+The following example defines an interface with a prompt and three labels. The interface will show three options, *Positive*, *Negative* and *Neutral*, which store the values `positive`, `negative` and `neutral`, respectively.
 
 ```yaml
 interface:
@@ -264,8 +268,26 @@ interface:
 
 ### TextAnnotation
 
-Interface for annotation words or other segments within a text.
+A class for text annotation tasks. The following input and output formats are supported.
 
 |input|output|
 |-----|------|
 |`string`|`json`|
+
+Configure the interface by adding the following keys under the top-level key `interface`.
+
+|Key|Description|
+|-----|------|
+| `prompt` | A string that defines a text that is shown above the buttons on the interface. |
+| `labels` | Key/value pairs that define the labels shown on the interface and the values stored in the data. |
+
+The following example defines an interface with a prompt and three labels. The interface will show three options, *Verb*, *Noun* and *Adjective*, which store the values `verb`, `noun` and `adj`, respectively.
+
+```yaml
+interface:
+  prompt: Annotate verbs, nouns and adjectives in the text below.
+  labels:
+    verb: Verb
+    noun: Noun
+    adj: Adjective
+```
