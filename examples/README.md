@@ -85,4 +85,8 @@ classify_image = ImageClassification(configuration="config/classify_image.yaml",
                                      client=tclient)
 ```
 
-This object may be then added to a crowdsourcing pipeline and uploaded to Toloka.
+This object may be then added to a crowdsourcing pipeline, as shown on [line 39](classify_images.py#L39).
+
+```python
+pipe = TaskSequence(sequence=[classify_image], client=tclient)
+```
