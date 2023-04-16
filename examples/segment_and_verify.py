@@ -1,8 +1,7 @@
 # -*- coding: utf-8 -*-
 
 from abulafia.actions import Forward, VerifyPolygon
-from abulafia.task_specs import ImageSegmentation, TaskSequence, MulticlassVerification, FixImageSegmentation, \
-    SegmentationClassification, ImageClassification
+from abulafia.task_specs import ImageSegmentation, TaskSequence
 import argparse
 import json
 import toloka.client as toloka
@@ -37,11 +36,12 @@ with open(cred_file) as cred_f:
 outline_text = ImageSegmentation(configuration="config/outline_text_verify.yaml",
                                  client=tclient)
 
-# Forward action
+# Set up a Forward action for processing the pool outputs
 forward_detect = Forward(configuration="config/forward_verify_polygon.yaml",
                          client=tclient,
                          targets=[outline_text])
 
+# Set up a VerifyPolygon action to validate the polygons created by the crowdsourced workers
 verify_polygon = VerifyPolygon(configuration="config/verify_polygon.yaml",
                                task=outline_text,
                                forward=forward_detect)
