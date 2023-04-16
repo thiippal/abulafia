@@ -5,14 +5,15 @@ data:
     outlines: json
   output:
     result: str
-options:
-  correct: "Yes"
-  incorrect: "No"
-  human_error: "Human error"
 actions:
   on_closed: aggregate_verify
 interface:
   prompt: Read the instructions first. Is the diagram annotated according to the instructions?
+  verification: true
+  labels:
+    correct: "Yes"
+    incorrect: "No"
+    human_error: "Human error"
 project:
   setup:
     public_name: Verify outlines for text, letters or numbers in diagrams

@@ -1,8 +1,7 @@
 # -*- coding: utf-8 -*-
 
 from abulafia.actions import Forward, Aggregate, SeparateBBoxes
-from abulafia.task_specs import ImageSegmentation, TaskSequence, MulticlassVerification, FixImageSegmentation, \
-    SegmentationClassification, ImageClassification
+from abulafia.task_specs import TaskSequence, ImageClassification, ImageSegmentation, SegmentationClassification
 import argparse
 import json
 import toloka.client as toloka
@@ -39,7 +38,7 @@ detect_text = ImageClassification(configuration="config/detect_text.yaml", clien
 # Image segmentation task asking the worker to outline text elements from diagrams
 outline_text = ImageSegmentation(configuration="config/outline_text.yaml", client=tclient)
 
-# Forward action that forwards all tasks with output "True" from the detext_text pool to outline_text pool
+# Forward action that forwards all tasks with output "True" from the detect_text pool to outline_text pool
 forward_detect = Forward(configuration="config/forward_detect.yaml", client=tclient, targets=[outline_text])
 
 # Aggregate action that determines the most probable correct outputs for the detect_text pool. Aggregated 
@@ -47,10 +46,10 @@ forward_detect = Forward(configuration="config/forward_detect.yaml", client=tcli
 aggregate_detect = Aggregate(configuration="config/aggregate_detect.yaml", task=detect_text, forward=forward_detect)
 
 # Verification task asking the workers to determine if image segmentations from pool outline_text are done correctly
-verify_outlines = MulticlassVerification(configuration="config/verify_outlines.yaml", client=tclient)
+verify_outlines = SegmentationClassification(configuration="config/verify_outlines.yaml", client=tclient)
 
 # Pool where partially correct image segmentations go from forwarding
-fix_outlines = FixImageSegmentation(configuration="config/fix_outlines.yaml", client=tclient)
+fix_outlines = ImageSegmentation(configuration="config/fix_outlines.yaml", client=tclient)
 
 # Binary segmentation classification task where workers identify potential targets for the outlined text elements
 has_target = SegmentationClassification(configuration="config/detect_target.yaml", client=tclient)

@@ -5,8 +5,7 @@ data:
   output:
     outlines: json
 actions:
-  on_submitted: verify_polygon
-  on_rejected: outline_text
+  on_closed: aggregate_detect
 interface:
   prompt: Read the instructions first. Then outline all diagram elements that contain
     text, letters or numbers.

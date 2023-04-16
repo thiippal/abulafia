@@ -380,7 +380,7 @@ class SegmentationClassification(CrowdsourcingTask):
                 data_in['assignment_id'] = toloka.project.StringSpec(required=False)
 
         # Check if labels associated with the image annotation element have been defined
-        if 'labels' in configuration['interface']['segmentation']:
+        if 'segmentation' in configuration['interface']:
 
             # Create labels for the image annotation interface
             seg_labels = [tb.ImageAnnotationFieldV1.Label(value=v, label=l) for
