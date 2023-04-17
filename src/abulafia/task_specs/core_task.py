@@ -140,6 +140,7 @@ class CrowdsourcingTask:
                             input_values={**task.input_values,
                                           **solution.output_values,
                                           'assignment_id': event.assignment.id},
+                            # TODO Remember to re-add the user_id below
                             unavailable_for=[*self.blocklist]) # , event.assignment.user_id])
                             for task, solution in
                             zip(event.assignment.tasks, event.assignment.solutions)]
