@@ -61,6 +61,7 @@ class CrowdsourcingTask:
         self.skill = False  # Does the Task provide or require a skill?
         self.exam = False  # Is this Task an exam?
         self.test = True if kwargs and kwargs['test'] else False  # Are we running a test?
+        self.verify = True if 'verify' in self.data_conf and self.data_conf['verify'] else False
 
         # See if users should be banned from the pool and check that blocklist is configured correctly
         try:
@@ -116,7 +117,7 @@ class CrowdsourcingTask:
 
                 add_tasks(self, self.tasks)
 
-    def __call__(self, in_obj, **options):
+    def __call__(self, in_obj):
 
         # Check that the input object is a list of AssignmentEvent objects
         if type(in_obj) == list and all(isinstance(item, AssignmentEvent) for item in in_obj):
@@ -128,27 +129,32 @@ class CrowdsourcingTask:
                 # If the event type is accepted or submitted, create new tasks in current pool
                 if event.event_type.value in ['ACCEPTED', 'SUBMITTED']:
 
-                    # Create new Task objects
-                    new_tasks = [Task(pool_id=self.pool.id,
-                                      overlap=self.pool_conf['defaults']['default_overlap_for_new_tasks'],
-                                      input_values={k: v for k, v in task.input_values.items()},
-                                      unavailable_for=self.blocklist
-                                      )
-                                 for task, solution
-                                 in zip(event.assignment.tasks,
-                                        event.assignment.solutions)]
+                    # If the assignments are for a verification pool, add the output values to
+                    # the input of the new task and make the verification task unavailable for
+                    # the original performer.
+                    if self.verify:
 
-                    # If the assignments are for a verification pool, add the output values to the input of
-                    # the new task and make the verification task unavailable for the performer
-                    if options and 'verify' in options:
+                        new_tasks = [Task(
+                            pool_id=self.pool.id,
+                            overlap=self.pool_conf['defaults']['default_overlap_for_new_tasks'],
+                            input_values={**task.input_values,
+                                          **solution.output_values,
+                                          'assignment_id': event.assignment.id},
+                            unavailable_for=[*self.blocklist]) # , event.assignment.user_id])
+                            for task, solution in
+                            zip(event.assignment.tasks, event.assignment.solutions)]
 
-                        new_tasks = [Task(pool_id=self.pool.id,
-                                          overlap=self.pool_conf['defaults']['default_overlap_for_new_tasks'],
-                                          input_values={**task.input_values,
-                                                        **solution.output_values,
-                                                        'assignment_id': event.assignment.id},
-                                          unavailable_for=[*self.blocklist, event.assignment.user_id])
-                                     for task, solution in zip(event.assignment.tasks, event.assignment.solutions)]
+                    else:
+
+                        # Create new Task objects
+                        new_tasks = [Task(
+                            pool_id=self.pool.id,
+                            overlap=self.pool_conf['defaults']['default_overlap_for_new_tasks'],
+                            input_values={k: v for k, v in task.input_values.items()},
+                            unavailable_for=self.blocklist)
+                            for task, solution
+                            in zip(event.assignment.tasks,
+                                   event.assignment.solutions)]
 
                     # Add Tasks and open the pool
                     self.client.create_tasks(tasks=new_tasks, open_pool=True)

@@ -1,5 +1,6 @@
 name: verify_outlines
 data:
+  verify: true
   input:
     image: url                          
     outlines: json
@@ -9,7 +10,6 @@ actions:
   on_closed: aggregate_verify
 interface:
   prompt: Read the instructions first. Is the diagram annotated according to the instructions?
-  verification: true
   labels:
     correct: "Yes"
     incorrect: "No"
@@ -42,8 +42,8 @@ pool:
     - BROWSER
     - TOLOKA_APP
 quality_control:
-  speed_quality_balance:
-    top_percentage_by_quality: 40
+  # speed_quality_balance:
+  #  top_percentage_by_quality: 40
   fast_responses:
     history_size: 5
     count: 3

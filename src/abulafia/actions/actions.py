@@ -128,6 +128,7 @@ class Aggregate:
         self.name = self.conf['name']
 
         self.forward = forward
+        self.messages = self.conf['messages'] if 'messages' in self.conf else None
 
         self.majority_vote = True if self.conf['method'] == 'majority_vote' else False
         self.dawid_skene = True if self.conf['method'] == 'dawid_skene' else False
@@ -149,6 +150,7 @@ class Aggregate:
                                                                     toloka.Assignment.ACCEPTED]))
 
         if assignments:
+
             a_dict = {"task": [], "inputs": [], "label": [], "worker": [], "id": []}
 
             input_data = list(self.task.data_conf['input'].keys())[0]
@@ -198,7 +200,8 @@ class Aggregate:
 
             forward_data = [{"id": df.loc[df["task"] == task, "id"].iloc[0], 
                              "input_data": df.loc[df["task"] == task, "inputs"].iloc[0], 
-                             "label": self.result[task]} 
+                             "label": self.result[task],
+                             "message": self.messages[self.result[task]] if self.messages is not None else "No reason was provided."}
                             for task in self.result.index]
 
             msg.good(f"Finished aggregating {len(forward_data)} submitted tasks from {self.task.name}")

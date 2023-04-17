@@ -370,22 +370,27 @@ class SegmentationClassification(CrowdsourcingTask):
                                                               expected_input=expected_i,
                                                               expected_output=expected_o)
 
+        # TODO Should the assignment ID data structure be added to every task interface by default?
+
         # If the task is used for human verification, add the assignment ID to the input data. The
         # assignment ID can be used to accept and reject tasks in subsequent tasks or actions.
-        if 'verification' in configuration['interface']:
+        if 'verify' in configuration['data'] and configuration['data']['verify']:
 
-            if configuration['interface']['verification']:
-
-                # Add a data structure for incoming assignment IDs
-                data_in['assignment_id'] = toloka.project.StringSpec(required=False)
+            # Add a data structure for incoming assignment IDs
+            data_in['assignment_id'] = toloka.project.StringSpec(required=False)
 
         # Check if labels associated with the image annotation element have been defined
         if 'segmentation' in configuration['interface']:
 
-            # Create labels for the image annotation interface
-            seg_labels = [tb.ImageAnnotationFieldV1.Label(value=v, label=l) for
-                          v, l in configuration['interface']['segmentation']['labels'].items()] \
-                if 'labels' in configuration['interface']['segmentation'] else None
+            if 'labels' in configuration['interface']['segmentation']:
+
+                # Create labels for the image annotation interface
+                seg_labels = [tb.ImageAnnotationFieldV1.Label(value=v, label=l) for
+                              v, l in configuration['interface']['segmentation']['labels'].items()]
+
+        else:
+
+            seg_labels = None
 
         # Check if a checkbox should be added to the interface
         if 'checkbox' in configuration['interface']:
@@ -435,7 +440,7 @@ class SegmentationClassification(CrowdsourcingTask):
         # Check the labels defined for the radio button group
         try:
             radio_labels = [tb.fields.GroupFieldOption(value=value, label=label) for
-                            value, label in configuration["interface"]["labels"].items()]
+                            value, label in configuration['interface']['labels'].items()]
 
         except KeyError:
 
@@ -465,8 +470,8 @@ class SegmentationClassification(CrowdsourcingTask):
             # Create hotkeys for all possible responses
             hotkey_dict = {f'key_{i+1}': tb.SetActionV1(
                 data=tb.OutputData(output_data['bool'] if 'bool' in output_data else output_data['str']),
-                payload=list(configuration["interface"]["labels"].keys())[i])
-                for i in range(len(configuration["interface"]["labels"]))}
+                payload=list(configuration['interface']['labels'].keys())[i])
+                for i in range(len(configuration['interface']['labels']))}
 
             hotkey_plugin = tb.HotkeysPluginV1(**hotkey_dict)
 

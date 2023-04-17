@@ -550,7 +550,7 @@ def create_pool_table(task_sequence: list) -> None:
     """
 
     # Set up headers and a placeholder for data
-    header = ('Name', 'Input', 'Output', 'Pool ID', 'Project ID', 'Pool type')
+    header = ('Name', 'Input', 'Output', 'Pool ID', 'Project ID', 'Type')
     data = []
 
     # Loop over the tasks
