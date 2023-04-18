@@ -196,3 +196,12 @@ The key `reward_per_assignment` defines the reward for each *task suite* in USD$
 The key `assignment_max_duration_seconds` defines the maximum time allowed for completing a task suite in seconds. This value must be provided as an integer.
 
 The key `auto_accept_solutions` determines whether the workers are paid immediately after they complete a task suite. This key takes a Boolean (`true` or `false`) as its value. If the value is set to `false`, the task suites must be accepted or rejected manually. This may be achieved either through the Toloka web interface or by directing the tasks to another pool for [verification by other workers](#setting-up-human-verification).
+
+```yaml
+pool:
+  private_name: "Dataset 1"
+  reward_per_assignment: 0.15
+  assignment_max_duration_seconds: 600
+  auto_accept_solutions: false
+```
+
