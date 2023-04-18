@@ -244,3 +244,16 @@ pool:
     golden_tasks_count: 1
     training_tasks_count: 0
 ```
+
+Finally, the key `filter` is used to limit access to the pool for workers with certain characteristics.
+
+
+
+### Loading pools
+
+To load an existing pool from Toloka, add the key `id` under the top-level key `pool`. Then provide the pool ID as the value.
+
+```yaml
+pool:
+  id: 6789
+```
