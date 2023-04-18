@@ -90,3 +90,41 @@ This object may be then added to a crowdsourcing pipeline, as shown on [line 39]
 ```python
 pipe = TaskSequence(sequence=[classify_image], client=tclient)
 ```
+
+## Configuring input and output data
+
+Each crowdsourcing task requires a data specification, which determines the types of input and output data associated with the task.
+
+In the YAML configuration, the inputs and outputs are defined under the top-level key `data` using the keys `input` and `output`.
+
+To define input and output data, provide key/value pairs that define the name of the data and its type, e.g. `outlines` and `json`.
+
+```yaml
+data:
+  input:
+    outlines: json
+  output:
+    correct: bool
+```
+
+You can place the key `file` under `data` to provide input data to the task. The value of this key should point towards a TSV file that contains the input data. The TSV file must contain columns with headers that match those defined under the key `input`.
+
+```yaml
+data:
+  file: images.tsv
+  input:
+    image: url
+  output:
+    result: bool
+```
+
+If the task is used for verifying work submitted by other crowdsourced workers, you must add the key `verify` under `data` and set its value to `true`. This adds the output data from the incoming tasks to the input of the current task, while also making the verification task unavailable to the worker who completed the original task.
+
+```yaml
+data:
+  verify: true
+  input:
+    outlines: json
+  output:
+    result: bool
+```
