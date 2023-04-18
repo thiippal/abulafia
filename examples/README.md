@@ -1,7 +1,7 @@
 # Examples and tutorials
 
 - [Creating a task for classifying images](#creating-a-task-for-classifying-images)
-- [Configuring input and output data](#configuring-input-and-output-data)
+- [Defining input and output data](#defining-input-and-output-data)
 - [Setting up projects](#setting-up-projects)
 - Configuring pools
 - Limiting access to tasks using filters
@@ -97,7 +97,7 @@ This object may be then added to a crowdsourcing pipeline, as shown on [line 39]
 pipe = TaskSequence(sequence=[classify_image], client=tclient)
 ```
 
-## Configuring input and output data
+## Defining input and output data
 
 ### Specifying data types
 
