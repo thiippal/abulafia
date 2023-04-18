@@ -2,7 +2,7 @@
 
 - [Creating a task for classifying images](#creating-a-task-for-classifying-images)
 - [Configuring input and output data](#configuring-input-and-output-data)
-- Setting up projects
+- [Setting up projects](#setting-up-projects)
 - Configuring pools
 - Limiting access to tasks using filters
 
@@ -139,4 +139,12 @@ data:
     outlines: json
   output:
     result: bool
+```
+
+## Setting up projects
+
+Project settings are configured using the top-level key `projects`.
+
+Under `projects`, the key `setup` is used to define a public name and a description for the project, which are displayed on the platform for prospective workers. These properties are defined using keys `public_name` and `public_description`, whose values should consist of strings. 
+
 ```
