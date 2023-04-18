@@ -143,9 +143,9 @@ data:
 
 ## Setting up projects
 
-On Toloka, projects are the most abstract entities that may contain multiple pools, which in turn contain assignments for the workers to complete. In the YAML configuration file, project settings are configured using the top-level key `projects`.
+Projects are the most abstract entity on Toloka. A project may include multiple pools, which contain assignments for the workers. In the YAML configuration file, project settings are configured using the top-level key `projects`.
 
-Under `projects`, the key `setup` is used to define a public name and a description for the project, which are displayed on the platform for prospective workers. 
+Under `projects`, the key `setup` is used to define a public name and a description for the project, which are displayed on the Toloka platform for prospective workers. 
 
 These properties are defined using keys `public_name` and `public_description`, whose values must be strings.
 
@@ -158,3 +158,5 @@ project:
     public_description: "A brief description of the project."
   instructions: my_instructions.html
 ```
+
+
