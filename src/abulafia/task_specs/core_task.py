@@ -129,9 +129,9 @@ class CrowdsourcingTask:
                 # If the event type is accepted or submitted, create new tasks in current pool
                 if event.event_type.value in ['ACCEPTED', 'SUBMITTED']:
 
-                    # If the assignments are for a verification pool, add the output values to
-                    # the input of the new task and make the verification task unavailable for
-                    # the original performer.
+                    # If the assignments are intended to be verified by other users, add the output
+                    # values to the input of the new task and make the verification task unavailable
+                    # for the worker who originally submitted it.
                     if self.verify:
 
                         new_tasks = [Task(
@@ -140,8 +140,7 @@ class CrowdsourcingTask:
                             input_values={**task.input_values,
                                           **solution.output_values,
                                           'assignment_id': event.assignment.id},
-                            # TODO Remember to re-add the user_id below
-                            unavailable_for=[*self.blocklist]) # , event.assignment.user_id])
+                            unavailable_for=[*self.blocklist, event.assignment.user_id])
                             for task, solution in
                             zip(event.assignment.tasks, event.assignment.solutions)]
 

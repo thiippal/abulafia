@@ -30,7 +30,7 @@ with open(cred_file) as cred_f:
     creds = json.loads(cred_f.read())
     client = toloka.TolokaClient(creds['token'], creds['mode'])
 
-# Create class instances of all CrowdsourcingTasks and Actions in the pipeline
+# Create instances of all CrowdsourcingTasks and Actions in the pipeline
 
 # Binary image classification task for identifying possible text in diagrams
 detect_text = ImageClassification(configuration="config/action_demo/detect_text.yaml",

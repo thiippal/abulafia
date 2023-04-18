@@ -68,6 +68,10 @@ class ImageClassification(CrowdsourcingTask):
                                                               expected_input=expected_i,
                                                               expected_output=expected_o)
 
+        # Add a data specification for incoming assignment IDs, which are needed for accepting and
+        # rejecting verified tasks.
+        data_in['assignment_id'] = toloka.project.StringSpec(required=False)
+
         # Create the task interface; start by setting up the image viewer with the input URL
         img_viewer = tb.ImageViewV1(url=tb.InputData(input_data['url']),
                                     rotatable=True,
@@ -190,6 +194,10 @@ class ImageSegmentation(CrowdsourcingTask):
         data_in, data_out, input_data, output_data = check_io(configuration=configuration,
                                                               expected_input=expected_i,
                                                               expected_output=expected_o)
+
+        # Add a data specification for incoming assignment IDs, which are needed for accepting and
+        # rejecting verified tasks.
+        data_in['assignment_id'] = toloka.project.StringSpec(required=False)
 
         # If labels for bounding boxes should be added to the interface, create a list of labels
         # to be added. The 'label' will be added to the UI, whereas 'value' contains the value
@@ -370,14 +378,9 @@ class SegmentationClassification(CrowdsourcingTask):
                                                               expected_input=expected_i,
                                                               expected_output=expected_o)
 
-        # TODO Should the assignment ID data structure be added to every task interface by default?
-
-        # If the task is used for human verification, add the assignment ID to the input data. The
-        # assignment ID can be used to accept and reject tasks in subsequent tasks or actions.
-        if 'verify' in configuration['data'] and configuration['data']['verify']:
-
-            # Add a data structure for incoming assignment IDs
-            data_in['assignment_id'] = toloka.project.StringSpec(required=False)
+        # Add a data specification for incoming assignment IDs, which are needed for accepting and
+        # rejecting verified tasks.
+        data_in['assignment_id'] = toloka.project.StringSpec(required=False)
 
         # Check if labels associated with the image annotation element have been defined
         if 'segmentation' in configuration['interface']:
@@ -558,7 +561,8 @@ class TextClassification(CrowdsourcingTask):
                                                               expected_input=expected_i,
                                                               expected_output=expected_o)
 
-        # Add assignment ID to the input data
+        # Add a data specification for incoming assignment IDs, which are needed for accepting and
+        # rejecting verified tasks.
         data_in['assignment_id'] = toloka.project.StringSpec(required=False)
 
         # Create the task interface; start by setting up the text classification interface
@@ -684,7 +688,8 @@ class TextAnnotation(CrowdsourcingTask):
                                                               expected_input=expected_i,
                                                               expected_output=expected_o)
 
-        # Add assignment ID to the input data
+        # Add a data specification for incoming assignment IDs, which are needed for accepting and
+        # rejecting verified tasks.
         data_in['assignment_id'] = toloka.project.StringSpec(required=False)
 
         # Define the text prompt above the annotation UI
@@ -693,7 +698,7 @@ class TextAnnotation(CrowdsourcingTask):
         # Check the labels defined for the radio button group
         try:
             labels = [tb.fields.GroupFieldOption(value=value, label=label) for
-                       (value, label) in configuration['interface']['labels'].items()]
+                      (value, label) in configuration['interface']['labels'].items()]
 
         except KeyError:
 

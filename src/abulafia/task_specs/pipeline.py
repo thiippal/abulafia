@@ -128,7 +128,7 @@ class TaskSequence:
 
                 # Wait for 3 minutes to ensure that no new tasks are added to pools in the pipeline
                 # before ending the task sequence
-                time.sleep(180)
+                time.sleep(90)
 
                 if all(status):
 
