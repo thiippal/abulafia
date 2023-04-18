@@ -191,7 +191,7 @@ pool:
   estimated_time_per_suite: 60
 ```
 
-Key properties of the pool are defined under the key `setup`. These include `private_name`, which is a string that defines a name for the pool. This name is not shown to workers on the platform.
+Key properties of a pool are defined under the key `setup`. These include `private_name`, which is a string that defines a name for the pool. This name is not shown to workers on the platform.
 
 Use the key `reward_per_assignment` to define a reward for each *task suite* in USD$ as a floating point number.
 
@@ -225,4 +225,22 @@ pool:
   defaults:
     default_overlap_for_new_tasks: 3
     default_overlap_for_new_task_suites: 3
+```
+
+Next, the key `mixer` is used to define the mix of different assignment types in each task suite.
+
+Use the key `real_tasks_count` to define the number of 'real' assignments in each task suite. These assignments are drawn from the [input data](#specifying-data-types).
+
+The key `golden_tasks_count` defines the number of 'golden' assignments with known answers in each task suite. These assignments can be used to evaluate the quality of submitted work.
+
+Finally, the key `training_tasks_count` determines the number of training assignments in each task suite.
+
+The following example sets the number of real assignments to 5 and the number of golden assignments to 1, while leaving the number of training assignments to 0. This means that each task suite in the pool contains 6 assignments.
+
+```yaml
+pool:
+  mixer:
+    real_tasks_count: 5
+    golden_tasks_count: 1
+    training_tasks_count: 0
 ```
