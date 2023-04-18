@@ -180,9 +180,11 @@ Pool settings are configured under the top-level key `pool` in the YAML configur
 
 ### Creating pools
 
-To begin with, the key `estimated_time_per_suite` is used to calculate a fair reward for the workers (an average hourly wage of $USD 12). 
+To begin with, the key `estimated_time_per_suite`, which must be placed under the key `pool`, is used to calculate a fair reward for the workers (an average hourly wage of $USD 12). 
 
 Provide the estimated time required to complete a task suite in seconds.
+
+The following example sets the value to 60 seconds.
 
 ```yaml
 pool:
@@ -191,17 +193,36 @@ pool:
 
 Key properties of the pool are defined under the key `setup`. These include `private_name`, which is a string that defines a name for the pool. This name is not shown to workers on the platform.
 
-The key `reward_per_assignment` defines the reward for each *task suite* in USD$ as a floating point number.
+Use the key `reward_per_assignment` to define a reward for each *task suite* in USD$ as a floating point number.
 
-The key `assignment_max_duration_seconds` defines the maximum time allowed for completing a task suite in seconds. This value must be provided as an integer.
+Use the key `assignment_max_duration_seconds` to define the maximum time allowed for completing a task suite in seconds. This value must be provided as an integer.
 
-The key `auto_accept_solutions` determines whether the workers are paid immediately after they complete a task suite. This key takes a Boolean (`true` or `false`) as its value. If the value is set to `false`, the task suites must be accepted or rejected manually. This may be achieved either through the Toloka web interface or by directing the tasks to another pool for [verification by other workers](#setting-up-human-verification).
+Use the key `auto_accept_solutions` to determine whether workers are paid immediately after they complete a task suite. This key takes a Boolean (`true` or `false`) as its value. 
+
+If the value of `auto_accept_solutions` is set to `false`, the task suites must be accepted or rejected manually. This may be achieved using the Toloka web interface or by directing the tasks to another pool for [verification by other workers](#setting-up-human-verification).
+
+These 
 
 ```yaml
 pool:
-  private_name: "Dataset 1"
-  reward_per_assignment: 0.15
-  assignment_max_duration_seconds: 600
-  auto_accept_solutions: false
+  setup:
+    private_name: "Dataset 1"
+    reward_per_assignment: 0.15
+    assignment_max_duration_seconds: 600
+    auto_accept_solutions: false
 ```
 
+The next key under the key `pool` is `defaults`, which is used to define default settings for assignments and task suites.
+
+Use the key `default_overlap_for_new_tasks` to define how many workers should complete each assignment. Having multiple workers perform the same task is defined as 'overlap', which may be used to evaluate the quality of the work. The value must be an integer.
+
+The key `default_overlap_for_new_suites` can be used to define overlap for new task suites. The value must be an integer.
+
+The following example sets both values to 3.
+
+```yaml
+pool:
+  defaults:
+    default_overlap_for_new_tasks: 3
+    default_overlap_for_new_task_suites: 3
+```
