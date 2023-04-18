@@ -3,7 +3,7 @@
 - [Creating a task for classifying images](#creating-a-task-for-classifying-images)
 - [Defining input and output data](#defining-input-and-output-data)
 - [Setting up projects](#setting-up-projects)
-- Configuring pools
+- [Configuring pools](#configuring-pools)
 - Limiting access to tasks using filters
 
 ## Creating a task for classifying images
@@ -143,13 +143,17 @@ data:
 
 ## Setting up projects
 
-Projects are the most abstract entity on Toloka. A project may include multiple pools, which contain assignments for the workers. In the YAML configuration file, project settings are configured using the top-level key `projects`.
+Projects are the most abstract entity on Toloka. A project may include multiple pools, which contain assignments for the workers. 
 
-Under `projects`, the key `setup` is used to define a public name and a description for the project, which are displayed on the Toloka platform for prospective workers. 
+In the YAML configuration file, project settings are configured using the top-level key `projects`.
 
-These properties are defined using keys `public_name` and `public_description`, whose values must be strings.
+## Creating projects
 
-Finally, the key `instructions` should point to an HTML file that provides the instructions for completing the task.
+To create a new project, use the key `setup` to define a public name and a description for the project, which are displayed on the Toloka platform for prospective workers. 
+
+Use the keys `public_name` and `public_description` to provide the name and description as strings.
+
+The key `instructions` should point to an HTML file that provides instructions for completing the task.
 
 ```yaml
 project:
@@ -159,4 +163,16 @@ project:
   instructions: my_instructions.html
 ```
 
+### Loading projects from Toloka
+
+To load an existing project from Toloka, add the key `id` under the top-level key `project`. Then provide the project ID as the value.
+
+```yaml
+project:
+  id: 12345
+```
+
+## Configuring pools
+
+A pool contains assignments for the workers to complete. Pool settings are configured under the top-level key `pool` in the YAML configuration file.
 
