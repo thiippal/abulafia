@@ -2,6 +2,9 @@
 
 - [Creating a task for classifying images](#creating-a-task-for-classifying-images)
 - [Configuring input and output data](#configuring-input-and-output-data)
+- Setting up projects
+- Configuring pools
+- Limiting access to tasks using filters
 
 ## Creating a task for classifying images
 
