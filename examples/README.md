@@ -1,8 +1,11 @@
 # Examples and tutorials
 
-## Creating a task for classifying images using a YAML file
+- [Creating a task for classifying images](#creating-a-task-for-classifying-images)
+- [Configuring input and output data](#configuring-input-and-output-data)
 
-In this example, we create a configuration file for the `ImageClassification` class.
+## Creating a task for classifying images
+
+In this example, we create a YAML configuration file for the `ImageClassification` class.
 
 This example breaks down how 𝚊𝚋𝚞𝚕𝚊𝚏𝚒𝚊 uses YAML files to create and configure crowdsourcing tasks on Toloka. The complete configuration file referred to in this example may be found [here](config/classify_image.yaml).
 
