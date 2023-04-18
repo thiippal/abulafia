@@ -147,7 +147,7 @@ Projects are the most abstract entity on Toloka. A project may include multiple 
 
 In the YAML configuration file, project settings are configured using the top-level key `projects`.
 
-## Creating projects
+### Creating projects
 
 To create a new project, use the key `setup` to define a public name and a description for the project, which are displayed on the Toloka platform for prospective workers. 
 
@@ -174,5 +174,25 @@ project:
 
 ## Configuring pools
 
-A pool contains assignments for the workers to complete. Pool settings are configured under the top-level key `pool` in the YAML configuration file.
+A pool contains **assignments** for the workers to complete. Multiple assignments may be grouped into a **task suite**. 
 
+Pool settings are configured under the top-level key `pool` in the YAML configuration file.
+
+### Creating pools
+
+To begin with, the key `estimated_time_per_suite` is used to calculate a fair reward for the workers (an average hourly wage of $USD 12). 
+
+Provide the estimated time required to complete a task suite in seconds.
+
+```yaml
+pool:
+  estimated_time_per_suite: 60
+```
+
+Key properties of the pool are defined under the key `setup`. These include `private_name`, which is a string that defines a name for the pool. This name is not shown to workers on the platform.
+
+The key `reward_per_assignment` defines the reward for each *task suite* in USD$ as a floating point number.
+
+The key `assignment_max_duration_seconds` defines the maximum time allowed for completing a task suite in seconds. This value must be provided as an integer.
+
+The key `auto_accept_solutions` determines whether the workers are paid immediately after they complete a task suite. This key takes a Boolean (`true` or `false`) as its value. If the value is set to `false`, the task suites must be accepted or rejected manually. This may be achieved either through the Toloka web interface or by directing the tasks to another pool for [verification by other workers](#setting-up-human-verification).
