@@ -227,13 +227,15 @@ pool:
     default_overlap_for_new_task_suites: 3
 ```
 
-Next, the key `mixer` is used to define the mix of different assignment types in each task suite.
+Next, use the key `mixer` to define the mix of different assignment types in each task suite. The following key/value pairs can be provided under the key `mixer`.
 
-Use the key `real_tasks_count` to define the number of 'real' assignments in each task suite. These assignments are drawn from the [input data](#specifying-data-types).
+| Key                      | Value   | Description |
+|:-------------------------|:--------|:------------|
+| `real_tasks_count`       | integer | The number of actual assignments in each task suite. |
+| `golden_tasks_count`     | integer | The number of assignments with known answers in each task suite. |
+| `training_tasks_count`   | integer | The number of training assignments in each task suite. |
 
-The key `golden_tasks_count` defines the number of 'golden' assignments with known answers in each task suite. These assignments can be used to evaluate the quality of submitted work.
-
-Finally, the key `training_tasks_count` determines the number of training assignments in each task suite.
+The actual assignments are drawn from the [input data](#specifying-data-types), whereas the golden assignments can be used to evaluate the quality of work submitted to the pool.
 
 The following example sets the number of real assignments to 5 and the number of golden assignments to 1, while leaving the number of training assignments to 0. This means that each task suite in the pool contains 6 assignments.
 
