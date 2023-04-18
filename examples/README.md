@@ -201,8 +201,6 @@ Use the key `auto_accept_solutions` to determine whether workers are paid immedi
 
 If the value of `auto_accept_solutions` is set to `false`, the task suites must be accepted or rejected manually. This may be achieved using the Toloka web interface or by directing the tasks to another pool for [verification by other workers](#setting-up-human-verification).
 
-These 
-
 ```yaml
 pool:
   setup:
