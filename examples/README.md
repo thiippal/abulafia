@@ -1,6 +1,6 @@
 # Examples and tutorials
 
-## Creating a YAML configuration for classifying images
+## Creating a task for classifying images using a YAML file
 
 In this example, we create a configuration file for the `ImageClassification` class.
 
