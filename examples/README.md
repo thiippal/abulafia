@@ -257,12 +257,43 @@ Finally, the key `filter` is used to allow only workers with certain characteris
 | `languages`       | list of strings  | Limit workers to these languages (two-letter ISO 639-1 code)             |
 | `client_type`     | list of strings  | Limit workers to these clients (BROWSER or TOLOKA_APP)                   |      
 | `education`       | list of strings  | Limit workers to these education levels (BASIC, MIDDLE, HIGH)            |
-| `gender`          |                  | Limit workers to these genders (MALE or FEMALE)                          |
+| `gender`          | list of strings  | Limit workers to these genders (MALE or FEMALE)                          |
 | `adult_allowed`   | boolean          | Limit workers to those who have agreed to work with adult content        | 
 | `country`         | list of strings  | Limit workers to these countries (two-letter ISO3166-1 codes)            |
-| `city`            | list of integers | Limit workers to these [regions](https://toloka.ai/docs/api/regions/)    |
 | `date_of_birth`   | dictionary       | Limit workers to those born before or after this date (unix timestamp)   | 
 | `user_agent_type` | list of strings  | Limit workers to these user agent types (BROWSER, MOBILE_BROWSER, OTHER) |
+
+The following example demonstrates the use of all currently implemented filters:
+
+```yaml
+pool:
+  filter:
+    skill:
+      12345: 80
+    languages:
+      - EN
+      - FI
+    client_type:
+      - BROWSER
+      - TOLOKA_APP
+    education:
+      - HIGH
+      - MIDDLE
+    gender:
+      - FEMALE
+      - MALE
+    adult_allowed: false
+    country:
+      - UK
+      - US
+      - FI
+    date_of_birth:
+      before: 631144800
+    user_agent_type:
+      - BROWSER
+      - MOBILE_BROWSER
+      - OTHER
+```
 
 ### Loading pools
 
