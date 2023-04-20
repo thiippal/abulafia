@@ -251,18 +251,18 @@ pool:
 
 Finally, the key `filter` is used to allow only workers with certain characteristics to complete tasks in the pool. The following key/value pairs can be provided under the key `filter`.
 
-| Key               | Value      | Description                                                     |
-|:------------------|:-----------|:----------------------------------------------------------------|
-| `skill`           | dictionary |            
-| `languages`       | list       | 
-| `client_type`     | list       | 
-| `education`       | list       |
-| `gender`          |            |
-| `adult_allowed`   |
-| `country`         |
-| `city`            | list       |
-| `date_of_birth`   | timestamp  |
-| `user_agent_type` |  
+| Key               | Value            | Description                                                                                |
+|:------------------|:-----------------|:-------------------------------------------------------------------------------------------|
+| `skill`           | dictionary       | Only workers with these skills and skill levels can access the pool                        |
+| `languages`       | list of strings  | Only workers with these languages can access the pool (two-letter ISO 639-1 code)          |
+| `client_type`     | list of strings  | Only workers with these clients can access the pool (BROWSER or TOLOKA_APP)                |      
+| `education`       | list of strings  | Only workers with these education levels can access the pool (BASIC, MIDDLE, HIGH)         |
+| `gender`          |                  | Only workers of this gender can access the pool (MALE or FEMALE)                           |
+| `adult_allowed`   | boolean          | Only workers who have agreed to work with adult content can access the pool                | 
+| `country`         | list of strings  | Only workers from these countries can access the pool (two-letter ISO3166-1 codes)         |
+| `city`            | list of integers | Only workers from these [regions](https://toloka.ai/docs/api/regions/) can access the pool |
+| `date_of_birth`   | dictionary       | Only workers born before or after this date can access the pool (unix timestamp)           | 
+| `user_agent_type` | list of strings  | Only workers with these agent types can access the pool (BROWSER, MOBILE_BROWSER, OTHER)   |
 
 ### Loading pools
 
