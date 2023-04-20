@@ -249,19 +249,21 @@ pool:
     training_tasks_count: 0
 ```
 
-Finally, the key `filter` is used to allow only workers with certain characteristics to complete tasks in the pool. The following key/value pairs can be provided under the key `filter`.
+Finally, the key `filter` is used to allow only workers with certain characteristics to access the pool. Note that filters are used to *limit* access: without any filters, all workers on Toloka can access the pool. 
 
-| Key               | Value            | Description                                                              |
-|:------------------|:-----------------|:-------------------------------------------------------------------------|
-| `skill`           | dictionary       | Limit workers to these skills and skill levels                           |
-| `languages`       | list of strings  | Limit workers to these languages (two-letter ISO 639-1 code)             |
-| `client_type`     | list of strings  | Limit workers to these clients (BROWSER or TOLOKA_APP)                   |      
-| `education`       | list of strings  | Limit workers to these education levels (BASIC, MIDDLE, HIGH)            |
-| `gender`          | list of strings  | Limit workers to these genders (MALE or FEMALE)                          |
-| `adult_allowed`   | boolean          | Limit workers to those who have agreed to work with adult content        | 
-| `country`         | list of strings  | Limit workers to these countries (two-letter ISO3166-1 codes)            |
-| `date_of_birth`   | dictionary       | Limit workers to those born before or after this date (unix timestamp)   | 
-| `user_agent_type` | list of strings  | Limit workers to these user agent types (BROWSER, MOBILE_BROWSER, OTHER) |
+The following key/value pairs can be provided under the key `filter`.
+
+| Key               | Value                | Description                                                              |
+|:------------------|:---------------------|:-------------------------------------------------------------------------|
+| `skill`           | list of dictionaries | Limit workers to these skills and skill levels                           |
+| `languages`       | list of strings      | Limit workers to these languages (two-letter ISO 639-1 code)             |
+| `client_type`     | list of strings      | Limit workers to these clients (BROWSER or TOLOKA_APP)                   |      
+| `education`       | list of strings      | Limit workers to these education levels (BASIC, MIDDLE, HIGH)            |
+| `gender`          | string               | Limit workers to this gender (MALE or FEMALE)                            |
+| `adult_allowed`   | boolean              | Limit workers to those who have agreed to work with adult content        | 
+| `country`         | list of strings      | Limit workers to these countries (two-letter ISO3166-1 codes)            |
+| `date_of_birth`   | dictionary           | Limit workers to those born before or after this date (unix timestamp)   | 
+| `user_agent_type` | list of strings      | Limit workers to these user agent types (BROWSER, MOBILE_BROWSER, OTHER) |
 
 The following example demonstrates the use of all currently implemented filters:
 
@@ -269,7 +271,7 @@ The following example demonstrates the use of all currently implemented filters:
 pool:
   filter:
     skill:
-      12345: 80
+      - 12345: 80
     languages:
       - EN
       - FI
@@ -279,12 +281,10 @@ pool:
     education:
       - HIGH
       - MIDDLE
-    gender:
-      - FEMALE
-      - MALE
+    gender: FEMALE
     adult_allowed: false
     country:
-      - UK
+      - GB
       - US
       - FI
     date_of_birth:
