@@ -3,6 +3,7 @@
 - [Creating a task for classifying images](#creating-a-task-for-classifying-images)
 - [Defining input and output data](#defining-input-and-output-data)
 - [Setting up projects](#setting-up-projects)
+- [Configuring training](#configuring-training)
 - [Creating pools](#creating-pools)
 - [Configuring quality control](#configuring-quality-control)
 
@@ -171,6 +172,9 @@ To load an existing project from Toloka, add the key `id` under the top-level ke
 project:
   id: 12345
 ```
+## Configuring training
+
+TODO
 
 ## Creating pools
 
