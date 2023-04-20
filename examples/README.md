@@ -180,7 +180,7 @@ Pool settings are configured under the top-level key `pool` in the YAML configur
 
 ### Creating pools
 
-To begin with, the key `estimated_time_per_suite`, which must be placed under the key `pool`, is used to calculate a fair reward for the workers (an average hourly wage of $USD 12). 
+To begin with, the key `estimated_time_per_suite`, which must be placed under the key `pool`, is used to calculate a fair reward for the workers (an average hourly wage of 12 USD). 
 
 Provide the estimated time required to complete a task suite in seconds.
 
@@ -215,12 +215,12 @@ pool:
 
 The next key under the key `pool` is `defaults`, which is used to define default settings for assignments and task suites. The following key/value paris can be defined under the key `mixer`.
 
-| Key                      | Value   | Description |
-|:-------------------------|:--------|:------------|
-| `default_overlap_for_new_tasks` | integer | How many workers should complete each assignment |
+| Key                              | Value   | Description                                      |
+|:---------------------------------|:--------|:-------------------------------------------------|
+| `default_overlap_for_new_tasks`  | integer | How many workers should complete each assignment |
 | `default_overlap_for_new_suites` | integer | How many workers should complete each task suite |
 
-The following example sets both values to 3.
+The following example sets the value of both settings to 3.
 
 ```yaml
 pool:
@@ -231,11 +231,11 @@ pool:
 
 Next, use the key `mixer` to define the mix of different assignment types in each task suite. The following key/value pairs can be provided under the key `mixer`.
 
-| Key                      | Value   | Description |
-|:-------------------------|:--------|:------------|
-| `real_tasks_count`       | integer | The number of actual assignments in each task suite |
+| Key                      | Value   | Description                                                     |
+|:-------------------------|:--------|:----------------------------------------------------------------|
+| `real_tasks_count`       | integer | The number of actual assignments in each task suite             |
 | `golden_tasks_count`     | integer | The number of assignments with known answers in each task suite |
-| `training_tasks_count`   | integer | The number of training assignments in each task suite |
+| `training_tasks_count`   | integer | The number of training assignments in each task suite           |
 
 The actual assignments are drawn from the [input data](#specifying-data-types), whereas the golden assignments can be used to evaluate the quality of work submitted to the pool.
 
@@ -249,7 +249,9 @@ pool:
     training_tasks_count: 0
 ```
 
-Finally, the key `filter` is used to limit access to the pool for workers with certain characteristics.
+Finally, the key `filter` is used to allow only workers with certain characteristics to complete tasks in the pool.
+
+
 
 
 
