@@ -213,7 +213,7 @@ pool:
     auto_accept_solutions: false
 ```
 
-The next key under the key `pool` is `defaults`, which is used to define default settings for assignments and task suites. The following key/value paris can be defined under the key `mixer`.
+The key `defaults` is used to define default settings for assignments and task suites. The following key/value paris can be defined under the key `mixer`.
 
 | Key                              | Value   | Description                                      |
 |:---------------------------------|:--------|:-------------------------------------------------|
@@ -249,7 +249,7 @@ pool:
     training_tasks_count: 0
 ```
 
-Finally, the key `filter` is used to allow only workers with certain characteristics to access the pool. Note that filters are used to *limit* access: without any filters, all workers on Toloka can access the pool. 
+The key `filter` is used to allow only workers with certain characteristics to access the pool. Note that filters are used to *limit* access: without any filters, all workers on Toloka can access the pool. 
 
 The following key/value pairs can be provided under the key `filter`.
 
@@ -293,6 +293,26 @@ pool:
       - BROWSER
       - MOBILE_BROWSER
       - OTHER
+```
+
+The key `exam` is used to configure an examination pool, which contain tasks with known solutions. These tasks can be used to evaluate the performance of workers and to grant them skills. 
+
+The following key/value pairs can be provided under the key `exam`.
+
+| Key              | Value   | Description                                                                     |
+|:-----------------|:--------|:--------------------------------------------------------------------------------|
+| `history_size`   | integer | The number of assignments taken into account when evaluating examination score  |
+| `min_answers`    | integer | The minimum number of assignments that the worker must complete to be evaluated |
+| `max_performers` | integer | How many workers are allowed to take the exam before the pool closes            |
+
+The following example sets the number of assignments to be evaluated to 20, defines that the worker must complete all 20 tasks to be evaluated, and closes the pool when 50 performers have taken the exam.
+
+```yaml
+pool:
+  exam:
+    history_size: 20
+    min_answers: 20
+    max_performers: 20
 ```
 
 ### Loading pools
