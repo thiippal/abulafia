@@ -249,11 +249,20 @@ pool:
     training_tasks_count: 0
 ```
 
-Finally, the key `filter` is used to allow only workers with certain characteristics to complete tasks in the pool.
+Finally, the key `filter` is used to allow only workers with certain characteristics to complete tasks in the pool. The following key/value pairs can be provided under the key `filter`.
 
-
-
-
+| Key               | Value      | Description                                                     |
+|:------------------|:-----------|:----------------------------------------------------------------|
+| `skill`           | dictionary |            
+| `languages`       | list       | 
+| `client_type`     | list       | 
+| `education`       | list       |
+| `gender`          |            |
+| `adult_allowed`   |
+| `country`         |
+| `city`            | list       |
+| `date_of_birth`   | timestamp  |
+| `user_agent_type` |  
 
 ### Loading pools
 
