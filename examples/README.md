@@ -3,8 +3,8 @@
 - [Creating a task for classifying images](#creating-a-task-for-classifying-images)
 - [Defining input and output data](#defining-input-and-output-data)
 - [Setting up projects](#setting-up-projects)
-- [Configuring training](#configuring-training)
 - [Creating pools](#creating-pools)
+- [Configuring training](#configuring-training)
 - [Configuring quality control](#configuring-quality-control)
 
 ## Creating a task for classifying images
@@ -148,7 +148,16 @@ Projects are the most abstract entity on Toloka. A project may include multiple 
 
 In the YAML configuration file, project settings are configured using the top-level key `projects`.
 
-### Creating projects
+### Loading existing projects from Toloka
+
+To load an existing project from Toloka, add the key `id` under the top-level key `project`. Then provide the project ID as the value.
+
+```yaml
+project:
+  id: 12345
+```
+
+### Creating new projects
 
 To create a new project, use the key `setup` to define a public name and a description for the project, which are displayed on the Toloka platform for prospective workers. 
 
@@ -164,55 +173,22 @@ project:
   instructions: my_instructions.html
 ```
 
-### Loading projects from Toloka
-
-To load an existing project from Toloka, add the key `id` under the top-level key `project`. Then provide the project ID as the value.
-
-```yaml
-project:
-  id: 12345
-```
-## Configuring training
-
-To train the workers in performing a task, use the top-level key `training` to define a training pool that must be completed before accessing the pool that contains the actual assignments.
-
-Use the key `setup` to configure the training pool. The following key/value pairs can be defined under the key `setup`.
-
-| Key                                | Value   | Description                                                                 |
-|:-----------------------------------|:--------|:----------------------------------------------------------------------------|
-| private_name                       | string  | A private name for the training pool; not shown on the platform             |
-| shuffle_tasks_in_training_suite    | boolean | Defines whether the assignments are shuffled in the training pool           |
-| assignment_max_duration_seconds    | integer | The maximum time allowed for competing a task suite in seconds              |
-| training_tasks_in_task_suite_count | integer | The number of assignments in each training pool                             |
-| retry_training_after_days          | integer | Defines when the worker can try the training again after failing            |
-| inherited_instructions             | boolean | Defines whether the training pool uses the same instructions as the project |
-
-```yaml
-training:
-  setup:
-    private_name: Training for verifying target outlines exam
-    shuffle_tasks_in_task_suite: false
-    assignment_max_duration_seconds: 600
-    training_tasks_in_task_suite_count: 5
-    retry_training_after_days: 1
-    inherited_instructions: true
-  data:
-    file: data/verify_target_outlines_training.tsv
-    input:
-      image: url
-      outlines: json
-      no_target: bool
-    output:
-      result: bool
-```
-
 ## Creating pools
 
 A pool contains **assignments** for the workers to complete. Multiple assignments may be grouped into a **task suite**. 
 
 Pool settings are configured under the top-level key `pool` in the YAML configuration file.
 
-### Creating pools
+### Loading existing pools
+
+To load an existing pool from Toloka, add the key `id` under the top-level key `pool`. Then provide the pool ID as the value.
+
+```yaml
+pool:
+  id: 6789
+```
+
+### Creating new pools
 
 To begin with, the key `estimated_time_per_suite`, which must be placed under the key `pool`, is used to calculate a fair reward for the workers (an average hourly wage of 12 USD). 
 
@@ -378,13 +354,52 @@ pool:
     description: "This is my new skill."
 ```
 
-### Loading pools
+Finally, use the key `training` to set the skill level that the workers much achieve in [training](#configuring-training).
 
-To load an existing pool from Toloka, add the key `id` under the top-level key `pool`. Then provide the pool ID as the value.
+Use the key `training_passing_skill_value` to determine that percentage of correct answers needed for accessing the actual task suites.
+
+The following example sets the training performance threshold to 70% for accessing the pool.
 
 ```yaml
 pool:
-  id: 6789
+  training:
+    training_passing_skill_value: 70
 ```
+
+## Configuring training
+
+To train the workers in performing a task, use the top-level key `training` to define a training pool that must be completed before accessing the pool that contains the actual assignments.
+
+Use the key `setup` to configure the training pool. The following key/value pairs can be defined under the key `setup`.
+
+| Key                                | Value   | Description                                                                 |
+|:-----------------------------------|:--------|:----------------------------------------------------------------------------|
+| private_name                       | string  | A private name for the training pool; not shown on the platform             |
+| shuffle_tasks_in_training_suite    | boolean | Defines whether the assignments are shuffled in the training pool           |
+| assignment_max_duration_seconds    | integer | The maximum time allowed for competing a task suite in seconds              |
+| training_tasks_in_task_suite_count | integer | The number of assignments in each training pool                             |
+| retry_training_after_days          | integer | Defines when the worker can try the training again after failing            |
+| inherited_instructions             | boolean | Defines whether the training pool uses the same instructions as the project |
+
+```yaml
+training:
+  setup:
+    private_name: Training for verifying target outlines exam
+    shuffle_tasks_in_task_suite: false
+    assignment_max_duration_seconds: 600
+    training_tasks_in_task_suite_count: 5
+    retry_training_after_days: 1
+    inherited_instructions: true
+  data:
+    file: data/verify_target_outlines_training.tsv
+    input:
+      image: url
+      outlines: json
+      no_target: bool
+    output:
+      result: bool
+```
+
+
 
 ## Configuring quality control
