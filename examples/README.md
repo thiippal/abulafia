@@ -191,15 +191,18 @@ pool:
   estimated_time_per_suite: 60
 ```
 
-Key properties of a pool are defined under the key `setup`. These include `private_name`, which is a string that defines a name for the pool. This name is not shown to workers on the platform.
+The key properties of a pool are defined under the key `setup`. The following key/value paris can be defined under the key `pool`.
 
-Use the key `reward_per_assignment` to define a reward for each *task suite* in USD$ as a floating point number.
-
-Use the key `assignment_max_duration_seconds` to define the maximum time allowed for completing a task suite in seconds. This value must be provided as an integer.
-
-Use the key `auto_accept_solutions` to determine whether workers are paid immediately after they complete a task suite. This key takes a Boolean (`true` or `false`) as its value. 
+| Key                               | Value   | Description                                                    |
+|:----------------------------------|:--------|:---------------------------------------------------------------|
+| `private_name`                    | string  | A private name for the pool; not shown on the platform         |
+| `reward_per_assignment`           | float   | The reward paid for completing a single task suite in USD      |
+| `assignment_max_duration_seconds` | integer | The maximum time allowed for competing a task suite in seconds |
+| `auto_accept_solutions`           | boolean | Whether submitted work is accepted and paid for immediately    |
 
 If the value of `auto_accept_solutions` is set to `false`, the task suites must be accepted or rejected manually. This may be achieved using the Toloka web interface or by directing the tasks to another pool for [verification by other workers](#setting-up-human-verification).
+
+The following example illustrates the use of the variables discussed above.
 
 ```yaml
 pool:
@@ -210,11 +213,12 @@ pool:
     auto_accept_solutions: false
 ```
 
-The next key under the key `pool` is `defaults`, which is used to define default settings for assignments and task suites.
+The next key under the key `pool` is `defaults`, which is used to define default settings for assignments and task suites. The following key/value paris can be defined under the key `mixer`.
 
-Use the key `default_overlap_for_new_tasks` to define how many workers should complete each assignment. Having multiple workers perform the same task is defined as 'overlap', which may be used to evaluate the quality of the work. The value must be an integer.
-
-The key `default_overlap_for_new_suites` can be used to define overlap for new task suites. The value must be an integer.
+| Key                      | Value   | Description |
+|:-------------------------|:--------|:------------|
+| `default_overlap_for_new_tasks` | integer | How many workers should complete each assignment |
+| `default_overlap_for_new_suites` | integer | How many workers should complete each task suite |
 
 The following example sets both values to 3.
 
@@ -229,9 +233,9 @@ Next, use the key `mixer` to define the mix of different assignment types in eac
 
 | Key                      | Value   | Description |
 |:-------------------------|:--------|:------------|
-| `real_tasks_count`       | integer | The number of actual assignments in each task suite. |
-| `golden_tasks_count`     | integer | The number of assignments with known answers in each task suite. |
-| `training_tasks_count`   | integer | The number of training assignments in each task suite. |
+| `real_tasks_count`       | integer | The number of actual assignments in each task suite |
+| `golden_tasks_count`     | integer | The number of assignments with known answers in each task suite |
+| `training_tasks_count`   | integer | The number of training assignments in each task suite |
 
 The actual assignments are drawn from the [input data](#specifying-data-types), whereas the golden assignments can be used to evaluate the quality of work submitted to the pool.
 
