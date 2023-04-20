@@ -174,7 +174,37 @@ project:
 ```
 ## Configuring training
 
-TODO
+To train the workers in performing a task, use the top-level key `training` to define a training pool that must be completed before accessing the pool that contains the actual assignments.
+
+Use the key `setup` to configure the training pool. The following key/value pairs can be defined under the key `setup`.
+
+| Key                                | Value   | Description                                                                 |
+|:-----------------------------------|:--------|:----------------------------------------------------------------------------|
+| private_name                       | string  | A private name for the training pool; not shown on the platform             |
+| shuffle_tasks_in_training_suite    | boolean | Defines whether the assignments are shuffled in the training pool           |
+| assignment_max_duration_seconds    | integer | The maximum time allowed for competing a task suite in seconds              |
+| training_tasks_in_task_suite_count | integer | The number of assignments in each training pool                             |
+| retry_training_after_days          | integer | Defines when the worker can try the training again after failing            |
+| inherited_instructions             | boolean | Defines whether the training pool uses the same instructions as the project |
+
+```yaml
+training:
+  setup:
+    private_name: Training for verifying target outlines exam
+    shuffle_tasks_in_task_suite: false
+    assignment_max_duration_seconds: 600
+    training_tasks_in_task_suite_count: 5
+    retry_training_after_days: 1
+    inherited_instructions: true
+  data:
+    file: data/verify_target_outlines_training.tsv
+    input:
+      image: url
+      outlines: json
+      no_target: bool
+    output:
+      result: bool
+```
 
 ## Creating pools
 
