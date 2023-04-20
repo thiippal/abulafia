@@ -295,7 +295,7 @@ pool:
       - OTHER
 ```
 
-The key `exam` is used to configure an examination pool, which contain tasks with known solutions. These tasks can be used to evaluate the performance of workers and to grant them skills. 
+Optionally, the key `exam` is used to configure an examination pool, which contains tasks with known solutions. These tasks can be used to evaluate the performance of workers and to grant them skills. 
 
 The following key/value pairs can be provided under the key `exam`.
 
@@ -313,6 +313,35 @@ pool:
     history_size: 20
     min_answers: 20
     max_performers: 20
+```
+
+The key `skill` is used to define the skill assigned to a worker upon completing the examination.
+
+The following key/value pairs can be provided under the key `exam`.
+
+| Key              | Value   | Description                                                      |
+|:-----------------|:--------|:-----------------------------------------------------------------|
+| `id`             | integer | A valid identifier for a pre-existing skill on Toloka            |
+| `name`           | string  | The name for the new skill to be created                         |
+| `language`       | string  | The language associated with the new skill as an ISO 639-1 code  |
+| `description`    | string  | A description of the new skill in the language defined above     |
+
+The following example shows how to grant an existing skill to workers who complete the examination:
+
+```yaml
+pool:
+  skill: 
+    id: 12345
+```
+
+The following example shows how to create a new skill that is granted to workers who complete the examination:
+
+```yaml
+pool:
+  skill:
+    name: "My new skill"
+    language: EN
+    description: "This is my new skill."
 ```
 
 ### Loading pools
