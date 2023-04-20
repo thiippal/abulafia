@@ -651,7 +651,7 @@ class CrowdsourcingTask:
 
                         # Create filter
                         agent = (toloka.filter.UserAgentType ==
-                                   self.pool_conf['filter']['user_agent_type'][0].upper())
+                                 self.pool_conf['filter']['user_agent_type'][0].upper())
 
                         # Check for existing filters and set
                         self.pool.filter = set_filter(filters=self.pool.filter,
