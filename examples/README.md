@@ -3,8 +3,8 @@
 - [Creating a task for classifying images](#creating-a-task-for-classifying-images)
 - [Defining input and output data](#defining-input-and-output-data)
 - [Setting up projects](#setting-up-projects)
-- [Configuring pools](#configuring-pools)
-- Limiting access to tasks using filters
+- [Creating pools](#configuring-pools)
+- [Configuring quality control]
 
 ## Creating a task for classifying images
 
@@ -303,3 +303,5 @@ To load an existing pool from Toloka, add the key `id` under the top-level key `
 pool:
   id: 6789
 ```
+
+## Configuring quality control
