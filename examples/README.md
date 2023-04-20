@@ -3,8 +3,8 @@
 - [Creating a task for classifying images](#creating-a-task-for-classifying-images)
 - [Defining input and output data](#defining-input-and-output-data)
 - [Setting up projects](#setting-up-projects)
-- [Creating pools](#configuring-pools)
-- [Configuring quality control]
+- [Creating pools](#creating-pools)
+- [Configuring quality control](#configuring-quality-control)
 
 ## Creating a task for classifying images
 
@@ -172,7 +172,7 @@ project:
   id: 12345
 ```
 
-## Configuring pools
+## Creating pools
 
 A pool contains **assignments** for the workers to complete. Multiple assignments may be grouped into a **task suite**. 
 
