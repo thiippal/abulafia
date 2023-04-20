@@ -221,9 +221,8 @@ Configure the interface by adding the following keys under the top-level key `in
 | `labels` | Key/value pairs that define the labels for the radio buttons and the values stored in the data. |
 | `segmentation/labels` (optional) | Key/value pairs that define the labels for bounding boxes and the values stored in the data. |
 | `checkbox` (optional) | A string that defines a text that is shown above the checkbox in the interface. |
-| `verification` (optional) | Include unique assignment identifier into the output for accepting and rejecting tasks. |
 
-The following example defines a prompt, an image segmentation interface with three labels for bounding boxes, two labels for the radio buttons and sets the verification mode to `true`.
+The following example defines a prompt, an image segmentation interface with three labels for bounding boxes and two labels for the radio buttons.
 
 ```yaml
 interface:
@@ -236,7 +235,6 @@ interface:
   labels:
     true: "Yes"
     false: "No"
-  verification: true
 ```
 
 ### TextClassification
