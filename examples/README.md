@@ -404,6 +404,5 @@ training:
       result: bool
 ```
 
-
-
 ## Configuring quality control
+
