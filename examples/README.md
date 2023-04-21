@@ -381,6 +381,10 @@ Use the key `setup` to configure the training pool. The following key/value pair
 | retry_training_after_days          | integer | Defines when the worker can try the training again after failing            |
 | inherited_instructions             | boolean | Defines whether the training pool uses the same instructions as the project |
 
+Use the key `data` to configure input and output variables and the source of data, as instructed [above](#defining-input-and-output-data). 
+
+The following example illustrates the configuration of training tasks.
+
 ```yaml
 training:
   setup:
@@ -391,7 +395,7 @@ training:
     retry_training_after_days: 1
     inherited_instructions: true
   data:
-    file: data/verify_target_outlines_training.tsv
+    file: training.tsv
     input:
       image: url
       outlines: json
