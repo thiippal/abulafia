@@ -305,7 +305,7 @@ pool:
       - OTHER
 ```
 
-Optionally, the key `exam` is used to configure an examination pool, which contains tasks with known solutions. These tasks can be used to evaluate the performance of workers and to grant them skills. 
+Optionally, the key `exam` can be used to configure an examination pool, which contains tasks with known solutions. These tasks can be used to evaluate the performance of workers and to grant them skills.
 
 The following key/value pairs can be provided under the key `exam`.
 
