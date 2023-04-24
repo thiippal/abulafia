@@ -201,7 +201,11 @@ pool:
   estimated_time_per_suite: 60
 ```
 
-The basic properties of a pool are defined under the key `setup`. The following key/value paris can be defined under the key `pool`.
+The following sections describe how to set the main properties of pools.
+
+#### `setup`
+
+The basic properties of a pool are defined under the mandatory key `setup`. The following key/value paris can be defined under the key `pool`.
 
 | Key                               | Value   | Description                                                    |
 |:----------------------------------|:--------|:---------------------------------------------------------------|
@@ -223,7 +227,9 @@ pool:
     auto_accept_solutions: false
 ```
 
-The key `defaults` is used to define default settings for assignments and task suites. The following key/value paris can be defined under the key `mixer`.
+#### `defaults`
+
+The mandatory key `defaults` is used to define default settings for assignments and task suites. The following key/value paris can be defined under the key `mixer`.
 
 | Key                              | Value   | Description                                      |
 |:---------------------------------|:--------|:-------------------------------------------------|
@@ -239,7 +245,9 @@ pool:
     default_overlap_for_new_task_suites: 3
 ```
 
-Next, use the key `mixer` to define the mix of different assignment types in each task suite. The following key/value pairs can be provided under the key `mixer`.
+#### `mixer`
+
+The mandatory key `mixer` is used to define the mix of different assignment types in each task suite. The following key/value pairs can be provided under the key `mixer`.
 
 | Key                      | Value   | Description                                                     |
 |:-------------------------|:--------|:----------------------------------------------------------------|
@@ -259,7 +267,9 @@ pool:
     training_tasks_count: 0
 ```
 
-The key `filter` is used to allow only workers with certain characteristics to access the pool. Note that filters are used to *limit* access: without any filters, all workers on Toloka can access the pool. 
+#### `filter`
+
+The optional key `filter` is used to allow only workers with certain characteristics to access the pool. Note that filters are used to *limit* access: without any filters, all workers on Toloka can access the pool. 
 
 The following key/value pairs can be provided under the key `filter`.
 
@@ -305,7 +315,9 @@ pool:
       - OTHER
 ```
 
-To block certain users from accessing the pool, use the key `blocklist` and provide a path to a TSV file with user identiers to be blocked.
+#### `blocklist`
+
+Use the optional key `blocklist` to block certain users from accessing the pool. Provide a path to a TSV file with user identiers to be blocked as the value for this key.
 
 The blocklist column that contains the user identifiers must have the header `user_id`. See an example of a blocklist file [here](data/blocklist.tsv).
 
@@ -316,7 +328,9 @@ pool:
   blocklist: data/blocklist.tsv
 ```
 
-Optionally, the key `exam` can be used to configure an examination pool, which contains tasks with known solutions. These tasks can be used to evaluate the performance of workers and to grant them skills.
+#### `exam`
+
+The optional key `exam` can be used to configure an examination pool, which contains tasks with known solutions. These tasks can be used to evaluate the performance of workers and to grant them skills.
 
 The following key/value pairs can be provided under the key `exam`.
 
@@ -336,7 +350,9 @@ pool:
     max_performers: 20
 ```
 
-The key `skill` is used to define the skill assigned to a worker upon completing the examination.
+#### `skill`
+
+The optional key `skill` is used to define the skill assigned to a worker upon completing the examination.
 
 The following key/value pairs can be provided under the key `exam`.
 
@@ -365,7 +381,9 @@ pool:
     description: "This is my new skill."
 ```
 
-Finally, use the key `training` to set the skill level that the workers much achieve in [training](#configuring-training).
+#### `training`
+
+Use the optional key `training` to set the skill level that the workers much achieve in [training](#configuring-training).
 
 Use the key `training_passing_skill_value` to determine that percentage of correct answers needed for accessing the actual task suites.
 
