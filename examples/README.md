@@ -201,7 +201,7 @@ pool:
   estimated_time_per_suite: 60
 ```
 
-The key properties of a pool are defined under the key `setup`. The following key/value paris can be defined under the key `pool`.
+The basic properties of a pool are defined under the key `setup`. The following key/value paris can be defined under the key `pool`.
 
 | Key                               | Value   | Description                                                    |
 |:----------------------------------|:--------|:---------------------------------------------------------------|
@@ -303,6 +303,17 @@ pool:
       - BROWSER
       - MOBILE_BROWSER
       - OTHER
+```
+
+To block certain users from accessing the pool, use the key `blocklist` and provide a path to a TSV file with user identiers to be blocked.
+
+The blocklist column that contains the user identifiers must have the header `user_id`. See an example of a blocklist file [here](data/blocklist.tsv).
+
+The following example illustrates the use of a blocklist file.
+
+```yaml
+pool:
+  blocklist: data/blocklist.tsv
 ```
 
 Optionally, the key `exam` can be used to configure an examination pool, which contains tasks with known solutions. These tasks can be used to evaluate the performance of workers and to grant them skills.
