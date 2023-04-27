@@ -275,7 +275,7 @@ class AddOutlines(CrowdsourcingTask):
              A Toloka TaskSpec object.
         """
         # Define expected input and output types for the task
-        expected_i, expected_o = {'url', 'json'}, {'json', 'bool'}
+        expected_i, expected_o = {'url', 'json'}, {'json'}
 
         # Configure Toloka data specifications and check the expected input against configuration
         data_in, data_out, input_data, output_data = check_io(configuration=configuration,
@@ -317,32 +317,17 @@ class AddOutlines(CrowdsourcingTask):
             # Set up labels for the outlines
             labels=labels,
 
-            disabled=False
+            disabled=False,
+
+            validation=tb.RequiredConditionV1(hint="Please select at least one area!")
         )
-
-        # Create a checkbox for special cases
-        try:
-            checkbox = tb.CheckboxFieldV1(
-                data=tb.OutputData(output_data['bool'], default=False),
-                label=configuration['interface']['checkbox'])
-
-        except KeyError:
-            msg.warn(f"Please add the key 'checkbox' under the top-level key 'interface' to "
-                     f"define a text that is displayed above the checkbox. Define the text as a "
-                     f"string e.g. checkbox: There is nothing to outline.", exits=1)
 
         # Define the text prompt below the segmentation UI
         prompt = tb.TextViewV1(content=configuration['interface']['prompt'])
 
         # Combine the task interface elements into a view
         interface = toloka.project.TemplateBuilderViewSpec(
-            view=tb.ListViewV1([img_ui, prompt, checkbox], 
-            validation=tb.AnyConditionV1(conditions=[tb.SchemaConditionV1(data=tb.OutputData(output_data['json']),
-                                                                          schema={'type': 'array', 'minItems': 2}),
-                                                     tb.EqualsConditionV1(data=tb.OutputData(output_data['bool']), to=True)],
-                                                     hint="Outline at least one target or check the box if necessary."),
-            )
-        )
+            view=tb.ListViewV1([img_ui, prompt]))
 
         # Create a task specification with interface and input/output data
         task_spec = toloka.project.task_spec.TaskSpec(
