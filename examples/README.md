@@ -1,106 +1,22 @@
 # Examples and tutorials
 
-- [Creating a task for classifying images](#creating-a-task-for-classifying-images)
-- [Defining input and output data](#defining-input-and-output-data)
-- [Setting up projects](#setting-up-projects)
-- [Creating pools](#creating-pools)
-- [Configuring training](#configuring-training)
-- [Configuring quality control](#configuring-quality-control)
+- Configuring individual tasks
+  - [Defining input and output data](#defining-input-and-output-data)
+  - [Setting up projects](#setting-up-projects)
+  - [Creating pools](#creating-pools)
+  - [Configuring training](#configuring-training)
+  - [Configuring quality control](#configuring-quality-control)
+- Combining tasks into pipelines
+- Processing results using actions
+- Tutorials
+  - [Creating a task for classifying images](#creating-a-task-for-classifying-images)
+  - Creating a pipeline with multiple tasks
 
-## Creating a task for classifying images
+## Configuring individual tasks
 
-In this example, we create a YAML configuration file for the `ImageClassification` class.
+### Defining input and output data
 
-This example breaks down how 𝚊𝚋𝚞𝚕𝚊𝚏𝚒𝚊 uses YAML files to create and configure crowdsourcing tasks on Toloka. The complete configuration file referred to in this example may be found [here](config/classify_image.yaml).
-
-First we define a unique name for the crowdsourcing task under the key `name`. In this case, we call the task *classify_images*.
-
-Next, we must provide information about the data and its structure under the key `data`. For this purpose, we define three additional keys: `file`, `input` and `output`. 
-
-The value under the key `file` must point towards a TSV file containing the data to be loaded on the Toloka platform. The keys `input` and `output` contain key/value pairs that define the names of the input and output variables and their type. 
-
-To exemplify, the input data consists of a URL, which can be found under the key `image`, as shown in the [TSV file](data/verify_image_data.tsv). The output data, in turn, consists of Boolean values stored under the variable *result*.
-
-```yaml
-name: classify_images
-data:
-  file: data/verify_image_data.tsv
-  input:
-    image: url                    
-  output:
-    result: bool
-```
-
-Next, we proceed to set up the user interface under the key `interface`. The key `prompt` defines the text that is positioned above the buttons for various labels. 
-
-These labels are defined under the key `labels`. Each key under `labels` defines the value that will be stored when the user selects the label, whereas the label defines what shown in the user interface. Here we set up two labels in the user interface, *Yes* and *No*, which store the values *true* and *false*, respectively.
-
-```yaml
-interface:
-  prompt: "Does the image contain text, letters or numbers?"
-  labels:
-    true: "Yes"
-    false: "No" 
-```
-
-After configuring the user interface, we proceed to set up a project on Toloka. In Toloka, user interfaces are associated with projects, which may contain multiple different pools with different tasks.
-
-To create a project, we provide the following information under the key `project`. The key `setup` contains two key/value pairs, `public_name` and `public_description`, which define basic information shown to workers on the platform. The key `instructions`, in turn, points towards an HTML file that contains instructions for completing the task. 
-
-```yaml
-project:
-  setup:
-    public_name: "Check if an image contains text, letters or numbers"
-    public_description: "Look at diagrams from science textbooks and state if they
-      contain text, letters or numbers."
-  instructions: instructions/detect_text_instructions.html
-```
-
-Next, we configure a pool within the project to which the tasks will be uploaded. This configuration is provided under the key `pool`.
-
-To begin with, we use the `estimated_time_per_suite` to estimate the time spent for completing each task suite (a group of one or more tasks) in seconds. This will allow 𝚊𝚋𝚞𝚕𝚊𝚏𝚒𝚊 to estimate whether the payment for the task is fair.
-
-Next, under the key `setup`, we provide a `private_name` for the pool, together with essential information. The key/value pairs `reward_per_assignment`, `assignment_max_duration_seconds` and `auto_accept_solutions` define the amount of money paid for each task suite, the maximum amount of time allowed for completing a task suite in seconds and whether the task suites submitted by workers should be accepted automatically.
-
-```yaml
-pool:
-  estimated_time_per_suite: 10
-  setup:
-    private_name: "Classify images"
-    reward_per_assignment: 0.034
-    assignment_max_duration_seconds: 600
-    auto_accept_solutions: true
-  defaults:
-    default_overlap_for_new_tasks: 1
-    default_overlap_for_new_task_suites: 1
-  mixer:
-    real_tasks_count: 1
-    golden_tasks_count: 0
-    training_tasks_count: 0
-  filter:
-    client_type:
-      - TOLOKA_APP
-      - BROWSER
-```
-
-This finishes the configuration. We can now use this configuration to create an `ImageClassification` object, as illustrated in [here](classify_images.py).
-
-As shown on [line 35](classify_images.py#L35), we must provide a path to the configuration file using the parameter `configuration`.
-
-```python
-classify_image = ImageClassification(configuration="config/classify_image.yaml",
-                                     client=tclient)
-```
-
-This object may be then added to a crowdsourcing pipeline, as shown on [line 39](classify_images.py#L39).
-
-```python
-pipe = TaskSequence(sequence=[classify_image], client=tclient)
-```
-
-## Defining input and output data
-
-### Specifying data types
+#### Specifying data types
 
 Each crowdsourcing task requires a data specification, which determines the types of input and output data associated with the task.
 
@@ -116,7 +32,7 @@ data:
     correct: bool
 ```
 
-### Loading data from a file
+#### Loading data from a file
 
 You can place the key `file` under `data` to provide input data to the task. The value of this key should point towards a TSV file that contains the input data. The TSV file must contain columns with headers that match those defined under the key `input`.
 
@@ -129,7 +45,7 @@ data:
     result: bool
 ```
 
-### Setting up human verification 
+#### Setting up human verification 
 
 If the task is used for verifying work submitted by other crowdsourced workers, you must add the key `verify` under `data` and set its value to `true`. This adds the output data from the incoming tasks to the input of the current task, while also making the verification task unavailable to the worker who completed the original task.
 
@@ -142,13 +58,13 @@ data:
     result: bool
 ```
 
-## Setting up projects
+### Setting up projects
 
 Projects are the most abstract entity on Toloka. A project may include multiple pools, which contain assignments for the workers. 
 
 In the YAML configuration file, project settings are configured using the top-level key `projects`.
 
-### Loading existing projects from Toloka
+#### Loading an existing project from Toloka
 
 To load an existing project from Toloka, add the key `id` under the top-level key `project`. Then provide the project ID as the value.
 
@@ -157,7 +73,7 @@ project:
   id: 12345
 ```
 
-### Creating new projects
+#### Creating new projects
 
 To create a new project, use the key `setup` to define a public name and a description for the project, which are displayed on the Toloka platform for prospective workers. 
 
@@ -173,13 +89,13 @@ project:
   instructions: my_instructions.html
 ```
 
-## Creating pools
+### Creating pools
 
 A pool contains **assignments** for the workers to complete. Multiple assignments may be grouped into a **task suite**. 
 
 Pool settings are configured under the top-level key `pool` in the YAML configuration file.
 
-### Loading existing pools
+#### Loading existing pools
 
 To load an existing pool from Toloka, add the key `id` under the top-level key `pool`. Then provide the pool ID as the value.
 
@@ -188,7 +104,7 @@ pool:
   id: 6789
 ```
 
-### Creating new pools
+#### Creating new pools
 
 To begin with, the key `estimated_time_per_suite`, which must be placed under the key `pool`, is used to calculate a fair reward for the workers (an average hourly wage of 12 USD). 
 
@@ -203,7 +119,7 @@ pool:
 
 The following sections describe how to set the main properties of pools.
 
-#### `setup`
+##### `setup`
 
 The basic properties of a pool are defined under the mandatory key `setup`. The following key/value paris can be defined under the key `pool`.
 
@@ -317,7 +233,7 @@ pool:
 
 #### `blocklist`
 
-Use the optional key `blocklist` to block certain users from accessing the pool. Provide a path to a TSV file with user identiers to be blocked as the value for this key.
+Use the optional key `blocklist` to block certain users from accessing the pool and the associated training tasks. Provide a path to a TSV file with user identiers to be blocked as the value for this key.
 
 The blocklist column that contains the user identifiers must have the header `user_id`. See an example of a blocklist file [here](data/blocklist.tsv).
 
@@ -395,7 +311,7 @@ pool:
     training_passing_skill_value: 70
 ```
 
-## Configuring training
+### Configuring training
 
 To train the workers in performing a task, use the top-level key `training` to define a training pool that must be completed before accessing the pool that contains the actual assignments.
 
@@ -433,5 +349,96 @@ training:
       result: bool
 ```
 
-## Configuring quality control
+### Configuring quality control
 
+## Tutorials
+### Creating a task for classifying images
+
+In this tutorial, we create a YAML configuration file for the `ImageClassification` class.
+
+This example breaks down how 𝚊𝚋𝚞𝚕𝚊𝚏𝚒𝚊 uses YAML files to create and configure crowdsourcing tasks on Toloka. The complete configuration file referred to in this example may be found [here](config/classify_image.yaml).
+
+First we define a unique name for the crowdsourcing task under the key `name`. In this case, we call the task *classify_images*.
+
+Next, we must provide information about the data and its structure under the key `data`. For this purpose, we define three additional keys: `file`, `input` and `output`. 
+
+The value under the key `file` must point towards a TSV file containing the data to be loaded on the Toloka platform. The keys `input` and `output` contain key/value pairs that define the names of the input and output variables and their type. 
+
+To exemplify, the input data consists of a URL, which can be found under the key `image`, as shown in the [TSV file](data/verify_image_data.tsv). The output data, in turn, consists of Boolean values stored under the variable *result*.
+
+```yaml
+name: classify_images
+data:
+  file: data/verify_image_data.tsv
+  input:
+    image: url                    
+  output:
+    result: bool
+```
+
+Next, we proceed to set up the user interface under the key `interface`. The key `prompt` defines the text that is positioned above the buttons for various labels. 
+
+These labels are defined under the key `labels`. Each key under `labels` defines the value that will be stored when the user selects the label, whereas the label defines what shown in the user interface. Here we set up two labels in the user interface, *Yes* and *No*, which store the values *true* and *false*, respectively.
+
+```yaml
+interface:
+  prompt: "Does the image contain text, letters or numbers?"
+  labels:
+    true: "Yes"
+    false: "No" 
+```
+
+After configuring the user interface, we proceed to set up a project on Toloka. In Toloka, user interfaces are associated with projects, which may contain multiple different pools with different tasks.
+
+To create a project, we provide the following information under the key `project`. The key `setup` contains two key/value pairs, `public_name` and `public_description`, which define basic information shown to workers on the platform. The key `instructions`, in turn, points towards an HTML file that contains instructions for completing the task. 
+
+```yaml
+project:
+  setup:
+    public_name: "Check if an image contains text, letters or numbers"
+    public_description: "Look at diagrams from science textbooks and state if they
+      contain text, letters or numbers."
+  instructions: instructions/detect_text_instructions.html
+```
+
+Next, we configure a pool within the project to which the tasks will be uploaded. This configuration is provided under the key `pool`.
+
+To begin with, we use the `estimated_time_per_suite` to estimate the time spent for completing each task suite (a group of one or more tasks) in seconds. This will allow 𝚊𝚋𝚞𝚕𝚊𝚏𝚒𝚊 to estimate whether the payment for the task is fair.
+
+Next, under the key `setup`, we provide a `private_name` for the pool, together with essential information. The key/value pairs `reward_per_assignment`, `assignment_max_duration_seconds` and `auto_accept_solutions` define the amount of money paid for each task suite, the maximum amount of time allowed for completing a task suite in seconds and whether the task suites submitted by workers should be accepted automatically.
+
+```yaml
+pool:
+  estimated_time_per_suite: 10
+  setup:
+    private_name: "Classify images"
+    reward_per_assignment: 0.034
+    assignment_max_duration_seconds: 600
+    auto_accept_solutions: true
+  defaults:
+    default_overlap_for_new_tasks: 1
+    default_overlap_for_new_task_suites: 1
+  mixer:
+    real_tasks_count: 1
+    golden_tasks_count: 0
+    training_tasks_count: 0
+  filter:
+    client_type:
+      - TOLOKA_APP
+      - BROWSER
+```
+
+This finishes the configuration. We can now use this configuration to create an `ImageClassification` object, as illustrated in [here](classify_images.py).
+
+As shown on [line 35](classify_images.py#L35), we must provide a path to the configuration file using the parameter `configuration`.
+
+```python
+classify_image = ImageClassification(configuration="config/classify_image.yaml",
+                                     client=tclient)
+```
+
+This object may be then added to a crowdsourcing pipeline, as shown on [line 39](classify_images.py#L39).
+
+```python
+pipe = TaskSequence(sequence=[classify_image], client=tclient)
+```
