@@ -1,6 +1,7 @@
 # Examples and tutorials
 
 - Configuring individual tasks
+  - [Naming a task](#naming-a-task)  
   - [Defining input and output data](#defining-input-and-output-data)
   - [Setting up projects](#setting-up-projects)
   - [Creating pools](#creating-pools)
@@ -13,6 +14,15 @@
   - Creating a pipeline with multiple tasks
 
 ## Configuring individual tasks
+
+### Naming a task
+
+Use the top-level key `name` to name the task. Task names are used to identify and set up connections between tasks in a pipeline.
+
+To exemplify, the following example gives the task the name `my_task`.
+```yaml
+name: my_task
+```
 
 ### Defining input and output data
 
@@ -359,13 +369,13 @@ The connections between individual crowdsourcing tasks are defined in the YAML c
 
 The following key/value pairs can be provided under the key `actions`.
 
-| Key              | Value  | Description                                                      |
-|:-----------------|:-------|:-----------------------------------------------------------------|
-| `on_submitted`   | string | The             |
-| `on_rejected`    | string |                         |
-| `on_accepted`    | string |   |
-| `on_closed`      | string |
-| `on_result`      |        |
+| Key              | Value  | Description                                                                                                |
+|:-----------------|:-------|:-----------------------------------------------------------------------------------------------------------|
+| `on_submitted`   | string | The [name](#naming-a-task) of the Task or Action to which submitted assignments should be sent.            |
+| `on_rejected`    | string | The [name](#naming-a-task) of the Task or Action to which rejected assignments should be sent.             |
+| `on_accepted`    | string | The [name](#naming-a-task) of the Task or Action to which accepted tasks should be sent.                   |
+| `on_closed`      | string | The [name](#naming-a-task) of the Task or Action to which assignments should be sent when the pool closes. |
+| `on_result`      | -      | - |
 
 The following example sets up three actions: if rejected, the task suite is sent to the task named `task_1`. Any submitted task suites will be sent to `task_2`. If the task suite is accepted, it will be sent to `task_3`.
 ```yaml
