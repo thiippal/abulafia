@@ -1,25 +1,29 @@
 # Examples and tutorials
 
-- Configuring individual tasks
-  - [Naming a task](#naming-a-task)  
+- Configuring Tasks
+  - [Naming a Task](#naming-a-task)  
   - [Defining input and output data](#defining-input-and-output-data)
   - [Setting up projects](#setting-up-projects)
   - [Creating pools](#creating-pools)
   - [Configuring training](#configuring-training)
   - [Configuring quality control](#configuring-quality-control)
-- Combining tasks into pipelines
-- Processing results using actions
+- Combining Tasks into Pipelines
+- Processing Task outputs using Actions
 - Tutorials
-  - [Creating a task for classifying images](#creating-a-task-for-classifying-images)
-  - Creating a pipeline with multiple tasks
+  - [Creating a Task for classifying images](#creating-a-task-for-classifying-images)
+  - Creating a Pipeline with multiple Tasks
 
-## Configuring individual tasks
+## Configuring Tasks
 
-### Naming a task
+In 𝚊𝚋𝚞𝚕𝚊𝚏𝚒𝚊, a Task refers to a crowdsourcing task that is defined using its own YAML configuration file.
 
-Use the top-level key `name` to name the task. Task names are used to identify and set up connections between tasks in a pipeline.
+The following sections describe how to configure a Task.
 
-To exemplify, the following example gives the task the name `my_task`.
+### Naming a Task
+
+Use the top-level key `name` in the YAML configuration to name the Task. Task names are used to identify and set up connections between Tasks in a pipeline.
+
+To exemplify, the following example gives the Task the name `my_task`.
 ```yaml
 name: my_task
 ```
@@ -28,7 +32,7 @@ name: my_task
 
 #### Specifying data types
 
-Each crowdsourcing task requires a data specification, which determines the types of input and output data associated with the task.
+Each Task requires a data specification, which determines the types of input and output data associated with the Task.
 
 In the YAML configuration, the inputs and outputs are defined under the top-level key `data` using the keys `input` and `output`.
 
@@ -44,7 +48,7 @@ data:
 
 #### Loading data from a file
 
-You can place the key `file` under `data` to provide input data to the task. The value of this key should point towards a TSV file that contains the input data. The TSV file must contain columns with headers that match those defined under the key `input`.
+You can place the key `file` under `data` to provide input data to the Task. The value of this key should point towards a TSV file that contains the input data. The TSV file must contain columns with headers that match those defined under the key `input`.
 
 ```yaml
 data:
@@ -57,7 +61,7 @@ data:
 
 #### Setting up human verification 
 
-If the task is used for verifying work submitted by other crowdsourced workers, you must add the key `verify` under `data` and set its value to `true`. This adds the output data from the incoming tasks to the input of the current task, while also making the verification task unavailable to the worker who completed the original task.
+If a Task is used for verifying work submitted by other crowdsourced workers, you must add the key `verify` under `data` and set its value to `true`. This adds the output data from the incoming Tasks to the input of the current Task, while also making the verification assignment unavailable to the worker who completed the original assignment.
 
 ```yaml
 data:
@@ -70,7 +74,7 @@ data:
 
 ### Setting up projects
 
-Projects are the most abstract entity on Toloka. A project may include multiple pools, which contain assignments for the workers. 
+Projects are the most abstract entity on Toloka. A project may include multiple pools, which contain assignments for the workers. User interfaces are also defined at the level of a project.
 
 In the YAML configuration file, project settings are configured using the top-level key `projects`.
 
@@ -101,7 +105,7 @@ project:
 
 ### Creating pools
 
-A pool contains **assignments** for the workers to complete. Multiple assignments may be grouped into a **task suite**. 
+A pool contains **assignments** for the workers to complete. Each assignment is contained in a **task suite**. 
 
 Pool settings are configured under the top-level key `pool` in the YAML configuration file.
 
@@ -243,7 +247,7 @@ pool:
 
 #### `blocklist`
 
-Use the optional key `blocklist` to block certain users from accessing the pool and the associated training tasks. Provide a path to a TSV file with user identiers to be blocked as the value for this key.
+Use the optional key `blocklist` to block certain users from accessing the pool and the associated training. Provide a path to a TSV file with user identiers to be blocked as the value for this key.
 
 The blocklist column that contains the user identifiers must have the header `user_id`. See an example of a blocklist file [here](data/blocklist.tsv).
 
@@ -256,7 +260,7 @@ pool:
 
 #### `exam`
 
-The optional key `exam` can be used to configure an examination pool, which contains tasks with known solutions. These tasks can be used to evaluate the performance of workers and to grant them skills.
+The optional key `exam` can be used to configure an examination pool, which contains assignments with known solutions. These assignments can be used to evaluate the performance of workers and to grant them skills.
 
 The following key/value pairs can be provided under the key `exam`.
 
@@ -266,7 +270,7 @@ The following key/value pairs can be provided under the key `exam`.
 | `min_answers`    | integer | The minimum number of assignments that the worker must complete to be evaluated |
 | `max_performers` | integer | How many workers are allowed to take the exam before the pool closes            |
 
-The following example sets the number of assignments to be evaluated to 20, defines that the worker must complete all 20 tasks to be evaluated, and closes the pool when 50 performers have taken the exam.
+The following example sets the number of assignments to be evaluated to 20, defines that the worker must complete all 20 assignments to be evaluated, and closes the pool when 50 performers have taken the exam.
 
 ```yaml
 pool:
@@ -361,11 +365,11 @@ training:
 
 ### Configuring quality control
 
-## Combining tasks into pipelines
+## Combining Tasks into Pipelines
 
-One key functionality of 𝚊𝚋𝚞𝚕𝚊𝚏𝚒𝚊 is the creation of pipelines, which allow transferring assignments between individual tasks.
+One key functionality of 𝚊𝚋𝚞𝚕𝚊𝚏𝚒𝚊 is the creation of Pipelines, which allow transferring assignments between individual Tasks.
 
-The connections between individual crowdsourcing tasks are defined in the YAML configuration under the top-level key `actions`.
+The connections between individual Tasks are defined in the YAML configuration under the top-level key `actions`.
 
 The following key/value pairs can be provided under the key `actions`.
 
@@ -377,7 +381,7 @@ The following key/value pairs can be provided under the key `actions`.
 | `on_closed`      | string | The [name](#naming-a-task) of the Task or Action to which assignments should be sent when the pool closes. |
 | `on_result`      | -      | - |
 
-The following example sets up three actions: if rejected, the task suite is sent to the task named `task_1`. Any submitted task suites will be sent to `task_2`. If the task suite is accepted, it will be sent to `task_3`.
+The following example sets up three actions: if rejected, the task suite is sent to a Task named `task_1`. Any submitted task suites will be sent to `task_2`. If the task suite is accepted, it will be sent to `task_3`.
 ```yaml
 actions:
   on_rejected: task_1
@@ -386,13 +390,13 @@ actions:
 ```
 
 ## Tutorials
-### Creating a task for classifying images
+### Creating a Task for classifying images
 
 In this tutorial, we create a YAML configuration file for the `ImageClassification` class.
 
-This example breaks down how 𝚊𝚋𝚞𝚕𝚊𝚏𝚒𝚊 uses YAML files to create and configure crowdsourcing tasks on Toloka. The complete configuration file referred to in this example may be found [here](config/classify_image.yaml).
+This example breaks down how 𝚊𝚋𝚞𝚕𝚊𝚏𝚒𝚊 uses YAML files to create and configure Tasks. The complete configuration file referred to in this example may be found [here](config/classify_image.yaml).
 
-First we define a unique name for the crowdsourcing task under the key `name`. In this case, we call the task *classify_images*.
+First we define a unique name for the Task under the key `name`. In this case, we call the Task *classify_images*.
 
 Next, we must provide information about the data and its structure under the key `data`. For this purpose, we define three additional keys: `file`, `input` and `output`. 
 
@@ -412,7 +416,7 @@ data:
 
 Next, we proceed to set up the user interface under the key `interface`. The key `prompt` defines the text that is positioned above the buttons for various labels. 
 
-These labels are defined under the key `labels`. Each key under `labels` defines the value that will be stored when the user selects the label, whereas the label defines what shown in the user interface. Here we set up two labels in the user interface, *Yes* and *No*, which store the values *true* and *false*, respectively.
+These labels are defined under the key `labels`. Each key under `labels` defines the value that will be stored when the worker selects the label, whereas the label defines what shown in the user interface. Here we set up two labels in the user interface, *Yes* and *No*, which store the values *true* and *false*, respectively.
 
 ```yaml
 interface:
@@ -435,9 +439,9 @@ project:
   instructions: instructions/detect_text_instructions.html
 ```
 
-Next, we configure a pool within the project to which the tasks will be uploaded. This configuration is provided under the key `pool`.
+Next, we configure a pool within the project to which the assignments will be uploaded. This configuration is provided under the key `pool`.
 
-To begin with, we use the `estimated_time_per_suite` to estimate the time spent for completing each task suite (a group of one or more tasks) in seconds. This will allow 𝚊𝚋𝚞𝚕𝚊𝚏𝚒𝚊 to estimate whether the payment for the task is fair.
+To begin with, we use the `estimated_time_per_suite` to estimate the time spent for completing each task suite (a group of one or more assignments) in seconds. This will allow 𝚊𝚋𝚞𝚕𝚊𝚏𝚒𝚊 to estimate whether the payment for the work is fair.
 
 Next, under the key `setup`, we provide a `private_name` for the pool, together with essential information. The key/value pairs `reward_per_assignment`, `assignment_max_duration_seconds` and `auto_accept_solutions` define the amount of money paid for each task suite, the maximum amount of time allowed for completing a task suite in seconds and whether the task suites submitted by workers should be accepted automatically.
 
