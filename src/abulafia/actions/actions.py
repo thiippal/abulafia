@@ -81,24 +81,36 @@ class Verify:
                 # Accept the task suite if all assignments in the suite have been verified as correct
                 if all(results) is True:
 
-                    self.client.accept_assignment(assignment_id=assignment_id,
-                                                  public_comment=self.conf['messages']['accepted'])
+                    try:
 
-                    msg.good(f'Accepted assignment {assignment_id}')
+                        self.client.accept_assignment(assignment_id=assignment_id,
+                                                      public_comment=self.conf['messages']['accepted'])
+
+                        msg.good(f'Accepted assignment {assignment_id}')
+
+                    except IncorrectActionsApiError:
+
+                        msg.fail(f'Failed to accept assignment {assignment_id}!')
 
                 # Reject the task suite if all assignments in the suite have not been verified as correct
                 if all(results) is not True:
 
-                    self.client.reject_assignment(assignment_id=assignment_id,
-                                                  public_comment=self.conf['messages']['rejected'])
+                    try:
 
-                    msg.warn(f'Rejected assignment {assignment_id}')
+                        self.client.reject_assignment(assignment_id=assignment_id,
+                                                      public_comment=self.conf['messages']['rejected'])
+
+                        msg.warn(f'Rejected assignment {assignment_id}')
+
+                    except IncorrectActionsApiError:
+
+                        msg.fail(f'Failed to reject assignment {assignment_id}!')
 
             # Catch the error that might be raised by manually accepting/rejecting tasks in
             # the web interface
             except IncorrectActionsApiError:
 
-                msg.warn(f'Could not {"accept" if all(results) == True else "reject"} assignment {assignment_id}')
+                msg.fail(f'Could not {"accept" if all(results) == True else "reject"} assignment {assignment_id}!')
 
             # Append the task suite to the list of processed suites
             processed.append(assignment_id)
@@ -282,16 +294,26 @@ class Forward:
                     if solution in self.reject:
 
                         # TODO Implement dynamic public comment handling
-                        self.client.reject_assignment(assignment_id=event.assignment.tasks[i].input_values['assignment_id'],
-                                                      public_comment="Assignment was verified as incorrect by another user.")
-                        msg.warn(f'Rejected assignment {event.assignment.tasks[i].input_values["assignment_id"]}')
+                        try:
+                            self.client.reject_assignment(assignment_id=event.assignment.tasks[i].input_values['assignment_id'],
+                                                          public_comment="Assignment was verified as incorrect by another user.")
+                            msg.warn(f'Rejected assignment {event.assignment.tasks[i].input_values["assignment_id"]}')
+
+                        except IncorrectActionsApiError:
+
+                            msg.fail(f'Failed to reject {event.assignment.tasks[i].input_values["assignment_id"]}!')
 
                     # If performer verified the task as correct, accept original assignment and don't forward task
                     if solution in self.accept:
 
-                        self.client.accept_assignment(assignment_id=event.assignment.tasks[i].input_values['assignment_id'],
-                                                      public_comment="Assignment was verified as correct by another user.")
-                        msg.good(f'Accepted assignment {event.assignment.tasks[i].input_values["assignment_id"]}')
+                        try:
+                            self.client.accept_assignment(assignment_id=event.assignment.tasks[i].input_values['assignment_id'],
+                                                          public_comment="Assignment was verified as correct by another user.")
+                            msg.good(f'Accepted assignment {event.assignment.tasks[i].input_values["assignment_id"]}')
+
+                        except IncorrectActionsApiError:
+
+                            msg.fail(f'Failed to accept {event.assignment.tasks[i].input_values["assignment_id"]}!')
 
                     # If no forward pool was configured, submit task without forwarding/accepting/rejecting
                     if solution in self.dont_forward:
