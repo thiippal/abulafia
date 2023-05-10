@@ -351,6 +351,30 @@ training:
 
 ### Configuring quality control
 
+## Combining tasks into pipelines
+
+One key functionality of 𝚊𝚋𝚞𝚕𝚊𝚏𝚒𝚊 is the creation of pipelines, which allow transferring assignments between individual tasks.
+
+The connections between individual crowdsourcing tasks are defined in the YAML configuration under the top-level key `actions`.
+
+The following key/value pairs can be provided under the key `actions`.
+
+| Key              | Value  | Description                                                      |
+|:-----------------|:-------|:-----------------------------------------------------------------|
+| `on_submitted`   | string | The             |
+| `on_rejected`    | string |                         |
+| `on_accepted`    | string |   |
+| `on_closed`      | string |
+| `on_result`      |        |
+
+The following example sets up three actions: if rejected, the task suite is sent to the task named `task_1`. Any submitted task suites will be sent to `task_2`. If the task suite is accepted, it will be sent to `task_3`.
+```yaml
+actions:
+  on_rejected: task_1
+  on_submitted: task_2
+  on_accepted: task_3
+```
+
 ## Tutorials
 ### Creating a task for classifying images
 
