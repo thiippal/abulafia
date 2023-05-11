@@ -103,9 +103,12 @@ class TaskSequence:
 
                     else:
 
-                        self.client.close_pool(pool_id=task.pool.id)
+                        # Check pool status again
+                        if not self.client.get_pool(pool_id=task.pool.id).is_closed():
 
-                        msg.info(f'Closed pool with ID {task.pool.id}')
+                            self.client.close_pool(pool_id=task.pool.id)
+
+                            msg.info(f'Closed pool with ID {task.pool.id}')
 
                 # Check if there is a training pool that should be closed
                 if hasattr(task, 'training') and task.training is not None:
@@ -116,9 +119,12 @@ class TaskSequence:
 
                     else:
 
-                        self.client.close_pool(pool_id=task.training.id)
+                        # Check status again
+                        if not self.client.get_pool(pool_id=task.training.id).is_closed():
 
-                        msg.info(f'Closed pool with ID {task.training.id}')
+                            self.client.close_pool(pool_id=task.training.id)
+
+                            msg.info(f'Closed pool with ID {task.training.id}')
 
             for action in (a for a in self.sequence if hasattr(a, 'aggregator')):
 
