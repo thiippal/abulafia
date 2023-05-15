@@ -65,8 +65,12 @@ class CrowdsourcingTask:
         # See if users should be banned from the pool and check that blocklist is configured correctly
         try:
 
-            self.blocklist = list(pd.read_csv(self.pool_conf['blocklist'], sep="\t")["user_id"]) \
+            self.blocklist = list(pd.read_csv(self.pool_conf['blocklist'], sep='\t')['user_id'].dropna()) \
                 if 'blocklist' in self.pool_conf.keys() else []
+
+            if len(self.blocklist) > 0:
+
+                msg.info(f'Successfully loaded a blocklist with {len(self.blocklist)} user IDs.')
 
         except KeyError:
 
