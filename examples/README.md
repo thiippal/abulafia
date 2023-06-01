@@ -365,6 +365,19 @@ training:
 
 ### Configuring quality control
 
+Use the optional top-level key `quality_control` to define settings for automatic quality control. The following keys can be used to configure the quality control mechanisms.
+
+#### `speed_quality_balance`
+
+Use the key `speed_quality_balance` to limit access to the Task according to worker reputation. The following key/value pairs are supported.
+
+| Key                                | Value  | Description                                                                    |
+|:-----------------------------------|:-------|:-------------------------------------------------------------------------------|
+| `top_percentage_by_quality`        | int    | The percentage of workers with the highest reputation who can access the Task. |
+| `best_concurrent_users_by_quality` | int    | The number of workers with the highest reputation who can access the Task.     |
+
+
+
 ## Combining Tasks into Pipelines
 
 One key functionality of 𝚊𝚋𝚞𝚕𝚊𝚏𝚒𝚊 is the creation of Pipelines, which allow transferring assignments between individual Tasks.
