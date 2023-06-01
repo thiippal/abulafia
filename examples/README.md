@@ -376,7 +376,13 @@ Use the key `speed_quality_balance` to limit access to the Task according to wor
 | `top_percentage_by_quality`        | int    | The percentage of workers with the highest reputation who can access the Task. |
 | `best_concurrent_users_by_quality` | int    | The number of workers with the highest reputation who can access the Task.     |
 
+The following example illustrates how to allow only the highest-ranked 10% of workers to access the Task. 
 
+```yaml
+quality_control:
+  speed_quality_balance:
+    top_percentage_by_quality: 10
+```
 
 ## Combining Tasks into Pipelines
 
