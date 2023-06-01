@@ -377,16 +377,25 @@ The following key/value pairs can be provided under the key `actions`.
 |:-----------------|:-------|:-----------------------------------------------------------------------------------------------------------|
 | `on_submitted`   | string | The [name](#naming-a-task) of the Task or Action to which submitted assignments should be sent.            |
 | `on_rejected`    | string | The [name](#naming-a-task) of the Task or Action to which rejected assignments should be sent.             |
-| `on_accepted`    | string | The [name](#naming-a-task) of the Task or Action to which accepted tasks should be sent.                   |
+| `on_accepted`    | string | The [name](#naming-a-task) of the Task or Action to which accepted assignments should be sent.             |
 | `on_closed`      | string | The [name](#naming-a-task) of the Task or Action to which assignments should be sent when the pool closes. |
-| `on_result`      | -      | - |
+| `on_result`      | dictionary | A dictionary that maps a particular output value to the [name](#naming-a-task) of a Task or Action to which the assignment is sent.  |
 
-The following example sets up three actions: if rejected, the task suite is sent to a Task named `task_1`. Any submitted task suites will be sent to `task_2`. If the task suite is accepted, it will be sent to `task_3`.
+The following example sets up three actions. All submitted assignment will be sent to a Task named `verification`. If an assignment is rejected, the assignment is sent to a Task named `annotation`. If the assignment is accepted, it will be sent to a Task named `segmentation`.
+
 ```yaml
 actions:
-  on_rejected: task_1
-  on_submitted: task_2
-  on_accepted: task_3
+  on_submitted: verification
+  on_rejected: annotation
+  on_accepted: segmentation
+```
+
+The following example illustrates the use of the `on_result` action. If the output value is `true`, the assignment will be sent to a Task named `next_task`. If the value is `false`, the task will be sent to a Task named `previous_task`.
+
+```yaml
+  on_result:
+    true: next_task
+    false: previous_task
 ```
 
 ## Tutorials
