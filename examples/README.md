@@ -384,6 +384,33 @@ quality_control:
     top_percentage_by_quality: 10
 ```
 
+#### `fast_responses`
+
+| Key           | Value  | Description                                                                    |
+|:--------------|:-------|:-------------------------------------------------------------------------------|
+|`history_size` | int    |
+|`count`        | int    |
+|`threshold`    | int    |
+|`ban_duration` | int    |
+|`ban_units`    | str    |
+
+
+#### `skipped_assignments`
+
+| Key           | Value  | Description                                                                    |
+|:--------------|:-------|:-------------------------------------------------------------------------------|
+|`count`        | int    |
+|`ban_duration` | int    |
+|`ban_units`    | str    |
+
+#### `redo_banned`
+
+Just a boolean ...
+
+#### `golden_set`
+
+
+
 ## Combining Tasks into Pipelines
 
 One key functionality of 𝚊𝚋𝚞𝚕𝚊𝚏𝚒𝚊 is the creation of Pipelines, which allow transferring assignments between individual Tasks.
