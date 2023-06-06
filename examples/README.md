@@ -371,10 +371,10 @@ Use the optional top-level key `quality_control` to define settings for automati
 
 Use the key `speed_quality_balance` to limit access to the Task according to worker reputation. The following key/value pairs must be defined under the key `speed_quality_balance`.
 
-| Key                                | Value  | Description                                                                    |
-|:-----------------------------------|:-------|:-------------------------------------------------------------------------------|
-| `top_percentage_by_quality`        | int    | The percentage of workers with the highest reputation who can access the Task. |
-| `best_concurrent_users_by_quality` | int    | The number of workers with the highest reputation who can access the Task.     |
+| Key                                | Value   | Description                                                                    |
+|:-----------------------------------|:--------|:-------------------------------------------------------------------------------|
+| `top_percentage_by_quality`        | integer | The percentage of workers with the highest reputation who can access the Task. |
+| `best_concurrent_users_by_quality` | integer | The number of workers with the highest reputation who can access the Task.     |
 
 The following example allows only the highest-ranked 10% of workers to access the Task. 
 
@@ -396,13 +396,13 @@ quality_control:
 
 Use the key `fast_responses` to ban workers if they complete assignments too quickly, which may be indicative of spamming. The following key/value pairs must be defined under the key `fast_responses`.
 
-| Key           | Value  | Description                                                                         |
-|:--------------|:-------|:------------------------------------------------------------------------------------|
-|`history_size` | int    | The number of previous assignments considered when evaluating response times.       | 
-|`count`        | int    | The maximum number of fast responses allowed within the `history_period`.           |
-|`threshold`    | int    | The threshold for defining a response as fast in seconds.                           |
-|`ban_duration` | int    | How long the worker will be banned from accessing the Task.                         |
-|`ban_units`    | str    | Temporal unit that defines ban duration: `MINUTES`, `HOURS`, `DAYS` or `PERMANENT`. |
+| Key           | Value   | Description                                                                   |
+|:--------------|:--------|:------------------------------------------------------------------------------|
+|`history_size` | integer | The number of previous assignments considered when evaluating response times. | 
+|`count`        | integer | The maximum number of fast responses allowed within the `history_period`.     |
+|`threshold`    | integer | The threshold for defining a response as fast in seconds.                     |
+|`ban_duration` | integer | How long the worker will be banned from accessing the Task.                   |
+|`ban_units`    | string  | Temporal unit that defines ban duration: MINUTES, HOURS, DAYS or PERMANENT.   |
 
 The following example bans users who complete 3 out of the 5 most recent assignments in less than 10 seconds for 2 days.
 
@@ -420,11 +420,11 @@ quality_control:
 
 Use the key `skipped_assignments` to ban workers who skip too many assignments in a row. The following key/value pairs must be defined under the key `skipped_assignments`. 
 
-| Key           | Value  | Description                                                                         |
-|:--------------|:-------|:------------------------------------------------------------------------------------|
-|`count`        | int    | The maximum number of assignments that the user may skip without getting banned.    |
-|`ban_duration` | int    | How long the worker will be banned from accessing the Task.                         |
-|`ban_units`    | str    | Temporal unit that defines ban duration: `MINUTES`, `HOURS`, `DAYS` or `PERMANENT`. |
+| Key           | Value   | Description                                                                         |
+|:--------------|:--------|:------------------------------------------------------------------------------------|
+|`count`        | integer | The maximum number of assignments that the user may skip without getting banned.    |
+|`ban_duration` | integer | How long the worker will be banned from accessing the Task.                         |
+|`ban_units`    | string  | Temporal unit that defines ban duration: `MINUTES`, `HOURS`, `DAYS` or `PERMANENT`. |
 
 The following example bans workers who skip more than 10 tasks in a row for 30 minutes.
 
@@ -440,9 +440,9 @@ quality_control:
 
 Use the key `redo_banned` to re-do all assignments completed by a banned user. The following key/value pair must be defined under the key `redo_banned`.
 
-| Key           | Value    | Description                                                      |
-|:--------------|:-------- |:-----------------------------------------------------------------|
-|`redo_banned`  | boolean  | Whether assignments from banned users should be completed again. |
+| Key           | Value   | Description                                                      |
+|:--------------|:--------|:-----------------------------------------------------------------|
+|`redo_banned`  | boolean | Whether assignments from banned users should be completed again. |
 
 This following example re-does assignments completed by banned users. 
 
@@ -453,7 +453,41 @@ quality_control:
 
 #### `golden_set`
 
+Use the key `golden_set` to perform various actions if the input data contains 'golden' assignments with known answers. The following key/value pair must be defined under the key `golden_set`. The actions that may be undertaken using golden assignments are described below.
 
+| Key           | Value   | Description                                                                             |
+|:--------------|:--------|:----------------------------------------------------------------------------------------|
+|`history_size` | integer | The number of previous assignments with known answers considered when processing rules. | 
+
+`ban_rules`
+
+| Key                  | Value   | Description                                                      |
+|:---------------------|:--------|:-----------------------------------------------------------------|
+|`incorrect_threshold` | integer | Percentage
+|`ban_duration`        | integer |
+|`ban_units`           | string  |
+
+`reject_rules`
+
+| Key                  | Value   | Description                                                      |
+|:---------------------|:--------|:-----------------------------------------------------------------|
+|`incorrect_threshold` | integer | Percentage
+|`ban_duration`        | integer |
+|`ban_units`           | string  |
+
+`approve_rules`
+
+| Key                | Value   | Description                                                      |
+|:-------------------|:--------|:-----------------------------------------------------------------|
+|`correct_threshold` | integer | Percentage
+
+`skill_rules`
+
+| Key                | Value   | Description                                                      |
+|:-------------------|:--------|:-----------------------------------------------------------------|
+|`correct_threshold` | integer | Percentage
+|`skill_id`          | integer | 
+|`skill_value`       | integer |
 
 ## Combining Tasks into Pipelines
 
