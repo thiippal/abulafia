@@ -418,7 +418,7 @@ quality_control:
 
 #### `skipped_assignments`
 
-Use the key `skipped_assignments` to ban workers who skip too many assignments in a row. This may be used to block users who 
+Use the key `skipped_assignments` to ban workers who skip too many assignments in a row. The following key/value pairs must be defined under the key `skipped_assignments`. 
 
 | Key           | Value  | Description                                                                         |
 |:--------------|:-------|:------------------------------------------------------------------------------------|
@@ -438,7 +438,18 @@ quality_control:
 
 #### `redo_banned`
 
-Just a boolean ...
+Use the key `redo_banned` to re-do all assignments completed by a banned user. The following key/value pair must be defined under the key `redo_banned`.
+
+| Key           | Value    | Description                                                      |
+|:--------------|:-------- |:-----------------------------------------------------------------|
+|`redo_banned`  | boolean  | Whether assignments from banned users should be completed again. |
+
+This following example re-does assignments completed by banned users. 
+
+```yaml
+quality_control:
+  redo_banned: true
+```
 
 #### `golden_set`
 
