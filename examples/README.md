@@ -135,7 +135,7 @@ The following sections describe how to set the main properties of pools.
 
 ##### `setup`
 
-The basic properties of a pool are defined under the mandatory key `setup`. The following key/value paris can be defined under the key `pool`.
+The basic properties of a pool are defined under the mandatory key `setup`. The following key/value pairs can be defined under the key `pool`.
 
 | Key                               | Value   | Description                                                    |
 |:----------------------------------|:--------|:---------------------------------------------------------------|
@@ -369,14 +369,14 @@ Use the optional top-level key `quality_control` to define settings for automati
 
 #### `speed_quality_balance`
 
-Use the key `speed_quality_balance` to limit access to the Task according to worker reputation. The following key/value pairs are supported.
+Use the key `speed_quality_balance` to limit access to the Task according to worker reputation. The following key/value pairs must be defined under the key `speed_quality_balance`.
 
 | Key                                | Value  | Description                                                                    |
 |:-----------------------------------|:-------|:-------------------------------------------------------------------------------|
 | `top_percentage_by_quality`        | int    | The percentage of workers with the highest reputation who can access the Task. |
 | `best_concurrent_users_by_quality` | int    | The number of workers with the highest reputation who can access the Task.     |
 
-The following example illustrates how to allow only the highest-ranked 10% of workers to access the Task. 
+The following example allows only the highest-ranked 10% of workers to access the Task. 
 
 ```yaml
 quality_control:
@@ -384,24 +384,57 @@ quality_control:
     top_percentage_by_quality: 10
 ```
 
+The example below allows only the 20 workers with the highest reputation currently active on the platform to access the Task.
+
+```yaml
+quality_control:
+  speed_quality_balance:
+    best_concurrent_users_by_quality: 20
+```
+
 #### `fast_responses`
 
-| Key           | Value  | Description                                                                    |
-|:--------------|:-------|:-------------------------------------------------------------------------------|
-|`history_size` | int    |
-|`count`        | int    |
-|`threshold`    | int    |
-|`ban_duration` | int    |
-|`ban_units`    | str    |
+Use the key `fast_responses` to ban workers if they complete assignments too quickly, which may be indicative of spamming. The following key/value pairs must be defined under the key `fast_responses`.
 
+| Key           | Value  | Description                                                                         |
+|:--------------|:-------|:------------------------------------------------------------------------------------|
+|`history_size` | int    | The number of previous assignments considered when evaluating response times.       | 
+|`count`        | int    | The maximum number of fast responses allowed within the `history_period`.           |
+|`threshold`    | int    | The threshold for defining a response as fast in seconds.                           |
+|`ban_duration` | int    | How long the worker will be banned from accessing the Task.                         |
+|`ban_units`    | str    | Temporal unit that defines ban duration: `MINUTES`, `HOURS`, `DAYS` or `PERMANENT`. |
+
+The following example bans users who complete 3 out of the 5 most recent assignments in less than 10 seconds for 2 days.
+
+```yaml
+quality_control:
+  fast_responses:
+    history_size: 5
+    count: 3
+    threshold: 10
+    ban_duration: 2
+    ban_units: DAYS
+```
 
 #### `skipped_assignments`
 
-| Key           | Value  | Description                                                                    |
-|:--------------|:-------|:-------------------------------------------------------------------------------|
-|`count`        | int    |
-|`ban_duration` | int    |
-|`ban_units`    | str    |
+Use the key `skipped_assignments` to ban workers who skip too many assignments in a row. This may be used to block users who 
+
+| Key           | Value  | Description                                                                         |
+|:--------------|:-------|:------------------------------------------------------------------------------------|
+|`count`        | int    | The maximum number of assignments that the user may skip without getting banned.    |
+|`ban_duration` | int    | How long the worker will be banned from accessing the Task.                         |
+|`ban_units`    | str    | Temporal unit that defines ban duration: `MINUTES`, `HOURS`, `DAYS` or `PERMANENT`. |
+
+The following example bans workers who skip more than 10 tasks in a row for 30 minutes.
+
+```yaml
+quality_control:
+  skipped_assignments:
+    count: 10
+    ban_duration: 30
+    ban_units: MINUTES
+```
 
 #### `redo_banned`
 
