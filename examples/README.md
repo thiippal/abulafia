@@ -23,7 +23,8 @@ The following sections describe how to configure a Task.
 
 Use the top-level key `name` in the YAML configuration to name the Task. Task names are used to identify and set up connections between Tasks in a pipeline.
 
-To exemplify, the following example gives the Task the name `my_task`.
+The following example gives the Task the name `my_task`.
+
 ```yaml
 name: my_task
 ```
@@ -453,7 +454,7 @@ quality_control:
 
 #### `golden_set`
 
-Use the key `golden_set` to perform various actions if the input data contains 'golden' assignments with known answers. The following key/value pair must be defined under the key `golden_set`. The actions that may be undertaken using golden assignments are described below.
+Use the key `golden_set` to perform various actions if the input data contains 'golden' assignments with known answers. The following key/value pair must be defined under the key `golden_set`.
 
 | Key           | Value   | Description                                                                             |
 |:--------------|:--------|:----------------------------------------------------------------------------------------|
