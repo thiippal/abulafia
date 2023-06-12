@@ -314,9 +314,9 @@ pool:
 
 #### `training`
 
-Use the optional key `training` to set the skill level that the workers much achieve in [training](#configuring-training).
+Use the optional key `training` to set the skill level that the workers must achieve in [training](#configuring-training).
 
-Use the key `training_passing_skill_value` to determine that percentage of correct answers needed for accessing the actual task suites.
+Use the key `training_passing_skill_value` to determine the percentage of correct answers needed for accessing the actual task suites.
 
 The following example sets the training performance threshold to 70% for accessing the pool.
 
@@ -454,19 +454,39 @@ quality_control:
 
 #### `golden_set`
 
-Use the key `golden_set` to perform various actions if the input data contains 'golden' assignments with known answers. The following key/value pair must be defined under the key `golden_set`.
+Use the key `golden_set` to evaluate worker performance using 'golden' assignments with known answers. The following key/value pair must be defined under the key `golden_set`.
 
-| Key           | Value   | Description                                                                             |
-|:--------------|:--------|:----------------------------------------------------------------------------------------|
-|`history_size` | integer | The number of previous assignments with known answers considered when processing rules. | 
+| Key           | Value   | Description                                                                                     |
+|:--------------|:--------|:------------------------------------------------------------------------------------------------|
+|`history_size` | integer | The number of previous assignments with known answers that are evaluated when processing rules. |
 
-`ban_rules`
+The following example evaluates worker responses to the last 10 assignments with known answers when processing the rules defined shortly below.
 
-| Key                  | Value   | Description                                                      |
-|:---------------------|:--------|:-----------------------------------------------------------------|
-|`incorrect_threshold` | integer | Percentage
-|`ban_duration`        | integer |
-|`ban_units`           | string  |
+```yaml
+quality_control:
+  golden_set:
+    history_size: 10
+```
+
+Use the key `ban_rules` under `quality_control` to ban workers based on their performance when evaluated against the assignments with known answers. 
+
+| Key                  | Value   | Description                                                                         |
+|:---------------------|:--------|:------------------------------------------------------------------------------------|
+|`incorrect_threshold` | integer | Percentage of incorrect assignments that will result in the worker getting banned.  |
+|`ban_duration`        | integer | How long the worker will be banned from accessing the Task.                         |
+|`ban_units`           | string  | Temporal unit that defines ban duration: `MINUTES`, `HOURS`, `DAYS` or `PERMANENT`. |
+
+The following example bans workers who fail 90% of the last 10 assignments with known answers for 7 days.
+
+```yaml
+quality_control:
+  golden_set:
+    history_size: 10
+    ban_rules:
+      incorrect_threshold: 90
+      ban_duration: 7
+      ban_units: DAYS
+```
 
 `reject_rules`
 
