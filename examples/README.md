@@ -348,7 +348,7 @@ The following example illustrates the configuration of training tasks.
 ```yaml
 training:
   setup:
-    private_name: Training for verifying target outlines exam
+    private_name: Training for an examination
     shuffle_tasks_in_task_suite: false
     assignment_max_duration_seconds: 600
     training_tasks_in_task_suite_count: 5
@@ -468,7 +468,7 @@ quality_control:
     history_size: 10
 ```
 
-Use the key `ban_rules` under `quality_control` to ban workers based on their performance when evaluated against the assignments with known answers. 
+Use the key `ban_rules` under `quality_control` to ban workers based on their performance against the assignments with known answers. 
 
 | Key                  | Value   | Description                                                                         |
 |:---------------------|:--------|:------------------------------------------------------------------------------------|
@@ -488,27 +488,57 @@ quality_control:
       ban_units: DAYS
 ```
 
-`reject_rules`
+Use the key `reject_rules` under `quality_control` to reject all work from workers based on their performance against the assignments with known answers.
 
-| Key                  | Value   | Description                                                      |
-|:---------------------|:--------|:-----------------------------------------------------------------|
-|`incorrect_threshold` | integer | Percentage
-|`ban_duration`        | integer |
-|`ban_units`           | string  |
+| Key                  | Value   | Description                                                                                                |
+|:---------------------|:--------|:-----------------------------------------------------------------------------------------------------------|
+|`incorrect_threshold` | integer | Percentage of incorrect assignments that will result in rejecting all assignments submitted by the worker. |
 
-`approve_rules`
+The following example rejects all assignments submitted by workers who fail more than 50% of the last 10 assignments with known answers.
 
-| Key                | Value   | Description                                                      |
-|:-------------------|:--------|:-----------------------------------------------------------------|
-|`correct_threshold` | integer | Percentage
+```yaml
+quality_control:
+  golden_set:
+    history_size: 10
+    reject_rules:
+      incorrect_threshold: 50
+```
 
-`skill_rules`
+Use the key `approve_rules` under `quality_control` to accept all work from workers based on their performance against the assignments with known answers.
 
-| Key                | Value   | Description                                                      |
-|:-------------------|:--------|:-----------------------------------------------------------------|
-|`correct_threshold` | integer | Percentage
-|`skill_id`          | integer | 
-|`skill_value`       | integer |
+| Key                | Value   | Description                                                                                                |
+|:-------------------|:--------|:-----------------------------------------------------------------------------------------------------------|
+|`correct_threshold` | integer | Percentage of correct assignments that will result in accepting all submitted assignments from the worker. |
+
+The following example accepts all assignments submitted by workers who answer correctly to more than 70% of the last 10 assignments with known answers.
+
+```yaml
+quality_control:
+  golden_set:
+    history_size: 10
+    approve_rules:
+      correct_threshold: 70
+```
+
+Use the key `skill_rules` under `quality_control` to grant skills to workers based on their performance against the assignments with known answers.
+
+| Key                | Value   | Description                                                              |
+|:-------------------|:--------|:-------------------------------------------------------------------------|
+|`correct_threshold` | integer | Percentage of correct assignments needed to receive the skill.           |
+|`skill_id`          | integer | A valid identifier for a skill.                                          |
+|`skill_value`       | integer | A value associated with a skill.                                         |
+
+The following example grants the skill 12345 with a value of 80 to all workers who answer correctly to more than 80% of the assignments with known answers.
+
+```yaml
+quality_control:
+  golden_set:
+    history_size: 10
+    skill_rules:
+      correct_threshold: 80
+      skill_id: 12345
+      skill_value: 80
+```
 
 ## Combining Tasks into Pipelines
 
