@@ -123,9 +123,9 @@ pool:
 
 To begin with, the key `estimated_time_per_suite`, which must be placed under the key `pool`, is used to calculate a fair reward for the workers (an average hourly wage of 12 USD). 
 
-Provide the estimated time required to complete a task suite in seconds.
+Provide the estimated time required to complete a task suite in seconds. To calculate a fair reward per task suite, you can use the interactive script [`utils/calculate_fair_rewards.py`](../utils/calculate_fair_rewards.py).
 
-The following example sets the value to 60 seconds.
+The following example sets the estimated time needed for completing a single task suite to 60 seconds.
 
 ```yaml
 pool:
