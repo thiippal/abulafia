@@ -35,7 +35,7 @@ Alternatively, you can clone this repository and install the tool locally. Move 
 
 ## Usage
 
-See the directory [`examples/`](https://github.com/thiippal/abulafia/tree/main/examples) for information on configuring crowdsourcing tasks and practical examples.
+See the directory [`examples`](/examples) for information on configuring crowdsourcing tasks and practical examples.
 
 To deploy your crowdsourcing tasks to Toloka, the tool needs to read your credentials from a JSON file e.g. `creds.json`. Never add this file to version control. 
 
@@ -54,13 +54,7 @@ The screenshot below illustrates tool in action.
 
 <img src="https://s3.datacloud.helsinki.fi/crowdsrc:instructions/abulafia-screenshot.png" width=700>
 
-## Ensuring fair payments
-
-The tool has a built-in mechanism that guides the user to determine rewards that result in a fair hourly wage ($12) for the crowdsourced workers. In the pool configuration, the user should add a key `estimated_time_per_suite`. The value for the key should be the estimated time in seconds it takes for the worker to complete one task suite. Based on this value and the value `reward_per_assignment`, the tool checks if the reward is high enough to result in a fair hourly wage. The user is presented with a warning and prompted to cancel the pipeline if the configured reward is too low. A warning is also raised if `estimated_time_per_suite` is not found in the YAML configuration file.
-
-To calculate a fair reward per task suite, you can use the interactive script `utils/calculate_fair_rewards.py`.
-
-## Pre-defined interfaces for crowdsourcing tasks
+## Pre-defined task interfaces
 
 Crowdsourcing tasks are created using Python objects that define the input and output data, and the task interface. These properties are defined in a YAML configuration file, as shown in the [examples](examples/README.md).
 
