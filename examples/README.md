@@ -1,9 +1,9 @@
 # Examples and tutorials
 
+- Creating Task objects(#creating-task-objects)
 - Configuring Tasks
   - [Naming a Task](#naming-a-task)  
   - [Defining input and output data](#defining-input-and-output-data)
-  - [Configuring the task interface](#configuring-the-task-interface)
   - [Setting up projects](#setting-up-projects)
   - [Creating pools](#creating-pools)
   - [Configuring training](#configuring-training)
@@ -14,73 +14,23 @@
   - [Creating a Task for classifying images](#creating-a-task-for-classifying-images)
   - Creating a Pipeline with multiple Tasks
 
-## Configuring Tasks
+## Creating Task objects
 
-In 𝚊𝚋𝚞𝚕𝚊𝚏𝚒𝚊, a Task refers to a crowdsourcing task that is defined using its own YAML configuration file.
+In abulafia, user interfaces are hard-coded into Python classes that define the allowed input and output data types, and the task interface.
 
-The following sections describe how to configure a Task.
+To create a ...
 
-### Naming a Task
+The following example creates a Task object for text classification, using a YAML configuration file named `classify_text` and a Toloka client stored under the variable `client`.
 
-Use the top-level key `name` in the YAML configuration to name the Task. Task names are used to identify and set up connections between Tasks in a pipeline.
-
-The following example gives the Task the name `my_task`.
-
-```yaml
-name: my_task
+```python
+task = TextClassification(configuration='classify_text.yaml', client=client)
 ```
 
-### Defining input and output data
+Use the top-level key `interface` in the YAML file to configure the user interface for a given Task as exemplified in connection with each pre-defined interface below.
 
-#### Specifying data types
+You can create additional interfaces by inheriting the [`CrowdsourcingTask`](src/abulafia/task_specs/core_task.py) class, which defines the basic functionalities of a Task.
 
-Each Task requires a data specification, which determines the types of input and output data associated with the Task.
-
-In the YAML configuration, the inputs and outputs are defined under the top-level key `data` using the keys `input` and `output`.
-
-To define input and output data, provide key/value pairs that define the name of the data and its type, e.g. `outlines` and `json`.
-
-```yaml
-data:
-  input:
-    outlines: json
-  output:
-    correct: bool
-```
-
-#### Loading data from a file
-
-You can place the key `file` under `data` to provide input data to the Task. The value of this key should point towards a TSV file that contains the input data. The TSV file must contain columns with headers that match those defined under the key `input`.
-
-```yaml
-data:
-  file: images.tsv
-  input:
-    image: url
-  output:
-    result: bool
-```
-
-#### Setting up human verification 
-
-If a Task is used for verifying work submitted by other crowdsourced workers, you must add the key `verify` under `data` and set its value to `true`. This adds the output data from the incoming Tasks to the input of the current Task, while also making the verification assignment unavailable to the worker who completed the original assignment.
-
-```yaml
-data:
-  verify: true
-  input:
-    outlines: json
-  output:
-    result: bool
-```
-
-### Configuring the task interface
-
-Use the top-level key `interface` to configure a user interface for the task.
-
-You can create additional task interfaces by inheriting the [`CrowdsourcingTask`](src/abulafia/task_specs/core_task.py) class, which defines the basic functionalities of a task.
-
-The currently implemented task interfaces can be found in [`task_specs.py`](src/abulafia/task_specs/task_specs.py). These task interfaces are documented below.
+The currently implemented interfaces can be found in [`task_specs.py`](src/abulafia/task_specs/task_specs.py). These interfaces are documented below.
 
 #### ImageClassification
 
@@ -233,6 +183,66 @@ interface:
     verb: Verb
     noun: Noun
     adj: Adjective
+```
+
+## Configuring Tasks
+
+In 𝚊𝚋𝚞𝚕𝚊𝚏𝚒𝚊, a Task refers to a crowdsourcing task that is defined using its own YAML configuration file.
+
+The following sections describe how to configure a Task.
+
+### Naming a Task
+
+Use the top-level key `name` in the YAML configuration to name the Task. Task names are used to identify and set up connections between Tasks in a pipeline.
+
+The following example gives the Task the name `my_task`.
+
+```yaml
+name: my_task
+```
+
+### Defining input and output data
+
+#### Specifying data types
+
+Each Task requires a data specification, which determines the types of input and output data associated with the Task.
+
+In the YAML configuration, the inputs and outputs are defined under the top-level key `data` using the keys `input` and `output`.
+
+To define input and output data, provide key/value pairs that define the name of the data and its type, e.g. `outlines` and `json`.
+
+```yaml
+data:
+  input:
+    outlines: json
+  output:
+    correct: bool
+```
+
+#### Loading data from a file
+
+You can place the key `file` under `data` to provide input data to the Task. The value of this key should point towards a TSV file that contains the input data. The TSV file must contain columns with headers that match those defined under the key `input`.
+
+```yaml
+data:
+  file: images.tsv
+  input:
+    image: url
+  output:
+    result: bool
+```
+
+#### Setting up human verification 
+
+If a Task is used for verifying work submitted by other crowdsourced workers, you must add the key `verify` under `data` and set its value to `true`. This adds the output data from the incoming Tasks to the input of the current Task, while also making the verification assignment unavailable to the worker who completed the original assignment.
+
+```yaml
+data:
+  verify: true
+  input:
+    outlines: json
+  output:
+    result: bool
 ```
 
 ### Setting up projects
