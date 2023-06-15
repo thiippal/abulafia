@@ -7,7 +7,7 @@
   - [Creating pools](#creating-pools)
   - [Configuring training](#configuring-training)
   - [Configuring quality control](#configuring-quality-control)
-- Combining Tasks into Pipelines
+- Combining Tasks into Task Sequences
 - Processing Task outputs using Actions
 - Tutorials
   - [Creating a Task for classifying images](#creating-a-task-for-classifying-images)
@@ -540,9 +540,9 @@ quality_control:
       skill_value: 80
 ```
 
-## Combining Tasks into Pipelines
+## Combining Tasks into Task Sequences
 
-One key functionality of 𝚊𝚋𝚞𝚕𝚊𝚏𝚒𝚊 is the creation of Pipelines, which allow transferring assignments between individual Tasks.
+One key functionality of 𝚊𝚋𝚞𝚕𝚊𝚏𝚒𝚊 is the creation of Task Sequences, which allow moving assignments from one Task to another.
 
 The connections between individual Tasks are defined in the YAML configuration under the top-level key `actions`.
 
@@ -572,6 +572,42 @@ The following example illustrates the use of the `on_result` action. If the outp
     true: next_task
     false: previous_task
 ```
+
+## Processing Task outputs using Actions
+
+### Actions
+
+Just like crowdsourcing tasks, each action requires its own YAML configuration file. [`examples/action_demo.py`](https://github.com/thiippal/abulafia/blob/main/examples/action_demo.py) defines a pipeline that uses the `Aggregate`, `Forward` and `SeparateBBoxes` actions.
+
+**Forward** action requires the following keys:
+
+- `name` of the action
+- `data` 
+- `source`, the pool where the tasks to be forwarded originate
+
+Variable names for the possible outputs for the source task and pools to which they should be forwarded are configured under the key `on_result` under `actions`. 
+
+You can either configure a pool to which to forward, or use the keywords `accept` or `reject` to automatically accept or reject tasks based on the output. These keywords are meant to be used for tasks that involve workers verifying work submitte by other workers. 
+
+For example, you can ask workers to determine if an image has been annotated correctly. You can then use aggregation and forwarding to automatically accept or reject the *original* task by using key-value pairs such as `correct: accept` and `incorrect: reject` in your `Forward` configuration. You can also configure both accepting/rejecting and forwarding to another pool. In that case, use a list as the value for the variable name of the output. See the file [`examples/action_demo.py`](https://github.com/thiippal/abulafia/blob/main/examples/action_demo.py) and the associated YAML configuration files for an example. 
+
+Configure `Forward` actions to the source pool/action under `actions` with the key `on_result`.
+
+**Aggregate** action requires the keys:
+
+- `name` of the action
+- `source`, the pool from which tasks go to the aggregate action
+- The forward action to which the aggregated results will be sent should be configured under key `on_result` under `actions`
+- `method`, which is the desired [aggregation algorithm](https://toloka.ai/en/docs/crowd-kit/). For now, categorical methods are supported.
+
+Configure `Aggregate` actions to the source pool under `actions` with the key `on_closed`; aggregation can only be done after all tasks are complete and the pool is closed.
+
+**SeparateBBoxes** action requires the keys:
+
+- `name` of the action
+- The type of data that the action produces should be configured under the key `output` under `data`
+
+If you wish to start your pipeline with `SeparateBBoxes`, configure it under `actions` as value for the key `data_source` in the following pool. Then, the action reads a TSV file with images and bounding boxes and separates the bounding boxes to one per task. Note that the bounding boxes must be in the format that Toloka uses. If you want to have the action in the middle of a pipeline, you can configure it in your `Forward` action under one of the possible outputs of your task (for example; if you want all tasks with the output `True` to be forwarded to `SeparateBBoxes`, configure `True: name_of_your_separatebboxes_action` under `on_result` under `actions`. See `config/forward_verify.yaml` for an example). If you want, you can add a label for the bounding boxes in the resulting tasks, by giving the label as a value for the parameter `add_label`. Labelled bounding boxes are used in, for example, `AddOutlines` and `LabelledSegmentationVerification` tasks.
 
 ## Tutorials
 ### Creating a Task for classifying images
