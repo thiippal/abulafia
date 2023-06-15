@@ -7,7 +7,7 @@
   - [Creating pools](#creating-pools)
   - [Configuring training](#configuring-training)
   - [Configuring quality control](#configuring-quality-control)
-- Combining Tasks into Task Sequences
+- [Combining Tasks into Task Sequences](#combining-tasks-into-task-sequences)
 - Processing Task outputs using Actions
 - Tutorials
   - [Creating a Task for classifying images](#creating-a-task-for-classifying-images)
