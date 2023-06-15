@@ -62,9 +62,9 @@ Crowdsourcing tasks are created using Python objects that define the input and o
 task = TextClassification(configuration='classify_text.yaml', client=client)
 ```
 
-You can define additional task interfaces by inheriting the [`CrowdsourcingTask`](/task_specs/core_task.py) class, which defines the basic functionalities of a task.
+You can define additional task interfaces by inheriting the [`CrowdsourcingTask`](src/abulafia/task_specs/core_task.py) class, which defines the basic functionalities of a task.
 
-The currently implemented task interfaces can be found in [`/task_specs/task_specs.py`](/task_specs/task_specs.py). These task interfaces are described in greater detail below.
+The currently implemented task interfaces can be found in [`task_specs.py`](src/abulafia/task_specs/task_specs.py). These task interfaces are described in greater detail below.
 
 ### ImageClassification
 
