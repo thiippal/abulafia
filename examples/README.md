@@ -1,6 +1,6 @@
 # Examples and tutorials
 
-- Creating Task objects(#creating-task-objects)
+- [Creating Task objects](#creating-task-objects)
 - Configuring Tasks
   - [Naming a Task](#naming-a-task)  
   - [Defining input and output data](#defining-input-and-output-data)
@@ -12,15 +12,14 @@
 - Processing Task outputs using Actions
 - Tutorials
   - [Creating a Task for classifying images](#creating-a-task-for-classifying-images)
-  - Creating a Pipeline with multiple Tasks
 
 ## Creating Task objects
 
 In abulafia, user interfaces are hard-coded into Python classes that define the allowed input and output data types, and the task interface.
 
-To create a ...
+To create a Task object, create a YAML configuration file for a Task and pass this configuration to the appropriate class.
 
-The following example creates a Task object for text classification, using a YAML configuration file named `classify_text` and a Toloka client stored under the variable `client`.
+The following example creates a Task object using the `TextClassification` class, whose configuration is contained in a YAML configuration file named `classify_text`. A Toloka client stored under the variable `client` is used to interact with the Toloka platform.
 
 ```python
 task = TextClassification(configuration='classify_text.yaml', client=client)
@@ -32,7 +31,7 @@ You can create additional interfaces by inheriting the [`CrowdsourcingTask`](src
 
 The currently implemented interfaces can be found in [`task_specs.py`](src/abulafia/task_specs/task_specs.py). These interfaces are documented below.
 
-#### ImageClassification
+### ImageClassification
 
 A class for image classification tasks. The following input and output formats are supported.
 
@@ -58,7 +57,7 @@ interface:
     false: "No" 
 ```
 
-#### ImageSegmentation
+### ImageSegmentation
 
 A class for image segmentation tasks. The following input and output formats are supported. 
 
@@ -97,7 +96,7 @@ If a `checkbox` is added to the user inteface, you must add an input data variab
 
 If you want to show pre-existing annotations, you must add an input data variable with the type `json`.
 
-#### SegmentationVerification
+### SegmentationVerification
 
 A class for verifying bounding boxes and other forms of image segmentation. The following input and output formats are supported.
 
@@ -132,7 +131,7 @@ interface:
     false: "No"
 ```
 
-#### TextClassification
+### TextClassification
 
 A class for text classification tasks. The following input and output formats are supported. 
 
@@ -159,7 +158,7 @@ interface:
     neutral: Neutral
 ```
 
-#### TextAnnotation
+### TextAnnotation
 
 A class for text annotation tasks. The following input and output formats are supported.
 
