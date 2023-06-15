@@ -218,3 +218,7 @@ interface:
     noun: Noun
     adj: Adjective
 ```
+
+## Contact
+
+If you have questions about the tool, feel free to contact tuomo.hiippala (at) helsinki.fi or open an issue on GitHub.
