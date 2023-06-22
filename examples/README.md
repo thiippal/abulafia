@@ -746,7 +746,7 @@ The following example illustrates the use of the `on_result` action. If the outp
 
 ## Processing Task outputs using Actions
 
-In 𝚊𝚋𝚞𝚕𝚊𝚏𝚒𝚊, Action
+In 𝚊𝚋𝚞𝚕𝚊𝚏𝚒𝚊, Actions are used to process outputs from Tasks and other Actions.
 
 ### Forward
 
@@ -769,6 +769,7 @@ Use the following top-level keys to configure the Forward Action.
 |`name`              | string     | A unique [name](#naming-a-task) for the Forward Action.                                     |
 |`data`              | dictionary | A [data specification](#specifying-data-types) that defines the incoming data and its type. |
 |`actions`           | dictionary | A dictionary under the key `on_result` that defines how to process the incoming data.       |
+|`messages`          | dictionary | A dictionary that defines messages for the workers when their work is accepted or rejected. |
  
 The following example defines a Forward Action named `fwd_results`, which processes incoming data stored under the variable `result`.
 
