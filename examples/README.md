@@ -818,23 +818,7 @@ actions:
       - fix_outlines
 ```
 
-### Actions
-
-Just like crowdsourcing tasks, each action requires its own YAML configuration file. [`examples/action_demo.py`](https://github.com/thiippal/abulafia/blob/main/examples/action_demo.py) defines a pipeline that uses the `Aggregate`, `Forward` and `SeparateBBoxes` actions.
-
-**Forward** action requires the following keys:
-
-- `name` of the action
-- `data` 
-- `source`, the pool where the tasks to be forwarded originate
-
-Variable names for the possible outputs for the source task and pools to which they should be forwarded are configured under the key `on_result` under `actions`. 
-
-You can either configure a pool to which to forward, or use the keywords `accept` or `reject` to automatically accept or reject tasks based on the output. These keywords are meant to be used for tasks that involve workers verifying work submitte by other workers. 
-
-For example, you can ask workers to determine if an image has been annotated correctly. You can then use aggregation and forwarding to automatically accept or reject the *original* task by using key-value pairs such as `correct: accept` and `incorrect: reject` in your `Forward` configuration. You can also configure both accepting/rejecting and forwarding to another pool. In that case, use a list as the value for the variable name of the output. See the file [`examples/action_demo.py`](https://github.com/thiippal/abulafia/blob/main/examples/action_demo.py) and the associated YAML configuration files for an example. 
-
-Configure `Forward` actions to the source pool/action under `actions` with the key `on_result`.
+For more examples on using the Forward Action, see the file [`examples/action_demo.py`](examples/action_demo.py) and the associated YAML configuration files. 
 
 **Aggregate** action requires the keys:
 
