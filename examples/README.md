@@ -15,7 +15,7 @@
 
 ## Creating Task objects
 
-In abulafia, user interfaces are hard-coded into Python classes that define the allowed input and output data types, and the task interface.
+In 𝚊𝚋𝚞𝚕𝚊𝚏𝚒𝚊, user interfaces are hard-coded into Python classes that define the allowed input and output data types, and the task interface.
 
 To create a Task object, create a YAML configuration file for a Task and pass this configuration to the appropriate class.
 
@@ -745,6 +745,77 @@ The following example illustrates the use of the `on_result` action. If the outp
 ```
 
 ## Processing Task outputs using Actions
+
+In 𝚊𝚋𝚞𝚕𝚊𝚏𝚒𝚊, Action
+
+### Forward
+
+The Forward Action can be used to accept, reject and forward incoming data from other Tasks and Actions *based on the output*.
+
+To create a Forward Action, initialise a Forward object that points towards the YAML configuration file and the Tasks or Actions to which the assignments will be forwarded to.
+
+The following example creates a Forward action using a configuration file named `fwd_config.yaml` and a Toloka client named `client`. The argument `targets` takes the names of the *Python objects* (Tasks or Actions) to which the assignments will be forward to.
+
+```python
+from abulafia.actions import Forward
+
+fwd = Forward(configuration='fwd_config.yaml', client=client, targets=[outline_img, classify_txt])
+```
+
+Use the following top-level keys to configure the Forward Action. 
+
+| Key                | Value      | Description                                                                                 |
+|:-------------------|:-----------|:--------------------------------------------------------------------------------------------|
+|`name`              | string     | A unique [name](#naming-a-task) for the Forward Action.                                     |
+|`data`              | dictionary | A [data specification](#specifying-data-types) that defines the incoming data and its type. |
+|`actions`           | dictionary | A dictionary under the key `on_result` that defines how to process the incoming data.       |
+ 
+The following example defines a Forward Action named `fwd_results`, which processes incoming data stored under the variable `result`.
+
+If the variable `result` in the incoming data contains the value `text`, the assignment is forwarded to a Task named `classify_text`. Conversely, if the variable `result` contains the value `image`, the assignment will be forwarded to a Task named `outline_image`.
+
+```yaml
+name: fwd_results
+data:                     
+  output: result
+actions:
+  on_result:
+    text: classify_text
+    image: outline_image
+```
+
+The next example defines a Forward Action named `reject_accept` and uses the Forward Action to accept and reject incoming assignments based on their outputs.
+
+If the variable `classification` in the incoming data contains the value `correct`, the assignment is accepted. If the value is `incorrect`, the assignment is rejected.
+
+```yaml
+name: reject_accept
+data:
+  output: classification
+actions:
+  on_result:
+    correct: accept
+    incorrect: reject
+```
+
+The final example defines a Forward Action named `accept_fwd` and shows how to accept/reject and forward incoming assignments based on their outputs.
+
+If the variable `result` in the incoming data has the value `correct`, the assignment is accepted and forwarded to a Task named `classify_outlines`. If the value is `incorrect`, the assignment is rejected. If you want rejected assignments to be added automatically to the Task in which the incoming assignments originate, add the name of the Task under the key `on_rejected` when defining [actions](#combining-tasks-into-task-sequences). Finally, if the value is `human_error`, the assignment is accepted and forwarded to a Task named `fix_outlines`. 
+
+```yaml
+name: accept_fwd
+data:
+  output: result
+actions:
+  on_result:
+    correct:
+      - accept
+      - classify_outlines
+    incorrect: reject
+    human_error:
+      - accept
+      - fix_outlines
+```
 
 ### Actions
 
