@@ -35,7 +35,7 @@ Alternatively, you can clone this repository and install the tool locally. Move 
 
 ## Usage
 
-See the directory [`examples`](/examples) for information on configuring crowdsourcing tasks and practical examples.
+See the directory [`examples`](/examples) for documentation and practical examples.
 
 To deploy your crowdsourcing tasks to Toloka, the tool needs to read your credentials from a JSON file e.g. `creds.json`. Never add this file to version control. 
 
