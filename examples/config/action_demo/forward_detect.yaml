@@ -1,12 +1,8 @@
 name: forward_detect      # Name of the action: this is how pools and actions refer to each other
-data:                     
-  output: result          # What the action outputs
-source: aggregate_detect  # Pool/action from which tasks are forwarded to this action
-actions:
-  on_result:              # Keys: possible outputs to the task
-                          # Values: pools to which assignments with the output are forwarded
-                          # Special cases: value "accept" automatically accepts task, "reject" automatically rejects task
-                          #                empty value simply submits the task (does not forward, reject or accept)
-    true: outline_text
-    false: 
-    
+data: result              # The variable in the incoming data that contains the output to be evaluated
+on_result:              # Keys: possible outputs to the task
+                        # Values: pools to which assignments with the output are forwarded
+                        # Special cases: value "accept" automatically accepts task, "reject" automatically rejects task
+                        #                empty value simply submits the task (does not forward, reject or accept)
+  true: outline_text
+  false:

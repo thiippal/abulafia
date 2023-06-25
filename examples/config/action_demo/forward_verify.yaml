@@ -1,13 +1,14 @@
-name: forward_verify        # Name of the action: this is how pools and actions refer to each other
-data:
-  output: result            # What the action outputs
-source: aggregate_verify    # Pool/action from which tasks are forwarded to this action
-actions:
-  on_result:
-    correct: 
-      - accept
-      - separate_bboxes
-    incorrect: reject
-    human_error: 
-      - accept
-      - fix_outlines
+name: forward_verify
+data: result
+on_result:
+  correct:
+    - accept
+    - separate_bboxes
+  incorrect: reject
+  human_error:
+    - accept
+    - fix_outlines
+messages:
+  correct: "The outlines were evaluated as correct."
+  incorrect: "The outlines were evaluated as incorrect."
+  human_error: "The outlines were evaluated as correct, although they contained human errors. You will be paid for the work."

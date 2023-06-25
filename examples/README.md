@@ -764,12 +764,12 @@ fwd = Forward(configuration='fwd_config.yaml', client=client, targets=[outline_i
 
 Use the following top-level keys to configure the Forward Action. 
 
-| Key                | Value      | Description                                                                                 |
-|:-------------------|:-----------|:--------------------------------------------------------------------------------------------|
-|`name`              | string     | A unique [name](#naming-a-task) for the Forward Action.                                     |
-|`data`              | dictionary | A [data specification](#specifying-data-types) that defines the incoming data and its type. |
-|`actions`           | dictionary | A dictionary under the key `on_result` that defines how to process the incoming data.       |
-|`messages`          | dictionary | A dictionary that defines messages for the workers when their work is accepted or rejected. |
+| Key         | Value      | Description                                                                      |
+|:------------|:-----------|:---------------------------------------------------------------------------------|
+| `name`      | string     | A unique [name](#naming-a-task) for the Forward Action.                          |
+| `data`      | string     | The name of the variable that contains the output data to be evaluated.          |
+| `on_result` | dictionary | A dictionary that maps outputs to actions.                                       |
+| `messages`  | dictionary | A dictionary that maps outputs to messages for accepted or rejected assignments. |
  
 The following example defines a Forward Action named `fwd_results`, which processes incoming data stored under the variable `result`.
 
@@ -777,45 +777,50 @@ If the variable `result` in the incoming data contains the value `text`, the ass
 
 ```yaml
 name: fwd_results
-data:                     
-  output: result
-actions:
-  on_result:
-    text: classify_text
-    image: outline_image
+data: result
+on_result:
+  text: classify_text
+  image: outline_image
 ```
 
 The next example defines a Forward Action named `reject_accept` and uses the Forward Action to accept and reject incoming assignments based on their outputs.
 
 If the variable `classification` in the incoming data contains the value `correct`, the assignment is accepted. If the value is `incorrect`, the assignment is rejected.
 
+The messages associated with these outputs are defined under the top-level key `messages`.
+
 ```yaml
 name: reject_accept
-data:
-  output: classification
-actions:
-  on_result:
-    correct: accept
-    incorrect: reject
+data: classification
+on_result:
+  correct: accept
+  incorrect: reject
+messages:
+  correct: "Your assignment was classified as correct."
+  incorrect: "Your assignment was classified as incorrect."
 ```
 
 The final example defines a Forward Action named `accept_fwd` and shows how to accept/reject and forward incoming assignments based on their outputs.
 
 If the variable `result` in the incoming data has the value `correct`, the assignment is accepted and forwarded to a Task named `classify_outlines`. If the value is `incorrect`, the assignment is rejected. If you want rejected assignments to be added automatically to the Task in which the incoming assignments originate, add the name of the Task under the key `on_rejected` when defining [actions](#combining-tasks-into-task-sequences). Finally, if the value is `human_error`, the assignment is accepted and forwarded to a Task named `fix_outlines`. 
 
+The top-level key `messages` defines messages associated with all three outputs.
+
 ```yaml
 name: accept_fwd
-data:
-  output: result
-actions:
-  on_result:
-    correct:
-      - accept
-      - classify_outlines
-    incorrect: reject
-    human_error:
-      - accept
-      - fix_outlines
+data: result
+on_result:
+  correct:
+    - accept
+    - classify_outlines
+  incorrect: reject
+  human_error:
+    - accept
+    - fix_outlines
+messages:
+  correct: "Your assignment was classified as correct."
+  incorrect: "Your assignment was classified as incorrect."
+  human_error: "Your assignment contained human errors, but was nevertheless accepted."
 ```
 
 For more examples on using the Forward Action, see the file [`examples/action_demo.py`](examples/action_demo.py) and the associated YAML configuration files. 

@@ -238,7 +238,7 @@ class Forward:
         self.dont_forward = []
 
         # Possible outputs for the task (e.g. true and false) and their forward pools
-        self.outputs = self.conf['actions']['on_result']
+        self.outputs = self.conf['on_result']
 
         # Check if some outputs should be accepted or rejected (these are not forwarded like other tasks,
         # but accepted or rejected based on the output) and remove these from outputs
@@ -256,7 +256,29 @@ class Forward:
         multi_action = {k: v for (k, v) in self.outputs.items() if type(v) == list}
         self.reject.extend([k for k, v in multi_action.items() if 'reject' in v])
         self.accept.extend([k for k, v in multi_action.items() if 'accept' in v])
-        multi_action = {k: [i for i in v if i not in ["accept", "reject"]][0] for (k, v) in multi_action.items()}
+        multi_action = {k: [i for i in v if i not in ['accept', 'reject']][0] for (k, v) in multi_action.items()}
+
+        # Check that messages for accepting and rejecting assignments have been defined
+        if len(self.accept) or len(self.reject) > 0:
+
+            try:
+
+                self.conf['messages']
+
+            except KeyError:
+
+                msg.fail("Please use the top-level key 'messages' to define messages associated with outputs that "
+                         "accept or reject assignments. Define a message for each output value defined under "
+                         "'on_result' that leads to acceptance or rejection. These messages will be added to "
+                         "assignments and shown to the workers.", exits=1)
+
+            # Get the difference between the outputs defined under 'on_result' and 'messages'
+            diff = set(self.reject + self.accept).difference(self.conf['messages'])
+
+            if len(diff) > 0:
+
+                msg.fail(f"Please define messages associated with the following outputs under the top-level key "
+                         f"'messages': {', '.join(list(diff))}.", exits=True)
 
         self.outputs = {**self.outputs, **multi_action}
 
@@ -278,23 +300,22 @@ class Forward:
 
                 for i in range(len(event.assignment.tasks)):
 
-                    solution = event.assignment.solutions[i].output_values[self.conf['data']['output']]
+                    solution = event.assignment.solutions[i].output_values[self.conf['data']]
 
                     # If performer verified the task as incorrect, reject the original assignment
                     # and, if configured in source pool under "on_reject", re-add the task to the pool
                     if solution in self.reject:
 
-                        # TODO Implement dynamic public comment handling
                         self.client.reject_assignment(assignment_id=event.assignment.tasks[i].input_values['assignment_id'],
-                                                      public_comment="Assignment was verified as incorrect by another user.")
-                        msg.warn(f'Rejected assignment {event.assignment.tasks[i].input_values["assignment_id"]}')
+                                                      public_comment=self.conf['messages']['solution'])
+                        msg.warn(f"Rejected assignment {event.assignment.tasks[i].input_values['assignment_id']}")
 
                     # If performer verified the task as correct, accept original assignment and don't forward task
                     if solution in self.accept:
 
                         self.client.accept_assignment(assignment_id=event.assignment.tasks[i].input_values['assignment_id'],
-                                                      public_comment="Assignment was verified as correct by another user.")
-                        msg.good(f'Accepted assignment {event.assignment.tasks[i].input_values["assignment_id"]}')
+                                                      public_comment=self.conf['messages']['solution'])
+                        msg.warn(f"Accepted assignment {event.assignment.tasks[i].input_values['assignment_id']}")
 
                     # If no forward pool was configured, submit task without forwarding/accepting/rejecting
                     if solution in self.dont_forward:
@@ -352,16 +373,16 @@ class Forward:
                 # and, if configured in source pool under "on_reject", re-add the task to the pool
                 if solution in self.reject:
 
-                    self.client.reject_assignment(assignment_id=event["input_data"]["assignment_id"],
-                                                  public_comment=event["message"])
-                    msg.warn(f'Rejected assignment {event["input_data"]["assignment_id"]}')
+                    self.client.reject_assignment(assignment_id=event['input_data']['assignment_id'],
+                                                  public_comment=event['message'])
+                    msg.warn(f"Rejected assignment {event['input_data']['assignment_id']}")
 
                 # If performer verified the task as correct, accept original assignment and don't forward task
                 if solution in self.accept:
 
-                    self.client.accept_assignment(assignment_id=event["input_data"]["assignment_id"],
-                                                  public_comment=event["message"])
-                    msg.good(f'Accepted assignment {event["input_data"]["assignment_id"]}')
+                    self.client.accept_assignment(assignment_id=event['input_data']['assignment_id'],
+                                                  public_comment=event['message'])
+                    msg.warn(f"Accepted assignment {event['input_data']['assignment_id']}")
 
                 # If no forward pool was configured, submit task without forwarding/accepting/rejecting
                 if solution in self.dont_forward:
