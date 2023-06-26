@@ -71,7 +71,7 @@ class CrowdsourcingTask:
 
         except KeyError:
 
-            msg.warn(f"Could not find the column 'user_id' in the blocklist.", exits=1)
+            msg.fail(f"Could not find the column 'user_id' in the blocklist.", exits=1)
 
         # Print status message
         msg.info(f'The unique ID for this object ({self.name}) is {self.task_id}')
@@ -382,7 +382,7 @@ class CrowdsourcingTask:
 
                 except KeyError:
 
-                    msg.warn(f"Could not find the key 'training' under the main pool configuration. "
+                    msg.fail(f"Could not find the key 'training' under the main pool configuration. "
                              f"Define the key 'training' and place a key/value pair with the key "
                              f"'training_passing_skill_value' under 'training' to link the training "
                              f"and main pools. This key is used to set the criteria for passing "

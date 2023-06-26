@@ -198,13 +198,14 @@ class Aggregate:
 
             assert self.result is not None, raise_error("Aggregation did not produce a result!")
 
-            forward_data = [{"id": df.loc[df["task"] == task, "id"].iloc[0], 
-                             "input_data": df.loc[df["task"] == task, "inputs"].iloc[0], 
-                             "label": self.result[task],
-                             "message": self.messages[self.result[task]] if self.messages is not None else "No reason was provided."}
+            forward_data = [{'id': df.loc[df['task'] == task, 'id'].iloc[0],
+                             'input_data': df.loc[df['task'] == task, 'inputs'].iloc[0],
+                             'label': self.result[task],
+                             'message': self.messages[self.result[task]] if self.messages is not None
+                             else "No reason was provided."}
                             for task in self.result.index]
 
-            msg.good(f"Finished aggregating {len(forward_data)} submitted tasks from {self.task.name}")
+            msg.good(f"Finished aggregating {len(forward_data)} submitted assignments from {self.task.name}")
             self.complete = True
 
             if self.forward:

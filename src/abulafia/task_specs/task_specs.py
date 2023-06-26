@@ -87,7 +87,7 @@ class ImageClassification(CrowdsourcingTask):
 
         except KeyError:
 
-            msg.warn(f"Please add the key 'labels' under the top-level key 'interface' to define "
+            msg.fail(f"Please add the key 'labels' under the top-level key 'interface' to define "
                      f"the labels for the interface. The labels should be provided as key/value "
                      f"pairs, e.g. cat: Cat. The key is stored into the output data ('cat'), "
                      f"whereas the value defines that label shown on the interface ('Cat').",
@@ -413,7 +413,7 @@ class SegmentationClassification(CrowdsourcingTask):
 
             except KeyError:
 
-                msg.warn(f"Please add the key 'checkbox' under the top-level key 'interface' to "
+                msg.fail(f"Please add the key 'checkbox' under the top-level key 'interface' to "
                          f"define a text that is displayed above the checkbox. Define the text as a "
                          f"string e.g. checkbox: There is nothing to outline.", exits=1)
 
@@ -447,7 +447,7 @@ class SegmentationClassification(CrowdsourcingTask):
 
         except KeyError:
 
-            msg.warn(f"Please add the key 'labels' under the top-level key 'interface' to define "
+            msg.fail(f"Please add the key 'labels' under the top-level key 'interface' to define "
                      f"the labels for the interface. The labels should be provided as key/value "
                      f"pairs, e.g. cat: Cat. The key is stored into the output data ('cat'), "
                      f"whereas the value defines that label shown on the interface ('Cat').",
@@ -579,7 +579,7 @@ class TextClassification(CrowdsourcingTask):
         except KeyError:
 
             # TODO Move these warnings into a separate file, since they're frequently reused
-            msg.warn(f"Please add the key 'labels' under the top-level key 'interface' to define "
+            msg.fail(f"Please add the key 'labels' under the top-level key 'interface' to define "
                      f"the labels for the interface. The labels should be provided as key/value "
                      f"pairs, e.g. cat: Cat. The key is stored into the output data ('cat'), "
                      f"whereas the value defines that label shown on the interface ('Cat').",
@@ -703,7 +703,7 @@ class TextAnnotation(CrowdsourcingTask):
         except KeyError:
 
             # TODO Move these warnings into a separate file, since they're frequently reused
-            msg.warn(f"Please add the key 'labels' under the top-level key 'interface' to define "
+            msg.fail(f"Please add the key 'labels' under the top-level key 'interface' to define "
                      f"the labels for the interface. The labels should be provided as key/value "
                      f"pairs, e.g. cat: Cat. The key is stored into the output data ('cat'), "
                      f"whereas the value defines that label shown on the interface ('Cat').",
@@ -714,9 +714,7 @@ class TextAnnotation(CrowdsourcingTask):
 
             # Set up the output data field
             data=tb.OutputData(output_data['json']),
-
             content=tb.InputData(input_data['str']),
-
             labels=labels,
 
             # Set up validation

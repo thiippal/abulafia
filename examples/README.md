@@ -35,16 +35,16 @@ The currently implemented interfaces can be found in [`task_specs.py`](src/abula
 
 A class for image classification tasks. The following input and output formats are supported.
 
-|Input|Output|
-|-----|------|
-| `url` (image) | `boolean` (true/false) |
+| Input         | Output                         |
+|---------------|--------------------------------|
+| `url` (image) | `boolean` (true/false)         |
 |               | `string` (for multiple labels) |
 
 Configure the interface by adding the following keys under the top-level key `interface`.
 
-|Key|Description|
-|-----|------|
-| `prompt` | A string that defines a text that is shown above the buttons on the interface. |
+| Key      | Description                                                                                      |
+|----------|--------------------------------------------------------------------------------------------------|
+| `prompt` | A string that defines a text that is shown above the buttons on the interface.                   |
 | `labels` | Key/value pairs that define the labels shown on the interface and the values stored in the data. |
 
 The following example adds a prompt with two labels. The interface will show two options, *Yes* and *No*, which store the values `true` and `false`, respectively.
@@ -61,19 +61,19 @@ interface:
 
 A class for image segmentation tasks. The following input and output formats are supported. 
 
-|input|output|
-|-----|------|
-|`url` (image) | `json` (bounding boxes) |
-|`json` (bounding boxes) | `boolean` (optional checkbox) |
+| input                   | output                        |
+|-------------------------|-------------------------------|
+| `url` (image)           | `json` (bounding boxes)       |
+| `json` (bounding boxes) | `boolean` (optional checkbox) |
 
 Configure the interface by adding the following keys under the top-level key `interface`.
 
-|Key|Description|
-|-----|------|
-| `prompt` | A string that defines a text that is shown below the image annotation interface. |
-| `tools`| A list of values that defines the annotation tools available for the interface. |
-| `labels` (optional) | Key/value pairs that define the labels shown on the interface and the values stored in the data. |
-| `checkbox` (optional) | A string that defines a text that is shown above the checkbox in the interface. |
+| Key                   | Description                                                                                      |
+|-----------------------|--------------------------------------------------------------------------------------------------|
+| `prompt`              | A string that defines a text that is shown below the image annotation interface.                 |
+| `tools`               | A list of values that defines the annotation tools available for the interface.                  |
+| `labels` (optional)   | Key/value pairs that define the labels shown on the interface and the values stored in the data. |
+| `checkbox` (optional) | A string that defines a text that is shown above the checkbox in the interface.                  |
 
 The following example defines a prompt, an image segmentation interface with three labels, two annotation tools and a checkbox.
 
@@ -100,23 +100,23 @@ If you want to show pre-existing annotations, you must add an input data variabl
 
 A class for verifying bounding boxes and other forms of image segmentation. The following input and output formats are supported.
 
-|Input|Output|
-|-----|------|
-| `url` (image) | `boolean` (true/false) |
+| Input                   | Output                         |
+|-------------------------|--------------------------------|
+| `url` (image)           | `boolean` (true/false)         |
 | `json` (bounding boxes) | `string` (for multiple labels) |
-| `boolean` (checkbox) | |
-| `string` (checkbox) | |
+| `boolean` (checkbox)    |                                |
+| `string` (checkbox)     |                                |
 
 Configure the interface by adding the following keys under the top-level key `interface`.
 
-|Key|Description|
-|-----|------|
-| `prompt` | A string that defines a text that is shown above the radio buttons on the interface. |
-| `labels` | Key/value pairs that define the labels for the radio buttons and the values stored in the data. |
-| `segmentation/labels` (optional) | Key/value pairs that define the labels for bounding boxes and the values stored in the data. |
-| `checkbox` (optional) | A string that defines a text that is shown above the checkbox in the interface. |
+| Key                              | Description                                                                                     |
+|----------------------------------|-------------------------------------------------------------------------------------------------|
+| `prompt`                         | A string that defines a text that is shown above the radio buttons on the interface.            |
+| `labels`                         | Key/value pairs that define the labels for the radio buttons and the values stored in the data. |
+| `segmentation/labels` (optional) | Key/value pairs that define the labels for bounding boxes and the values stored in the data.    |
+| `checkbox` (optional)            | A string that defines a text that is shown above the checkbox in the interface.                 |
 
-The following example defines a prompt, an image segmentation interface with three labels for bounding boxes and two labels for the radio buttons.
+The following example defines a prompt, an image segmentation interface with two labels for bounding boxes and two labels for the radio buttons.
 
 ```yaml
 interface:
@@ -135,16 +135,16 @@ interface:
 
 A class for text classification tasks. The following input and output formats are supported. 
 
-|Input|Output|
-|-----|------|
-| `string` | `boolean` (true/false) |
+| Input    | Output                         |
+|----------|--------------------------------|
+| `string` | `boolean` (true/false)         |
 |          | `string` (for multiple labels) |
 
 Configure the interface by adding the following keys under the top-level key `interface`.
 
-|Key|Description|
-|-----|------|
-| `prompt` | A string that defines a text that is shown above the buttons on the interface. |
+| Key      | Description                                                                                      |
+|----------|--------------------------------------------------------------------------------------------------|
+| `prompt` | A string that defines a text that is shown above the buttons on the interface.                   |
 | `labels` | Key/value pairs that define the labels shown on the interface and the values stored in the data. |
 
 The following example defines an interface with a prompt and three labels. The interface will show three options, *Positive*, *Negative* and *Neutral*, which store the values `positive`, `negative` and `neutral`, respectively.
@@ -162,15 +162,15 @@ interface:
 
 A class for text annotation tasks. The following input and output formats are supported.
 
-|input|output|
-|-----|------|
-|`string`|`json`|
+| input    | output |
+|----------|--------|
+| `string` | `json` |
 
 Configure the interface by adding the following keys under the top-level key `interface`.
 
-|Key|Description|
-|-----|------|
-| `prompt` | A string that defines a text that is shown above the buttons on the interface. |
+| Key      | Description                                                                                      |
+|----------|--------------------------------------------------------------------------------------------------|
+| `prompt` | A string that defines a text that is shown above the buttons on the interface.                   |
 | `labels` | Key/value pairs that define the labels shown on the interface and the values stored in the data. |
 
 The following example defines an interface with a prompt and three labels. The interface will show three options, *Verb*, *Noun* and *Adjective*, which store the values `verb`, `noun` and `adj`, respectively.
@@ -568,13 +568,13 @@ quality_control:
 
 Use the key `fast_responses` to ban workers if they complete assignments too quickly, which may be indicative of spamming. The following key/value pairs must be defined under the key `fast_responses`.
 
-| Key           | Value   | Description                                                                   |
-|:--------------|:--------|:------------------------------------------------------------------------------|
-|`history_size` | integer | The number of previous assignments considered when evaluating response times. | 
-|`count`        | integer | The maximum number of fast responses allowed within the `history_period`.     |
-|`threshold`    | integer | The threshold for defining a response as fast in seconds.                     |
-|`ban_duration` | integer | How long the worker will be banned from accessing the Task.                   |
-|`ban_units`    | string  | Temporal unit that defines ban duration: MINUTES, HOURS, DAYS or PERMANENT.   |
+| Key            | Value   | Description                                                                   |
+|:---------------|:--------|:------------------------------------------------------------------------------|
+| `history_size` | integer | The number of previous assignments considered when evaluating response times. | 
+| `count`        | integer | The maximum number of fast responses allowed within the `history_period`.     |
+| `threshold`    | integer | The threshold for defining a response as fast in seconds.                     |
+| `ban_duration` | integer | How long the worker will be banned from accessing the Task.                   |
+| `ban_units`    | string  | Temporal unit that defines ban duration: MINUTES, HOURS, DAYS or PERMANENT.   |
 
 The following example bans users who complete 3 out of the 5 most recent assignments in less than 10 seconds for 2 days.
 
@@ -592,11 +592,11 @@ quality_control:
 
 Use the key `skipped_assignments` to ban workers who skip too many assignments in a row. The following key/value pairs must be defined under the key `skipped_assignments`. 
 
-| Key           | Value   | Description                                                                         |
-|:--------------|:--------|:------------------------------------------------------------------------------------|
-|`count`        | integer | The maximum number of assignments that the user may skip without getting banned.    |
-|`ban_duration` | integer | How long the worker will be banned from accessing the Task.                         |
-|`ban_units`    | string  | Temporal unit that defines ban duration: `MINUTES`, `HOURS`, `DAYS` or `PERMANENT`. |
+| Key            | Value   | Description                                                                         |
+|:---------------|:--------|:------------------------------------------------------------------------------------|
+| `count`        | integer | The maximum number of assignments that the user may skip without getting banned.    |
+| `ban_duration` | integer | How long the worker will be banned from accessing the Task.                         |
+| `ban_units`    | string  | Temporal unit that defines ban duration: `MINUTES`, `HOURS`, `DAYS` or `PERMANENT`. |
 
 The following example bans workers who skip more than 10 tasks in a row for 30 minutes.
 
@@ -614,7 +614,7 @@ Use the key `redo_banned` to re-do all assignments completed by a banned user. T
 
 | Key           | Value   | Description                                                      |
 |:--------------|:--------|:-----------------------------------------------------------------|
-|`redo_banned`  | boolean | Whether assignments from banned users should be completed again. |
+| `redo_banned` | boolean | Whether assignments from banned users should be completed again. |
 
 This following example re-does assignments completed by banned users. 
 
@@ -627,9 +627,9 @@ quality_control:
 
 Use the key `golden_set` to evaluate worker performance using 'golden' assignments with known answers. The following key/value pair must be defined under the key `golden_set`.
 
-| Key           | Value   | Description                                                                                     |
-|:--------------|:--------|:------------------------------------------------------------------------------------------------|
-|`history_size` | integer | The number of previous assignments with known answers that are evaluated when processing rules. |
+| Key            | Value   | Description                                                                                     |
+|:---------------|:--------|:------------------------------------------------------------------------------------------------|
+| `history_size` | integer | The number of previous assignments with known answers that are evaluated when processing rules. |
 
 The following example evaluates worker responses to the last 10 assignments with known answers when processing the rules defined shortly below.
 
@@ -641,11 +641,11 @@ quality_control:
 
 Use the key `ban_rules` under `quality_control` to ban workers based on their performance against the assignments with known answers. 
 
-| Key                  | Value   | Description                                                                         |
-|:---------------------|:--------|:------------------------------------------------------------------------------------|
-|`incorrect_threshold` | integer | Percentage of incorrect assignments that will result in the worker getting banned.  |
-|`ban_duration`        | integer | How long the worker will be banned from accessing the Task.                         |
-|`ban_units`           | string  | Temporal unit that defines ban duration: `MINUTES`, `HOURS`, `DAYS` or `PERMANENT`. |
+| Key                   | Value   | Description                                                                         |
+|:----------------------|:--------|:------------------------------------------------------------------------------------|
+| `incorrect_threshold` | integer | Percentage of incorrect assignments that will result in the worker getting banned.  |
+| `ban_duration`        | integer | How long the worker will be banned from accessing the Task.                         |
+| `ban_units`           | string  | Temporal unit that defines ban duration: `MINUTES`, `HOURS`, `DAYS` or `PERMANENT`. |
 
 The following example bans workers who fail 90% of the last 10 assignments with known answers for 7 days.
 
@@ -661,9 +661,9 @@ quality_control:
 
 Use the key `reject_rules` under `quality_control` to reject all work from workers based on their performance against the assignments with known answers.
 
-| Key                  | Value   | Description                                                                                                |
-|:---------------------|:--------|:-----------------------------------------------------------------------------------------------------------|
-|`incorrect_threshold` | integer | Percentage of incorrect assignments that will result in rejecting all assignments submitted by the worker. |
+| Key                   | Value   | Description                                                                                                |
+|:----------------------|:--------|:-----------------------------------------------------------------------------------------------------------|
+| `incorrect_threshold` | integer | Percentage of incorrect assignments that will result in rejecting all assignments submitted by the worker. |
 
 The following example rejects all assignments submitted by workers who fail more than 50% of the last 10 assignments with known answers.
 
@@ -677,9 +677,9 @@ quality_control:
 
 Use the key `approve_rules` under `quality_control` to accept all work from workers based on their performance against the assignments with known answers.
 
-| Key                | Value   | Description                                                                                                |
-|:-------------------|:--------|:-----------------------------------------------------------------------------------------------------------|
-|`correct_threshold` | integer | Percentage of correct assignments that will result in accepting all submitted assignments from the worker. |
+| Key                 | Value   | Description                                                                                                |
+|:--------------------|:--------|:-----------------------------------------------------------------------------------------------------------|
+| `correct_threshold` | integer | Percentage of correct assignments that will result in accepting all submitted assignments from the worker. |
 
 The following example accepts all assignments submitted by workers who answer correctly to more than 70% of the last 10 assignments with known answers.
 
@@ -693,11 +693,11 @@ quality_control:
 
 Use the key `skill_rules` under `quality_control` to grant skills to workers based on their performance against the assignments with known answers.
 
-| Key                | Value   | Description                                                              |
-|:-------------------|:--------|:-------------------------------------------------------------------------|
-|`correct_threshold` | integer | Percentage of correct assignments needed to receive the skill.           |
-|`skill_id`          | integer | A valid identifier for a skill.                                          |
-|`skill_value`       | integer | A value associated with a skill.                                         |
+| Key                 | Value   | Description                                                    |
+|:--------------------|:--------|:---------------------------------------------------------------|
+| `correct_threshold` | integer | Percentage of correct assignments needed to receive the skill. |
+| `skill_id`          | integer | A valid identifier for a skill.                                |
+| `skill_value`       | integer | A value associated with a skill.                               |
 
 The following example grants the skill 12345 with a value of 80 to all workers who answer correctly to more than 80% of the assignments with known answers.
 
@@ -719,13 +719,13 @@ The connections between individual Tasks are defined in the YAML configuration u
 
 The following key/value pairs can be provided under the key `actions`.
 
-| Key              | Value  | Description                                                                                                |
-|:-----------------|:-------|:-----------------------------------------------------------------------------------------------------------|
-| `on_submitted`   | string | The [name](#naming-a-task) of the Task or Action to which submitted assignments should be sent.            |
-| `on_rejected`    | string | The [name](#naming-a-task) of the Task or Action to which rejected assignments should be sent.             |
-| `on_accepted`    | string | The [name](#naming-a-task) of the Task or Action to which accepted assignments should be sent.             |
-| `on_closed`      | string | The [name](#naming-a-task) of the Task or Action to which assignments should be sent when the pool closes. |
-| `on_result`      | dictionary | A dictionary that maps a particular output value to the [name](#naming-a-task) of a Task or Action to which the assignment is sent.  |
+| Key            | Value      | Description                                                                                                                         |
+|:---------------|:-----------|:------------------------------------------------------------------------------------------------------------------------------------|
+| `on_submitted` | string     | The [name](#naming-a-task) of the Task or Action to which submitted assignments should be sent.                                     |
+| `on_rejected`  | string     | The [name](#naming-a-task) of the Task or Action to which rejected assignments should be sent.                                      |
+| `on_accepted`  | string     | The [name](#naming-a-task) of the Task or Action to which accepted assignments should be sent.                                      |
+| `on_closed`    | string     | The [name](#naming-a-task) of the Task or Action to which assignments should be sent when the pool closes.                          |
+| `on_result`    | dictionary | A dictionary that maps a particular output value to the [name](#naming-a-task) of a Task or Action to which the assignment is sent. |
 
 The following example sets up three actions. All submitted assignment will be sent to a Task named `verification`. If an assignment is rejected, the assignment is sent to a Task named `annotation`. If the assignment is accepted, it will be sent to a Task named `segmentation`.
 
@@ -762,7 +762,7 @@ from abulafia.actions import Forward
 fwd = Forward(configuration='fwd_config.yaml', client=client, targets=[outline_img, classify_txt])
 ```
 
-Use the following top-level keys to configure the Forward Action. 
+To configure the Forward Action, use the following top-level keys in the YAML configuration file. 
 
 | Key         | Value      | Description                                                                      |
 |:------------|:-----------|:---------------------------------------------------------------------------------|
@@ -820,19 +820,63 @@ on_result:
 messages:
   correct: "Your assignment was classified as correct."
   incorrect: "Your assignment was classified as incorrect."
-  human_error: "Your assignment contained human errors, but was nevertheless accepted."
+  human_error: "Your assignment contained some errors, but you will be paid for the work."
 ```
 
 For more examples on using the Forward Action, see the file [`examples/action_demo.py`](examples/action_demo.py) and the associated YAML configuration files. 
 
-**Aggregate** action requires the keys:
+### Aggregate
 
-- `name` of the action
-- `source`, the pool from which tasks go to the aggregate action
-- The forward action to which the aggregated results will be sent should be configured under key `on_result` under `actions`
-- `method`, which is the desired [aggregation algorithm](https://toloka.ai/en/docs/crowd-kit/). For now, categorical methods are supported.
+The Aggregate Action can be used to aggregate outputs from crowdsourced workers using various algorithms implemented in the [*Crowd-Kit*](https://github.com/Toloka/crowd-kit/) library.
 
-Configure `Aggregate` actions to the source pool under `actions` with the key `on_closed`; aggregation can only be done after all tasks are complete and the pool is closed.
+To create an Aggregate Action, initialise an Aggregate object that points towards a YAML configuration file, a Task object that contains the output to be aggregated, and and a [Forward](#forward) object that is used to process the results.
+
+The following example creates an Aggregate object using a configuration file named `agg_conf.yaml`. The argument `task` needs to be provided with the Task object that contains the outputs to be aggregated. The input for the argument `forward` is a Forward object, which will be used to process the aggregated results.
+
+```python
+from abulafia.actions import Aggregate
+
+agg = Aggregate(configuration='agg_conf.yaml', task=detect_text, forward=fwd_agg_text)
+```
+
+The Aggregate Action may only be applied to Task outputs once the Task is complete and closed. To aggregate the outputs of a pool, provide the name of the Aggregate Action under the key top-level key [`actions`](#processing-task-outputs-using-actions) and the key `on_closed`.
+
+```yaml
+actions:
+  on_closed: aggregate_action
+```
+
+To configure the Aggregate Action, use the following top-level keys in the YAML configuration file.
+
+| Key        | Value      | Description                                                                      |
+|:-----------|:-----------|:---------------------------------------------------------------------------------|
+| `name`     | string     | A unique [name](#naming-a-task) for the Aggregate Action.                        |
+| `method`   | string     | The name of the aggregation algorithm to be used.                                |
+| `messages` | dictionary | An optional dictionary that maps particular outputs to messages for the workers. |
+ 
+The following aggregation methods are currently supported. Provide the name as the value for the `method` key.
+
+| Name               | Method                                                                                                                              |
+|:-------------------|:------------------------------------------------------------------------------------------------------------------------------------|
+| `majority_vote`    | [Majority vote](https://toloka.ai/docs/crowd-kit/reference/crowdkit.aggregation.classification.majority_vote.MajorityVote/)         |
+| `dawid_skene`      | [Dawid-Skene](https://toloka.ai/docs/crowd-kit/reference/crowdkit.aggregation.classification.dawid_skene.DawidSkene/)               |
+| `mmsr`             | [M-MSR](https://toloka.ai/docs/crowd-kit/reference/crowdkit.aggregation.classification.m_msr.MMSR/)                                 |
+| `wawa`             | [Wawa](https://toloka.ai/docs/crowd-kit/reference/crowdkit.aggregation.classification.wawa.Wawa/)                                   |
+| `zero_based_skill` | [Zero-based skill](https://toloka.ai/docs/crowd-kit/reference/crowdkit.aggregation.classification.zero_based_skill.ZeroBasedSkill/) |
+| `glad`             | [GLAD](https://toloka.ai/docs/crowd-kit/reference/crowdkit.aggregation.classification.glad.GLAD/)                                   |
+
+The following example defines an Aggregate Action named `agg_ds`, which uses the Dawid-Skene algorithm for aggregating the outputs.
+
+The top-level key `messages` defines three outputs and messages associated with them, which are added to input to the Forward Action.
+
+```yaml
+name: agg_ds
+method: dawid_skene
+messages:
+  correct: "Your assignment was classified as correct."
+  incorrect: "Your assignment was classified as incorrect."
+  human_error: "Your assignment contained some errors, but you will be paid for the work."
+```
 
 **SeparateBBoxes** action requires the keys:
 
