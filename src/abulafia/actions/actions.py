@@ -614,7 +614,7 @@ class VerifyPolygon:
             for task, solution in zip(event.assignment.tasks, event.assignment.solutions):
 
                 # Retrieve the answer (the bounding box)
-                answer = solution.output_values[self.conf['data']['output']]
+                answer = solution.output_values[self.conf['data']]
 
                 # Retrieve all polygons
                 polygons = [p for p in answer if p['shape'] == 'polygon']
@@ -697,7 +697,7 @@ class VerifyPolygon:
                 # Add the bounding boxes stored under the variable to the input data, in case they
                 # are forwarded further. Store them under the key data/output defined in the YAML
                 # configuration for this Action.
-                result['input_data'].update({self.conf['data']['output']: answer})
+                result['input_data'].update({self.conf['data']: answer})
 
                 # Append the event dictionary to the list to be forwarded
                 forward_data.append(result)

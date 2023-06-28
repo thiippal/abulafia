@@ -9,13 +9,13 @@
   - [Configuring training](#configuring-training)
   - [Configuring quality control](#configuring-quality-control)
 - [Combining Tasks into Task Sequences](#combining-tasks-into-task-sequences)
-- Processing Task outputs using Actions
+- [Processing Task outputs using Actions](#processing-task-outputs-using-actions)
 - Tutorials
   - [Creating a Task for classifying images](#creating-a-task-for-classifying-images)
 
 ## Creating Task objects
 
-In 𝚊𝚋𝚞𝚕𝚊𝚏𝚒𝚊, user interfaces are hard-coded into Python classes that define the allowed input and output data types, and the task interface.
+In 𝚊𝚋𝚞𝚕𝚊𝚏𝚒𝚊, user interfaces are associated with Python classes that define the allowed input and output data types.
 
 To create a Task object, create a YAML configuration file for a Task and pass this configuration to the appropriate class.
 
@@ -759,7 +759,9 @@ The following example creates a Forward action using a configuration file named 
 ```python
 from abulafia.actions import Forward
 
-fwd = Forward(configuration='fwd_config.yaml', client=client, targets=[outline_img, classify_txt])
+fwd = Forward(configuration='fwd_config.yaml', 
+              client=client, 
+              targets=[outline_img, classify_txt])
 ```
 
 To configure the Forward Action, use the following top-level keys in the YAML configuration file. 
@@ -829,17 +831,21 @@ For more examples on using the Forward Action, see the file [`examples/action_de
 
 The Aggregate Action can be used to aggregate outputs from crowdsourced workers using various algorithms implemented in the [*Crowd-Kit*](https://github.com/Toloka/crowd-kit/) library.
 
-To create an Aggregate Action, initialise an Aggregate object that points towards a YAML configuration file, a Task object that contains the output to be aggregated, and and a [Forward](#forward) object that is used to process the results.
+To create an Aggregate Action, initialise an Aggregate object that points towards a YAML configuration file, a Task object that contains the output to be aggregated, and a [Forward](#forward) object that is used to process the results.
 
 The following example creates an Aggregate object using a configuration file named `agg_conf.yaml`. The argument `task` needs to be provided with the Task object that contains the outputs to be aggregated. The input for the argument `forward` is a Forward object, which will be used to process the aggregated results.
 
 ```python
 from abulafia.actions import Aggregate
 
-agg = Aggregate(configuration='agg_conf.yaml', task=detect_text, forward=fwd_agg_text)
+agg = Aggregate(configuration='agg_conf.yaml', 
+                task=detect_text, 
+                forward=fwd_agg_text)
 ```
 
 The Aggregate Action may only be applied to Task outputs once the Task is complete and closed. To aggregate the outputs of a pool, provide the name of the Aggregate Action under the key top-level key [`actions`](#processing-task-outputs-using-actions) and the key `on_closed`.
+
+The following example applies an Aggregate Action named `aggregate_action` to the Task output when the task is completed.
 
 ```yaml
 actions:
@@ -877,6 +883,54 @@ messages:
   incorrect: "Your assignment was classified as incorrect."
   human_error: "Your assignment contained some errors, but you will be paid for the work."
 ```
+
+### VerifyPolygon
+
+The VerifyPolygon Action can be used to check that the bounding boxes submitted by crowdsourced workers are valid, that is, the lines of a polygon do not cross each other. This is performed automatically using the [Shapely](https://pypi.org/project/shapely/) library.
+
+To create a VerifyPolygon Action, initialise a VerifyPolygon object that points towards a YAML configuration file, a Task object that contains the polygons to be validated, and a [Forward](#forward) object that is used to process the results.
+
+The following example creates a VerifyPolygon object using a configuration file named `verify.yaml`. The argument `task` needs to be provided with the Task object that contains the outputs to be aggregated. The input for the argument `forward` is a Forward object, which will be used to process the results.
+
+```python
+from abulafia.actions import VerifyPolygon
+
+vp = VerifyPolygon(configuration='verify.yaml',
+                   task=outline_objects,
+                   forward=verify_fwd)
+```
+
+The VerifyPolygon Action may only applied to Task outputs once the Task is complete and closed. To verify the polygons submitted by workers, provide the name of the VerifyPolygon Action under the top-levle key [`actions`](#processing-task-outputs-using-actions) and the key `on_closed`.
+
+The following example applies a VerifyPolygon Action named `verify_polygon` to the Task outputs.
+
+```yaml
+actions:
+  on_closed: verify_polygon
+```
+
+To configure the VerifyPolygon Action, use the following top-level keys in the YAML configuration file.
+
+
+| Key      | Value  | Description                                                                                                            |
+|:---------|:-------|:-----------------------------------------------------------------------------------------------------------------------|
+| `name`   | string | A unique [name](#naming-a-task) for the Aggregate Action.                                                              |
+| `data`   | string | The name of the variable that contains the output data to be validated.                                                |
+| `labels` | list   | A list of strings or dictionaries that define bounding box labels and their counts that should be present in the data. |
+
+The following example creates a VerifyPolygon Action named `verify_poly`, which validates incoming bounding boxes stored under the variable `polygons`. The items provided in the list under the top-level key `labels` define that the incoming data must contain precisely one polygon labelled as `text` and an arbitrary number of polygons labelled as `graphics`.
+
+```yaml
+name: verify_poly
+data: polygons
+labels:
+  - text: 1
+  - graphics
+```
+
+For an additional example of using the VerifyPolygon Action, see the example in [segment_and_verify.py](segment_and_verify.py).
+
+### SeparateBBoxes
 
 **SeparateBBoxes** action requires the keys:
 
