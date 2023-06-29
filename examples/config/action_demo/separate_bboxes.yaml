@@ -1,3 +1,4 @@
 name: separate_bboxes
 data:
-  output: result
+  image: image
+  bboxes: outlines

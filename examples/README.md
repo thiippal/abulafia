@@ -1,7 +1,12 @@
 # Examples and tutorials
 
 - [Creating Task objects](#creating-task-objects)
-- Configuring Tasks
+  - [ImageClassification](#imageclassification)
+  - [ImageSegmentation](#imagesegmentation)
+  - [SegmentationVerification](#segmentationverification)
+  - [TextClassification](#textclassification)
+  - [TextAnnotation](#textannotation)
+- [Configuring Tasks](#configuring-tasks)
   - [Naming a Task](#naming-a-task)  
   - [Defining input and output data](#defining-input-and-output-data)
   - [Setting up projects](#setting-up-projects)
@@ -10,7 +15,11 @@
   - [Configuring quality control](#configuring-quality-control)
 - [Combining Tasks into Task Sequences](#combining-tasks-into-task-sequences)
 - [Processing Task outputs using Actions](#processing-task-outputs-using-actions)
-- Tutorials
+  - [Forward](#forward)
+  - [Aggregate](#aggregate)
+  - [VerifyPolygon](#verifypolygon)
+  - [SeparateBBoxes](#separatebboxes)
+- [Tutorials](#tutorials)
   - [Creating a Task for classifying images](#creating-a-task-for-classifying-images)
 
 ## Creating Task objects
@@ -750,11 +759,11 @@ In 𝚊𝚋𝚞𝚕𝚊𝚏𝚒𝚊, Actions are used to process outputs from Ta
 
 ### Forward
 
-The Forward Action can be used to accept, reject and forward incoming data from other Tasks and Actions *based on the output*.
+The Forward Action can be used to accept, reject and forward assignments *based on the output values*.
 
 To create a Forward Action, initialise a Forward object that points towards the YAML configuration file and the Tasks or Actions to which the assignments will be forwarded to.
 
-The following example creates a Forward action using a configuration file named `fwd_config.yaml` and a Toloka client named `client`. The argument `targets` takes the names of the *Python objects* (Tasks or Actions) to which the assignments will be forward to.
+The following example creates a Forward action using a configuration file named `fwd_config.yaml` and a Toloka client named `client`. The argument `targets` takes the names of the *Python objects* (Tasks or Actions) to which the assignments will be forward to (`outline_img` and `classify_txt`).
 
 ```python
 from abulafia.actions import Forward
@@ -914,7 +923,7 @@ To configure the VerifyPolygon Action, use the following top-level keys in the Y
 
 | Key      | Value  | Description                                                                                                            |
 |:---------|:-------|:-----------------------------------------------------------------------------------------------------------------------|
-| `name`   | string | A unique [name](#naming-a-task) for the Aggregate Action.                                                              |
+| `name`   | string | A unique [name](#naming-a-task) for the VerifyPolygon Action.                                                          |
 | `data`   | string | The name of the variable that contains the output data to be validated.                                                |
 | `labels` | list   | A list of strings or dictionaries that define bounding box labels and their counts that should be present in the data. |
 
@@ -932,12 +941,52 @@ For an additional example of using the VerifyPolygon Action, see the example in 
 
 ### SeparateBBoxes
 
-**SeparateBBoxes** action requires the keys:
+The SeparateBBoxes Action can be used to separate groups of bounding boxes submitted by workers into individual bounding boxes. This Action is particularly useful if you need to ...
 
-- `name` of the action
-- The type of data that the action produces should be configured under the key `output` under `data`
+To create a SeparateBBoxes Action, initialise a SeparateBBoxes object that points towards a YAML configuration file and a Task object to which the individual bounding boxes will be forwarded.
 
-If you wish to start your pipeline with `SeparateBBoxes`, configure it under `actions` as value for the key `data_source` in the following pool. Then, the action reads a TSV file with images and bounding boxes and separates the bounding boxes to one per task. Note that the bounding boxes must be in the format that Toloka uses. If you want to have the action in the middle of a pipeline, you can configure it in your `Forward` action under one of the possible outputs of your task (for example; if you want all tasks with the output `True` to be forwarded to `SeparateBBoxes`, configure `True: name_of_your_separatebboxes_action` under `on_result` under `actions`. See `config/forward_verify.yaml` for an example). If you want, you can add a label for the bounding boxes in the resulting tasks, by giving the label as a value for the parameter `add_label`. Labelled bounding boxes are used in, for example, `AddOutlines` and `LabelledSegmentationVerification` tasks.
+The following example creates a SeparateBBox object using a configuration file named `sep.yaml`. The argument `target` defines the Task object to which the bounding boxes will be sent to. In this case, the bounding boxes are sent to a Task object named `describe_object`. 
+
+```python
+from abulafia.actions import SeparateBBoxes
+
+sp = SeparateBBoxes(configuration='sep.yaml',
+                    target=describe_object)
+```
+
+Optionally, you can also add labels to the bounding boxes by providing the argument `add_label` to the `SeparateBBoxes` object. The label should be a string, as exemplified below. The following example adds the label `source` to each bounding box.
+
+```python
+sp = SeparateBBoxes(configuration='sep.yaml',
+                    target=describe_object,
+                    label='source')
+```
+
+To configure the SeparateBBoxes Action, use the following top-level keys in the YAML configuration file.
+
+
+| Key      | Value      | Description                                                                                                              |
+|:---------|:-----------|:-------------------------------------------------------------------------------------------------------------------------|
+| `name`   | string     | A unique [name](#naming-a-task) for the Aggregate Action.                                                                |
+| `data`   | dictionary | A dictionary that defines the variable names that contain the images and bounding boxes within the incoming assignments. |
+
+The following example creates a SeparateBBoxes Action named `sep_boxes`. The top-devel key `data` is used to declare the variables that contain the images and bounding boxes among the incoming assignments. In this case, the images are found under the variable `img`, whereas the bounding boxes are stored under the variable `box`.
+
+```yaml
+name: sep_boxes
+data:
+  image: img 
+  bboxes: box
+```
+
+If you wish to load the bounding boxes to be separated from a file, provide the key `file` that points towards a TSV file under the key `data`. The following example loads data from a file named `bboxes.csv`. In this case, the keys `image` and `bboxes` refer to names of the columns in the input TSV file.
+
+```yaml
+data:
+  image: img
+  bboxes: box
+  file: bboxes.csv
+```
 
 ## Tutorials
 ### Creating a Task for classifying images
