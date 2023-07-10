@@ -1,0 +1,4 @@
+name: separate_bboxes
+data:
+  image: image
+  bboxes: outlines

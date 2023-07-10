@@ -9,6 +9,9 @@ actions:
   on_closed: aggregate_detect
 interface:
   prompt: Does the diagram contain text, letters or numbers?
+  labels:
+    true: "Yes"
+    false: "No"
 project:
   setup:
     public_name: Check if an image contains text, letters or numbers

@@ -29,96 +29,8 @@ with contextlib.redirect_stderr(f):
 warn = f.getvalue()
 
 if warn.startswith("None of PyTorch"):
-    msg.warn(f"Could not find a working installation of PyTorch or TensorFlow, one of which is "
+    msg.fail(f"Could not find a working installation of PyTorch or TensorFlow, one of which is "
              f"needed for the crowd-kit aggregators to function. Cancelling pipeline.", exits=1)
-
-
-class Verify:
-    """
-    This class defines an action for manually verifying crowdsourced answers by showing them to
-    other crowdsourced workers.
-    """
-    def __init__(self, configuration, task):
-        """
-        This function initialises the manual verification mechanism.
-
-        Parameters:
-            configuration: A string object that defines a path to a YAML file with configuration.
-            task: An object that inherits from the CrowdsourcingTask class.
-
-        Returns:
-            None
-        """
-        self.conf = read_configuration(configuration)
-        self.name = self.conf['name']
-        self.task = task
-        self.client = self.task.client
-        self.queue = collections.defaultdict(list)
-        self.aggregator = None
-
-    def __call__(self, events: List[AssignmentEvent]) -> None:
-
-        # Loop over the list of incoming AssignmentEvent objects
-        for event in events:
-
-            # Zip and iterate over tasks and solutions in each event
-            for task, solution in zip(event.assignment.tasks, event.assignment.solutions):
-
-                # Retrieve the answer
-                answer = solution.output_values[self.conf['data']['output']]
-
-                # Add the answer to the queue under assignment id
-                self.queue[task.input_values['assignment_id']].append(answer)
-
-        # Set up a placeholder for processed task suites
-        processed = []
-
-        # Loop over the assignments in the queue
-        for assignment_id, results in self.queue.items():
-
-            try:
-
-                # Accept the task suite if all assignments in the suite have been verified as correct
-                if all(results) is True:
-
-                    try:
-
-                        self.client.accept_assignment(assignment_id=assignment_id,
-                                                      public_comment=self.conf['messages']['accepted'])
-
-                        msg.good(f'Accepted assignment {assignment_id}')
-
-                    except IncorrectActionsApiError:
-
-                        msg.fail(f'Failed to accept assignment {assignment_id}!')
-
-                # Reject the task suite if all assignments in the suite have not been verified as correct
-                if all(results) is not True:
-
-                    try:
-
-                        self.client.reject_assignment(assignment_id=assignment_id,
-                                                      public_comment=self.conf['messages']['rejected'])
-
-                        msg.warn(f'Rejected assignment {assignment_id}')
-
-                    except IncorrectActionsApiError:
-
-                        msg.fail(f'Failed to reject assignment {assignment_id}!')
-
-            # Catch the error that might be raised by manually accepting/rejecting tasks in
-            # the web interface
-            except IncorrectActionsApiError:
-
-                msg.fail(f'Could not {"accept" if all(results) == True else "reject"} assignment {assignment_id}!')
-
-            # Append the task suite to the list of processed suites
-            processed.append(assignment_id)
-
-        # Delete the assignment from the list of processed task suites
-        for assignment_id in processed:
-
-            processed.remove(assignment_id)
 
 
 class Aggregate:
@@ -140,6 +52,7 @@ class Aggregate:
         self.name = self.conf['name']
 
         self.forward = forward
+        self.messages = self.conf['messages'] if 'messages' in self.conf else None
 
         self.majority_vote = True if self.conf['method'] == 'majority_vote' else False
         self.dawid_skene = True if self.conf['method'] == 'dawid_skene' else False
@@ -161,6 +74,7 @@ class Aggregate:
                                                                     toloka.Assignment.ACCEPTED]))
 
         if assignments:
+
             a_dict = {"task": [], "inputs": [], "label": [], "worker": [], "id": []}
 
             input_data = list(self.task.data_conf['input'].keys())[0]
@@ -208,12 +122,14 @@ class Aggregate:
 
             assert self.result is not None, raise_error("Aggregation did not produce a result!")
 
-            forward_data = [{"id": df.loc[df["task"] == task, "id"].iloc[0], 
-                             "input_data": df.loc[df["task"] == task, "inputs"].iloc[0], 
-                             "label": self.result[task]} 
+            forward_data = [{'id': df.loc[df['task'] == task, 'id'].iloc[0],
+                             'input_data': df.loc[df['task'] == task, 'inputs'].iloc[0],
+                             'label': self.result[task],
+                             'message': self.messages[self.result[task]] if self.messages is not None
+                             else "No reason was provided."}
                             for task in self.result.index]
 
-            msg.good(f"Finished aggregating {len(forward_data)} submitted tasks from {self.task.name}")
+            msg.good(f"Finished aggregating {len(forward_data)} submitted assignments from {self.task.name}")
             self.complete = True
 
             if self.forward:
@@ -247,7 +163,7 @@ class Forward:
         self.dont_forward = []
 
         # Possible outputs for the task (e.g. true and false) and their forward pools
-        self.outputs = self.conf['actions']['on_result']
+        self.outputs = self.conf['on_result']
 
         # Check if some outputs should be accepted or rejected (these are not forwarded like other tasks,
         # but accepted or rejected based on the output) and remove these from outputs
@@ -265,7 +181,29 @@ class Forward:
         multi_action = {k: v for (k, v) in self.outputs.items() if type(v) == list}
         self.reject.extend([k for k, v in multi_action.items() if 'reject' in v])
         self.accept.extend([k for k, v in multi_action.items() if 'accept' in v])
-        multi_action = {k: [i for i in v if i not in ["accept", "reject"]][0] for (k, v) in multi_action.items()}
+        multi_action = {k: [i for i in v if i not in ['accept', 'reject']][0] for (k, v) in multi_action.items()}
+
+        # Check that messages for accepting and rejecting assignments have been defined
+        if len(self.accept) or len(self.reject) > 0:
+
+            try:
+
+                self.conf['messages']
+
+            except KeyError:
+
+                msg.fail("Please use the top-level key 'messages' to define messages associated with outputs that "
+                         "accept or reject assignments. Define a message for each output value defined under "
+                         "'on_result' that leads to acceptance or rejection. These messages will be added to "
+                         "assignments and shown to the workers.", exits=1)
+
+            # Get the difference between the outputs defined under 'on_result' and 'messages'
+            diff = set(self.reject + self.accept).difference(self.conf['messages'])
+
+            if len(diff) > 0:
+
+                msg.fail(f"Please define messages associated with the following outputs under the top-level key "
+                         f"'messages': {', '.join(list(diff))}.", exits=True)
 
         self.outputs = {**self.outputs, **multi_action}
 
@@ -287,33 +225,22 @@ class Forward:
 
                 for i in range(len(event.assignment.tasks)):
 
-                    solution = event.assignment.solutions[i].output_values[self.conf['data']['output']]
+                    solution = event.assignment.solutions[i].output_values[self.conf['data']]
 
                     # If performer verified the task as incorrect, reject the original assignment
                     # and, if configured in source pool under "on_reject", re-add the task to the pool
                     if solution in self.reject:
 
-                        # TODO Implement dynamic public comment handling
-                        try:
-                            self.client.reject_assignment(assignment_id=event.assignment.tasks[i].input_values['assignment_id'],
-                                                          public_comment="Assignment was verified as incorrect by another user.")
-                            msg.warn(f'Rejected assignment {event.assignment.tasks[i].input_values["assignment_id"]}')
-
-                        except IncorrectActionsApiError:
-
-                            msg.fail(f'Failed to reject {event.assignment.tasks[i].input_values["assignment_id"]}!')
+                        self.client.reject_assignment(assignment_id=event.assignment.tasks[i].input_values['assignment_id'],
+                                                      public_comment=self.conf['messages']['solution'])
+                        msg.warn(f"Rejected assignment {event.assignment.tasks[i].input_values['assignment_id']}")
 
                     # If performer verified the task as correct, accept original assignment and don't forward task
                     if solution in self.accept:
 
-                        try:
-                            self.client.accept_assignment(assignment_id=event.assignment.tasks[i].input_values['assignment_id'],
-                                                          public_comment="Assignment was verified as correct by another user.")
-                            msg.good(f'Accepted assignment {event.assignment.tasks[i].input_values["assignment_id"]}')
-
-                        except IncorrectActionsApiError:
-
-                            msg.fail(f'Failed to accept {event.assignment.tasks[i].input_values["assignment_id"]}!')
+                        self.client.accept_assignment(assignment_id=event.assignment.tasks[i].input_values['assignment_id'],
+                                                      public_comment=self.conf['messages']['solution'])
+                        msg.warn(f"Accepted assignment {event.assignment.tasks[i].input_values['assignment_id']}")
 
                     # If no forward pool was configured, submit task without forwarding/accepting/rejecting
                     if solution in self.dont_forward:
@@ -371,16 +298,16 @@ class Forward:
                 # and, if configured in source pool under "on_reject", re-add the task to the pool
                 if solution in self.reject:
 
-                    self.client.reject_assignment(assignment_id=event["input_data"]["assignment_id"],
-                                                  public_comment=event["message"])
-                    msg.warn(f'Rejected assignment {event["input_data"]["assignment_id"]}')
+                    self.client.reject_assignment(assignment_id=event['input_data']['assignment_id'],
+                                                  public_comment=event['message'])
+                    msg.warn(f"Rejected assignment {event['input_data']['assignment_id']}")
 
                 # If performer verified the task as correct, accept original assignment and don't forward task
                 if solution in self.accept:
 
-                    self.client.accept_assignment(assignment_id=event["input_data"]["assignment_id"],
-                                                  public_comment=event["message"])
-                    msg.good(f'Accepted assignment {event["input_data"]["assignment_id"]}')
+                    self.client.accept_assignment(assignment_id=event['input_data']['assignment_id'],
+                                                  public_comment=event['message'])
+                    msg.warn(f"Accepted assignment {event['input_data']['assignment_id']}")
 
                 # If no forward pool was configured, submit task without forwarding/accepting/rejecting
                 if solution in self.dont_forward:
@@ -445,11 +372,24 @@ class SeparateBBoxes:
         self.target = target
         self.client = self.target.client
         self.conf = read_configuration(configuration)
-        self.name = self.conf["name"]
+        self.name = self.conf['name']
         self.add_label = add_label
 
-        if "input_file" in self.conf["data"]:
-            self.input_file = self.conf["data"]["input_file"]
+        try:
+
+            image = self.conf['data']['image']
+            outlines = self.conf['data']['bboxes']
+
+        except KeyError:
+
+            msg.fail(f"The configuration file for the SeparateBboxes Action named {self.name} does not contain "
+                     f"the names of the variables that contain the images and bounding boxes. Please ensure that "
+                     f"the top-level key 'data' contains keys 'image' and 'bboxes', whose values provide the "
+                     f"variable names.", exits=1)
+
+        if 'file' in self.conf['data']:
+
+            self.input_file = self.conf['data']['file']
 
     def __call__(self, event: Union[AssignmentEvent, dict, List[AssignmentEvent]] = None) -> None:
 
@@ -466,11 +406,11 @@ class SeparateBBoxes:
                     for i in range(len(event.assignment.tasks)):
 
                         new_tasks = [toloka.Task(pool_id=self.target.pool.id,
-                                                 input_values={"image": event.assignment.tasks[i].input_values["image"],
-                                                               "outlines": [bbox]},
+                                                 input_values={image: event.assignment.tasks[i].input_values[image],
+                                                               outlines: [bbox]},
                                                  unavailable_for=self.target.blocklist)
                                      for bbox in [dict(x, **{'label': self.add_label})
-                                                  for x in event.assignment.solutions[i].output_values["outlines"]]]
+                                                  for x in event.assignment.solutions[i].output_values[outlines]]]
 
                         self.client.create_tasks(new_tasks, allow_defaults=True, open_pool=True)
 
@@ -479,10 +419,10 @@ class SeparateBBoxes:
                     for i in range(len(event.assignment.tasks)):
 
                         new_tasks = [toloka.Task(pool_id=self.target.pool.id,
-                                                 input_values={"image": event.assignment.tasks[i].input_values["image"],
-                                                               "outlines": [bbox]},
+                                                 input_values={image: event.assignment.tasks[i].input_values[image],
+                                                               outlines: [bbox]},
                                                  unavailable_for=self.target.blocklist)
-                                     for bbox in event.assignment.solutions[i].output_values["outlines"] ]
+                                     for bbox in event.assignment.solutions[i].output_values[outlines]]
 
                         self.client.create_tasks(new_tasks, allow_defaults=True, open_pool=True)
 
@@ -497,11 +437,11 @@ class SeparateBBoxes:
                         for i in range(len(e.assignment.tasks)):
 
                             new_tasks = [toloka.Task(pool_id=self.target.pool.id,
-                                                     input_values={"image": e.assignment.tasks[i].input_values["image"],
-                                                                   "outlines": [bbox]},
+                                                     input_values={image: e.assignment.tasks[i].input_values[image],
+                                                                   outlines: [bbox]},
                                                      unavailable_for=self.target.blocklist)
                                          for bbox in [dict(x, **{'label': self.add_label})
-                                                      for x in e.assignment.solutions[i].output_values["outlines"]]]
+                                                      for x in e.assignment.solutions[i].output_values[outlines]]]
 
                             self.client.create_tasks(new_tasks, allow_defaults=True, open_pool=True)
 
@@ -512,10 +452,10 @@ class SeparateBBoxes:
                         for i in range(len(e.assignment.tasks)):
 
                             new_tasks = [toloka.Task(pool_id=self.target.pool.id,
-                                                     input_values={"image": e.assignment.tasks[i].input_values["image"],
-                                                                   "outlines": [bbox]},
+                                                     input_values={image: e.assignment.tasks[i].input_values[image],
+                                                                   outlines: [bbox]},
                                                      unavailable_for=self.target.blocklist)
-                                         for bbox in e.assignment.solutions[i].output_values["outlines"]]
+                                         for bbox in e.assignment.solutions[i].output_values[outlines]]
 
                             self.client.create_tasks(new_tasks, allow_defaults=True, open_pool=True)
 
@@ -527,21 +467,21 @@ class SeparateBBoxes:
                 if self.add_label:
 
                     new_tasks = [toloka.Task(pool_id=self.target.pool.id,
-                                             input_values={"image": event["input_data"]["image"],
-                                                           "outlines": [bbox]},
+                                             input_values={image: event['input_data'][image],
+                                                           outlines: [bbox]},
                                              unavailable_for=self.target.blocklist)
                                  for bbox in [dict(x, **{'label': self.add_label})
-                                              for x in event['input_data']['outlines']]]
+                                              for x in event['input_data'][outlines]]]
 
                     self.client.create_tasks(new_tasks, allow_defaults=True, open_pool=True)
 
                 else:
 
                     new_tasks = [toloka.Task(pool_id=self.target.pool.id,
-                                             input_values={"image": event["input_data"]["image"],
-                                                           "outlines": [bbox]},
+                                             input_values={image: event['input_data'][image],
+                                                           outlines: [bbox]},
                                              unavailable_for=self.target.blocklist)
-                                 for bbox in event['input_data']['outlines']]
+                                 for bbox in event['input_data'][outlines]]
 
                     self.client.create_tasks(new_tasks, allow_defaults=True, open_pool=True)
 
@@ -555,16 +495,16 @@ class SeparateBBoxes:
 
             if self.add_label:
 
-                input_df["outlines"] = input_df["outlines"].apply(lambda x: json.loads(x))
-                input_df["outlines"] = input_df["outlines"].apply(lambda x:
-                                                                  [dict(y, **{'label': self.add_label}) for y in x])
+                input_df[outlines] = input_df[outlines].apply(lambda x: json.loads(x))
+                input_df[outlines] = input_df[outlines].apply(lambda x:
+                                                              [dict(y, **{'label': self.add_label}) for y in x])
 
             for i, task in input_df.iterrows():
 
                 new_tasks = [toloka.Task(pool_id=self.target.pool.id,
-                                         input_values={"image": task["image"], "outlines": [bbox]},
+                                         input_values={image: task[image], outlines: [bbox]},
                                          unavailable_for=self.target.blocklist)
-                             for bbox in task["outlines"]]
+                             for bbox in task[outlines]]
                 
                 self.client.create_tasks(new_tasks, allow_defaults=True, open_pool=True)
 
@@ -611,7 +551,7 @@ class VerifyPolygon:
             for task, solution in zip(event.assignment.tasks, event.assignment.solutions):
 
                 # Retrieve the answer (the bounding box)
-                answer = solution.output_values[self.conf['data']['output']]
+                answer = solution.output_values[self.conf['data']]
 
                 # Retrieve all polygons
                 polygons = [p for p in answer if p['shape'] == 'polygon']
@@ -694,7 +634,7 @@ class VerifyPolygon:
                 # Add the bounding boxes stored under the variable to the input data, in case they
                 # are forwarded further. Store them under the key data/output defined in the YAML
                 # configuration for this Action.
-                result['input_data'].update({self.conf['data']['output']: answer})
+                result['input_data'].update({self.conf['data']: answer})
 
                 # Append the event dictionary to the list to be forwarded
                 forward_data.append(result)

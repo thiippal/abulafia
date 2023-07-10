@@ -61,6 +61,7 @@ class CrowdsourcingTask:
         self.skill = False  # Does the Task provide or require a skill?
         self.exam = False  # Is this Task an exam?
         self.test = True if kwargs and kwargs['test'] else False  # Are we running a test?
+        self.verify = True if 'verify' in self.data_conf and self.data_conf['verify'] else False
 
         # See if users should be banned from the pool and check that blocklist is configured correctly
         try:
@@ -74,7 +75,7 @@ class CrowdsourcingTask:
 
         except KeyError:
 
-            msg.warn(f"Could not find the column 'user_id' in the blocklist.", exits=1)
+            msg.fail(f"Could not find the column 'user_id' in the blocklist.", exits=1)
 
         # Print status message
         msg.info(f'The unique ID for this object ({self.name}) is {self.task_id}')
@@ -120,7 +121,7 @@ class CrowdsourcingTask:
 
                 add_tasks(self, self.tasks)
 
-    def __call__(self, in_obj, **options):
+    def __call__(self, in_obj):
 
         # Check that the input object is a list of AssignmentEvent objects
         if type(in_obj) == list and all(isinstance(item, AssignmentEvent) for item in in_obj):
@@ -132,27 +133,32 @@ class CrowdsourcingTask:
                 # If the event type is accepted or submitted, create new tasks in current pool
                 if event.event_type.value in ['ACCEPTED', 'SUBMITTED']:
 
-                    # Create new Task objects
-                    new_tasks = [Task(pool_id=self.pool.id,
-                                      overlap=self.pool_conf['defaults']['default_overlap_for_new_tasks'],
-                                      input_values={k: v for k, v in task.input_values.items()},
-                                      unavailable_for=self.blocklist
-                                      )
-                                 for task, solution
-                                 in zip(event.assignment.tasks,
-                                        event.assignment.solutions)]
+                    # If the assignments are intended to be verified by other users, add the output
+                    # values to the input of the new task and make the verification task unavailable
+                    # for the worker who originally submitted it.
+                    if self.verify:
 
-                    # If the assignments are for a verification pool, add the output values to the input of
-                    # the new task and make the verification task unavailable for the performer
-                    if options and 'verify' in options:
+                        new_tasks = [Task(
+                            pool_id=self.pool.id,
+                            overlap=self.pool_conf['defaults']['default_overlap_for_new_tasks'],
+                            input_values={**task.input_values,
+                                          **solution.output_values,
+                                          'assignment_id': event.assignment.id},
+                            unavailable_for=[*self.blocklist, event.assignment.user_id])
+                            for task, solution in
+                            zip(event.assignment.tasks, event.assignment.solutions)]
 
-                        new_tasks = [Task(pool_id=self.pool.id,
-                                          overlap=self.pool_conf['defaults']['default_overlap_for_new_tasks'],
-                                          input_values={**task.input_values,
-                                                        **solution.output_values,
-                                                        'assignment_id': event.assignment.id},
-                                          unavailable_for=[*self.blocklist, event.assignment.user_id])
-                                     for task, solution in zip(event.assignment.tasks, event.assignment.solutions)]
+                    else:
+
+                        # Create new Task objects
+                        new_tasks = [Task(
+                            pool_id=self.pool.id,
+                            overlap=self.pool_conf['defaults']['default_overlap_for_new_tasks'],
+                            input_values={k: v for k, v in task.input_values.items()},
+                            unavailable_for=self.blocklist)
+                            for task, solution
+                            in zip(event.assignment.tasks,
+                                   event.assignment.solutions)]
 
                     # Add Tasks and open the pool
                     self.client.create_tasks(tasks=new_tasks, open_pool=True)
@@ -380,7 +386,7 @@ class CrowdsourcingTask:
 
                 except KeyError:
 
-                    msg.warn(f"Could not find the key 'training' under the main pool configuration. "
+                    msg.fail(f"Could not find the key 'training' under the main pool configuration. "
                              f"Define the key 'training' and place a key/value pair with the key "
                              f"'training_passing_skill_value' under 'training' to link the training "
                              f"and main pools. This key is used to set the criteria for passing "
@@ -649,7 +655,7 @@ class CrowdsourcingTask:
 
                         # Create filter
                         agent = (toloka.filter.UserAgentType ==
-                                   self.pool_conf['filter']['user_agent_type'][0].upper())
+                                 self.pool_conf['filter']['user_agent_type'][0].upper())
 
                         # Check for existing filters and set
                         self.pool.filter = set_filter(filters=self.pool.filter,

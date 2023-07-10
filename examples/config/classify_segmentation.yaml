@@ -1,0 +1,44 @@
+name: classify_outlines
+data:
+  file: data/segmentation_data.tsv
+  input:
+    image: url
+    outlines: json
+    targets: bool
+  output:
+    result: bool
+interface:
+  prompt: "Is the image annotated correctly?"
+  checkbox: "There is nothing to annotate in this image."
+  segmentation:
+    labels:
+      source: "Source"
+      target: "Target"
+  labels:
+    true: "Yes"
+    false: "No"
+  verification: false
+project:
+  setup:
+    public_name: "Verify outlines in images"
+    public_description: "Look at diagrams from science textbooks and verify if they have been
+    annotated correctly."
+  instructions: instructions/detect_text_instructions.html
+pool:
+  estimated_time_per_suite: 10
+  setup:
+    private_name: "Classify outlines"
+    reward_per_assignment: 0.034
+    assignment_max_duration_seconds: 600
+    auto_accept_solutions: true
+  defaults:
+    default_overlap_for_new_tasks: 1
+    default_overlap_for_new_task_suites: 1
+  mixer:
+    real_tasks_count: 3
+    golden_tasks_count: 0
+    training_tasks_count: 0
+  filter:
+    client_type:
+      - TOLOKA_APP
+      - BROWSER

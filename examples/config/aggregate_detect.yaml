@@ -1,6 +1,0 @@
-name: aggregate_detect
-source: detect_text       # Pool from which tasks are forwarded to the Aggregate-action
-actions:                  # What happens to tasks after aggregation
-  on_result: forward_detect
-method: dawid_skene       # Aggregation method. For options, see https://toloka.ai/en/docs/crowd-kit/
-                          # For now, methods for categorical responses are supported

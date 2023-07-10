@@ -8,11 +8,16 @@ data:
 interface:
   prompt: Read the instructions first. Does the text refer to another part of the diagram?
   labels:
-    source: Source
+    true: "Yes"
+    false: "No"
+  segmentation:
+    labels:
+      source: Source
 project:
   setup:
     public_name: "Examine diagrams from school textbooks"
-    public_description: "In this task you will be shown diagrams from school textbooks. Your task is to examine the diagrams and reason about their content."
+    public_description: "In this task you will be shown diagrams from school textbooks. 
+    Your task is to examine the diagrams and reason about their content."
   instructions: instructions/detect_target_instructions.html
 pool:
   estimated_time_per_suite: 50 

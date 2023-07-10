@@ -1,8 +1,9 @@
 --find-links https://download.pytorch.org/whl/torch_stable.html
-torch==1.13.1
-crowd_kit==1.0.0
-pandas==1.4.1
-pytest==7.1.0
+torch==2.0.1
+crowd_kit==1.2.1
+pandas==2.0.3
+pytest==7.4.0
 PyYAML==6.0
-toloka_kit==0.1.26
-wasabi==0.9.0
+shapely==2.0.1
+toloka_kit==1.4.1
+wasabi==1.1.1

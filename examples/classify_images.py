@@ -31,24 +31,12 @@ with open(cred_file) as cred_f:
     creds = json.loads(cred_f.read())
     tclient = toloka.TolokaClient(creds['token'], creds['mode'])
 
-# Create class instances of all CrowdsourcingTasks and Actions in the pipeline
+# Define an image classification task
+classify_image = ImageClassification(configuration="config/classify_image.yaml",
+                                     client=tclient)
 
-# Ask crowdsourced workers to outline objects in diagrams
-outline_text = ImageSegmentation(configuration="config/outline_text_verify.yaml",
-                                 client=tclient)
+# Add the task into a pipeline
+pipe = TaskSequence(sequence=[classify_image], client=tclient)
 
-# Forward action
-forward_detect = Forward(configuration="config/forward_verify_polygon.yaml",
-                         client=tclient,
-                         targets=[outline_text])
-
-verify_polygon = VerifyPolygon(configuration="config/verify_polygon.yaml",
-                               task=outline_text,
-                               forward=forward_detect)
-
-# Combine the tasks and actions into one pipeline
-pipe = TaskSequence(sequence=[outline_text, verify_polygon, forward_detect],
-                    client=tclient)
-
-# Start the task sequence; create the tasks on Toloka
+# Start the task sequence; create the task on Toloka
 pipe.start()

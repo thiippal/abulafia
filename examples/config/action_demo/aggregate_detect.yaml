@@ -1,0 +1,2 @@
+name: aggregate_detect
+method: dawid_skene

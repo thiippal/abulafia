@@ -1,0 +1,40 @@
+name: segment_images
+data:
+  file: data/segmentation_data.tsv
+  input:
+    image: url
+  output:
+    outlines: json
+    no_objects: bool
+interface:
+  prompt: "Outline all elements with text, letters or numbers."
+  tools:
+    - rectangle
+    - polygon
+  labels:
+    text: "Text"
+    letter: "Letter"
+    number: "Number"
+  checkbox: "Check this box if there is nothing to outline."
+project:
+  setup:
+    public_name: "Outline text, letters and numbers in images"
+    public_description: "Look at diagrams from science textbooks and outline text, letters and numbers."
+  instructions: instructions/detect_text_instructions.html
+pool:
+  estimated_time_per_suite: 10
+  setup:
+    private_name: "Segment images"
+    reward_per_assignment: 0.034
+    assignment_max_duration_seconds: 600
+    auto_accept_solutions: true
+  defaults:
+    default_overlap_for_new_tasks: 1
+    default_overlap_for_new_task_suites: 1
+  mixer:
+    real_tasks_count: 1
+    golden_tasks_count: 0
+    training_tasks_count: 0
+  filter:
+    client_type:
+      - BROWSER
