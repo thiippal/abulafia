@@ -6,7 +6,7 @@ from toloka.streaming.observer import BaseObserver
 from toloka.client.analytics_request import UniqueWorkersCountPoolAnalytics, ActiveWorkersByFilterCountPoolAnalytics, \
     SubmittedAssignmentsCountPoolAnalytics
 from toloka.client.operations import Operation
-from toloka.client.exceptions import DoesNotExistApiError
+from toloka.client.exceptions import DoesNotExistApiError, IncorrectActionsApiError
 
 
 # Set up Printer
@@ -74,6 +74,11 @@ class AnalyticsObserver(BaseObserver):
 
                                 # If a training is found, but it cannot be closed, raise warning
                                 msg.warn(f"Attempted to close a training for pool {self.pool.id} that does not exist")
+
+                            # TODO Possible hotfix for crashing pipelines
+                            except IncorrectActionsApiError:
+
+                                pass
 
                     if response['request']['name'] == 'unique_workers_count' and not self.limit_reached:
 

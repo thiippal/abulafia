@@ -20,19 +20,21 @@ class TaskSequence:
     This class allows defining a sequence of crowdsourcing tasks on Toloka.
 
     """
-    def __init__(self, sequence, client):
+    def __init__(self, sequence, client, **kwargs):
         """
         This function initialises the TaskSequence class.
 
         Parameters:
             sequence: A list of objects that inherit from the CrowdsourcingTask class.
             client: A TolokaClient object with valid credentials.
+            kwargs: Keywords and arguments for additional settings.
         """
         # Set up attributes
         self.complete = False       # Tracks if all tasks have been completed
         self.sequence = sequence    # A list of CrowdsourcingTask objects
         self.client = client        # A Toloka Client object
         self.pipeline = None        # Placeholder for a Toloka Pipeline object
+        self.no_exit = True if 'no_exit' in kwargs and kwargs['no_exit'] else False     # Do not exit after finishing
 
         msg.info(f'Creating a task sequence')
 
@@ -101,9 +103,12 @@ class TaskSequence:
 
                     else:
 
-                        self.client.close_pool(pool_id=task.pool.id)
+                        # Check pool status again
+                        if not self.client.get_pool(pool_id=task.pool.id).is_closed():
 
-                        msg.info(f'Closed pool with ID {task.pool.id}')
+                            self.client.close_pool(pool_id=task.pool.id)
+
+                            msg.info(f'Closed pool with ID {task.pool.id}')
 
                 # Check if there is a training pool that should be closed
                 if hasattr(task, 'training') and task.training is not None:
@@ -114,13 +119,16 @@ class TaskSequence:
 
                     else:
 
-                        self.client.close_pool(pool_id=task.training.id)
+                        # Check status again
+                        if not self.client.get_pool(pool_id=task.training.id).is_closed():
 
-                        msg.info(f'Closed pool with ID {task.training.id}')
+                            self.client.close_pool(pool_id=task.training.id)
+
+                            msg.info(f'Closed pool with ID {task.training.id}')
 
             for action in (a for a in self.sequence if hasattr(a, 'aggregator')):
 
-                if action.complete == True:
+                if action.complete:
                     
                     status.append(True)
 
@@ -139,29 +147,13 @@ class TaskSequence:
         # Check the outputs
         if self.complete:
 
-            exit()
+            if not self.no_exit:
 
-            # Check if tasks are supposed to output the results
-            for task in self.sequence:
+                exit()
 
-                if hasattr(task, 'pool'):
+            if self.no_exit:
 
-                    # Get the output DataFrame for each task; assign under 'output_data'
-                    task.output_data = self.client.get_assignments_df(pool_id=task.pool.id)
-
-                    # Check if the output should be written to disk
-                    try:
-
-                        if task.conf['actions'] is not None and 'output' in task.conf['actions']:
-
-                            # Write the DataFrame to disk
-                            task.output_data.to_csv(f'{task.name}_{task.pool.id}.csv')
-
-                            msg.good(f'Wrote data for task {task.name} ({task.pool.id}) to disk.')
-
-                    except KeyError:
-
-                        pass
+                pass
 
     def create_pipeline(self):
 
