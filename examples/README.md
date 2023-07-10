@@ -959,7 +959,7 @@ Optionally, you can also add labels to the bounding boxes by providing the argum
 ```python
 sp = SeparateBBoxes(configuration='sep.yaml',
                     target=describe_object,
-                    label='source')
+                    add_label='source')
 ```
 
 To configure the SeparateBBoxes Action, use the following top-level keys in the YAML configuration file.
