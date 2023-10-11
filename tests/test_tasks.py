@@ -102,8 +102,7 @@ class TestProject:
 
         # Build a task interface similar to the one defined in data/detect_text.yaml
         task_spec = toloka.project.task_spec.TaskSpec(
-            input_spec={'image': toloka.project.UrlSpec(required=True, hidden=False),
-                        'assignment_id': toloka.project.StringSpec(required=False, hidden=False)},
+            input_spec={'image': toloka.project.UrlSpec(required=True, hidden=False)},
             output_spec={'result': toloka.project.BooleanSpec(required=True, hidden=False, allowed_values=None)},
             view_spec=toloka.project.TemplateBuilderViewSpec(
                 settings=None,
@@ -112,13 +111,13 @@ class TestProject:
                         items=[toloka.project.template_builder.ImageViewV1(
                             url=toloka.project.template_builder.InputData(
                                 path='image', default=None),
-                            full_height=True,
+                            full_height=None,
                             max_width=None,
                             min_width=None,
                             no_border=None,
                             no_lazy_load=None,
                             popup=None,
-                            ratio=None,
+                            ratio=[1, 1],
                             rotatable=True,
                             scrollable=None,
                             hint=None,
