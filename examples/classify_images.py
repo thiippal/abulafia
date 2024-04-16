@@ -1,8 +1,6 @@
 # -*- coding: utf-8 -*-
 
-from abulafia.actions import Forward, VerifyPolygon
-from abulafia.task_specs import ImageSegmentation, TaskSequence, MulticlassVerification, FixImageSegmentation, \
-    SegmentationClassification, ImageClassification
+from abulafia.task_specs import TaskSequence, ImageClassification
 import argparse
 import json
 import toloka.client as toloka

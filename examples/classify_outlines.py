@@ -1,6 +1,5 @@
 # -*- coding: utf-8 -*-
 
-from abulafia.actions import Forward, VerifyPolygon
 from abulafia.task_specs import TaskSequence, SegmentationClassification
 import argparse
 import json

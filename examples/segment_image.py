@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-from abulafia.task_specs import ImageSegmentation, TaskSequence
+from abulafia.task_specs import TaskSequence, ImageSegmentation
 import argparse
 import json
 import toloka.client as toloka
