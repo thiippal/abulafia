@@ -4,6 +4,7 @@
 from ..functions.core_functions import *
 from wasabi import Printer
 from .core_task import CrowdsourcingTask
+from urllib3.util import Retry
 import toloka.client as toloka
 import toloka.client.project.template_builder as tb
 from collections import OrderedDict
@@ -512,7 +513,7 @@ class TextClassification(CrowdsourcingTask):
     This is a class for text classification tasks.
     """
 
-    def __init__(self, configuration, client, **kwargs):
+    def __init__(self, configuration, creds, **kwargs):
         """
         This function initialises the TextClassification class, which inherits attributes
         and methods from the superclass CrowdsourcingTask.
@@ -529,6 +530,14 @@ class TextClassification(CrowdsourcingTask):
 
         # Specify task and task interface
         task_spec = self.specify_task(configuration=configuration)
+
+        # Initialize client
+        client = toloka.TolokaClient(creds['token'], creds['mode'],
+                                     retryer_factory=lambda: Retry(total=10,
+                                                                   status_forcelist=toloka.STATUSES_TO_RETRY,
+                                                                   allowed_methods=['HEAD', 'GET', 'PUT', 'DELETE',
+                                                                                    'OPTIONS', 'TRACE', 'POST', 'PATCH'],
+                                                                   backoff_factor=0.1))
 
         # Use the super() function to access the superclass Task and its methods and attributes.
         # This will set up the project, pool and training as specified in the configuration file.

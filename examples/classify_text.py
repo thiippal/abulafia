@@ -3,7 +3,6 @@
 from abulafia.task_specs import TaskSequence, TextClassification
 import argparse
 import json
-import toloka.client as toloka
 
 
 # Set up the argument parser
@@ -27,14 +26,13 @@ cred_file = args['creds']
 with open(cred_file) as cred_f:
 
     creds = json.loads(cred_f.read())
-    tclient = toloka.TolokaClient(creds['token'], creds['mode'])
 
 # Define a text classification task
 classify_image = TextClassification(configuration="config/classify_text.yaml",
-                                    client=tclient)
+                                    creds=creds)
 
 # Add the task into a pipeline
-pipe = TaskSequence(sequence=[classify_image], client=tclient)
+pipe = TaskSequence(sequence=[classify_image], creds=creds)
 
 # Start the task sequence; create the task on Toloka
 pipe.start()

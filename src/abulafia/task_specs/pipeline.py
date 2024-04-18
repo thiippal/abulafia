@@ -7,9 +7,12 @@ from ..functions.core_functions import *
 from toloka.client.actions import ChangeOverlap
 from toloka.client.collectors import AssignmentsAssessment
 from toloka.client.conditions import AssessmentEvent
-from toloka.util.async_utils import AsyncMultithreadWrapper
+from toloka.async_client.client import AsyncTolokaClient
+from toloka.client import TolokaClient, STATUSES_TO_RETRY
 from toloka.streaming import AssignmentsObserver, Pipeline, PoolStatusObserver
+from urllib3.util import Retry
 from wasabi import Printer
+
 
 # Set up Printer
 msg = Printer(pretty=True, timestamp=True, hide_animation=True)
@@ -20,7 +23,7 @@ class TaskSequence:
     This class allows defining a sequence of crowdsourcing tasks on Toloka.
 
     """
-    def __init__(self, sequence, client, **kwargs):
+    def __init__(self, sequence, creds, **kwargs):
         """
         This function initialises the TaskSequence class.
 
@@ -32,7 +35,7 @@ class TaskSequence:
         # Set up attributes
         self.complete = False       # Tracks if all tasks have been completed
         self.sequence = sequence    # A list of CrowdsourcingTask objects
-        self.client = client        # A Toloka Client object
+        self.creds = creds          # Toloka credentials
         self.pipeline = None        # Placeholder for a Toloka Pipeline object
         self.no_exit = True if 'no_exit' in kwargs and kwargs['no_exit'] else False     # Do not exit after finishing
 
@@ -43,6 +46,14 @@ class TaskSequence:
 
         msg.info(f'Printing tasks, inputs and outputs')
         create_pool_table(self.sequence)
+
+        msg.info(f'Initialising client')
+        self.client = TolokaClient(self.creds['token'], self.creds['mode'],
+                                   retryer_factory=lambda: Retry(total=10,
+                                                                 status_forcelist=STATUSES_TO_RETRY,
+                                                                 allowed_methods=['HEAD', 'GET', 'PUT', 'DELETE',
+                                                                                  'OPTIONS', 'TRACE', 'POST', 'PATCH'],
+                                                                 backoff_factor=0.1))
 
         # Create the pipeline
         self.create_pipeline()
@@ -158,7 +169,13 @@ class TaskSequence:
     def create_pipeline(self):
 
         # Create an asyncronous client
-        async_client = AsyncMultithreadWrapper(self.client)
+        msg.info(f'Initialising asynchronous client')
+        async_client = AsyncTolokaClient(self.creds['token'], self.creds['mode'],
+                                         retryer_factory=lambda: Retry(total=10,
+                                                                       status_forcelist={500},
+                                                                       backoff_factor=0),
+                                         retry_quotas=None,
+                                         timeout=0.5)
 
         # Loop over the tasks and create an AssignmentsObserver object for each task. Exam tasks
         # do not require AssignmentsObservers, because they do not create further tasks to be
@@ -347,7 +364,8 @@ class TaskSequence:
                                 
                                 observer.on_accepted(tasks[current_task.action_conf['on_result']])
 
-                        msg.info(f'Tasks from {name} will be forwarded with {tasks[current_task.action_conf["on_result"]].name} '
+                        msg.info(f'Tasks from {name} will be forwarded with '
+                                 f'{tasks[current_task.action_conf["on_result"]].name} '
                                  f'on result according to configuration')
 
                     except KeyError:
