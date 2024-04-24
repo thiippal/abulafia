@@ -18,6 +18,6 @@ dependencies = [
     "pytest",
     "PyYAML==6.0",
     "shapely==2.0.1",
-    "toloka_kit[pandas]=1.2.2",
+    "toloka_kit[pandas]>=1.2.2",
     "wasabi==1.1.1"
 ]

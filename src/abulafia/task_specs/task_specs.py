@@ -537,7 +537,8 @@ class TextClassification(CrowdsourcingTask):
                                                                    status_forcelist=toloka.STATUSES_TO_RETRY,
                                                                    allowed_methods=['HEAD', 'GET', 'PUT', 'DELETE',
                                                                                     'OPTIONS', 'TRACE', 'POST', 'PATCH'],
-                                                                   backoff_factor=0.1))
+                                                                   backoff_factor=0.5)
+                                     )
 
         # Use the super() function to access the superclass Task and its methods and attributes.
         # This will set up the project, pool and training as specified in the configuration file.

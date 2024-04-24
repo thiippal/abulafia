@@ -173,9 +173,7 @@ class TaskSequence:
         async_client = AsyncTolokaClient(self.creds['token'], self.creds['mode'],
                                          retryer_factory=lambda: Retry(total=10,
                                                                        status_forcelist={500},
-                                                                       backoff_factor=0),
-                                         retry_quotas=None,
-                                         timeout=0.5)
+                                                                       backoff_factor=0))
 
         # Loop over the tasks and create an AssignmentsObserver object for each task. Exam tasks
         # do not require AssignmentsObservers, because they do not create further tasks to be
