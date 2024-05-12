@@ -909,15 +909,6 @@ vp = VerifyPolygon(configuration='verify.yaml',
                    forward=verify_fwd)
 ```
 
-The VerifyPolygon Action may only applied to Task outputs once the Task is complete and closed. To verify the polygons submitted by workers, provide the name of the VerifyPolygon Action under the top-levle key [`actions`](#processing-task-outputs-using-actions) and the key `on_closed`.
-
-The following example applies a VerifyPolygon Action named `verify_polygon` to the Task outputs.
-
-```yaml
-actions:
-  on_closed: verify_polygon
-```
-
 To configure the VerifyPolygon Action, use the following top-level keys in the YAML configuration file.
 
 
