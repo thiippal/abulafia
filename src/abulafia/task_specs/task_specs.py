@@ -293,6 +293,9 @@ class ImageSegmentation(CrowdsourcingTask):
         # Create a list of interface elements
         view = [img_ui, prompt]
 
+        # Define hint for validation criteria without checkbox
+        hint = "Please draw at least one shape."
+
         # Check for optional checkbox element
         if 'checkbox' in configuration['interface']:
 
@@ -303,9 +306,11 @@ class ImageSegmentation(CrowdsourcingTask):
             conditions.append(tb.EqualsConditionV1(data=tb.OutputData(path=output_data['bool']),
                                                    to=True))
 
+            # Update hint
+            hint = "Please draw at least one shape or check the box."
+
         # Combine the validation criteria (at least one criterion must hold)
-        validation = tb.AnyConditionV1(conditions=conditions, hint="Please draw at least one "
-                                                                   "shape or check the box.")
+        validation = tb.AnyConditionV1(conditions=conditions, hint=hint)
 
         # Combine the components into a single user interface; add validation criteria
         interface = toloka.project.TemplateBuilderViewSpec(
