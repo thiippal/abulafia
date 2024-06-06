@@ -51,6 +51,18 @@ class Aggregate:
         self.conf = read_configuration(configuration)
         self.name = self.conf['name']
 
+        try:
+
+            agg_in = self.conf['data']['input']
+            agg_out = self.conf['data']['output']
+
+        except KeyError:
+
+            msg.fail(f"The configuration file for the Aggregate Action named {self.name} does not contain "
+                     f"the names of the variables for input and output data. Ensure that the top-level key "
+                     f"'data' contains keys 'input' and 'output', whose values provide the variable names "
+                     f"for incoming data.", exits=1)
+
         self.forward = forward
         self.messages = self.conf['messages'] if 'messages' in self.conf else None
 
@@ -77,8 +89,8 @@ class Aggregate:
 
             a_dict = {"task": [], "inputs": [], "label": [], "worker": [], "id": []}
 
-            input_data = list(self.task.data_conf['input'].keys())[0]
-            output_data = list(self.task.data_conf['output'].keys())[0]
+            input_data = self.conf['data']['input']
+            output_data = self.conf['data']['output']
 
             for a in assignments:
                 if a.id not in self.prev_assignments:
@@ -89,6 +101,10 @@ class Aggregate:
                         a_dict['worker'].append(a.user_id)
                         a_dict['id'].append(a.id)
                     self.prev_assignments.add(a.id)
+
+            if not isinstance(a_dict['task'], str):
+
+                a_dict['task'] = [str(x) for x in a_dict['task']]
 
             df = pd.DataFrame(data=a_dict)
 

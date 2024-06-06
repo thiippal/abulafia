@@ -866,6 +866,7 @@ To configure the Aggregate Action, use the following top-level keys in the YAML 
 | Key        | Value      | Description                                                                      |
 |:-----------|:-----------|:---------------------------------------------------------------------------------|
 | `name`     | string     | A unique [name](#naming-a-task) for the Aggregate Action.                        |
+| `data`     | dictionary | A dictionary that defines the input and output data to be aggregated.            |
 | `method`   | string     | The name of the aggregation algorithm to be used.                                |
 | `messages` | dictionary | An optional dictionary that maps particular outputs to messages for the workers. |
  
@@ -882,10 +883,15 @@ The following aggregation methods are currently supported. Provide the name as t
 
 The following example defines an Aggregate Action named `agg_ds`, which uses the Dawid-Skene algorithm for aggregating the outputs.
 
+The top-level key `data` defines the input (`input`) and output (`output`) data to be aggregated. In this case, each unique input (e.g. a URL of an image, `image`) is associated with multiple outputs (`label`). The aggregation algorithm seeks to determine the most probable output (`label`).
+
 The top-level key `messages` defines three outputs and messages associated with them, which are added to input to the Forward Action.
 
 ```yaml
 name: agg_ds
+data:
+  input: image
+  output: label
 method: dawid_skene
 messages:
   correct: "Your assignment was classified as correct."
@@ -932,7 +938,7 @@ For an additional example of using the VerifyPolygon Action, see the example in 
 
 ### SeparateBBoxes
 
-The SeparateBBoxes Action can be used to separate groups of bounding boxes submitted by workers into individual bounding boxes. This Action is particularly useful if you need to ...
+The SeparateBBoxes Action can be used to separate groups of bounding boxes submitted by workers into individual bounding boxes for further processing.
 
 To create a SeparateBBoxes Action, initialise a SeparateBBoxes object that points towards a YAML configuration file and a Task object to which the individual bounding boxes will be forwarded.
 
